@@ -216,3 +216,12 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Campaign Workspace
+backend/.venv/
+frontend/node_modules/
+frontend/dist/
+*.tsbuildinfo
+*.db
+.env
+!.env.example
