@@ -6,13 +6,69 @@ FastAPI with synchronous SQLAlchemy sessions, Pydantic validation, PostgreSQL, a
 
 - `app/main.py`: application, CORS, health endpoint.
 - `app/api/campaigns.py`: HTTP routes and injected database sessions.
-- `app/schemas/campaign.py`: request/response validation and project enum.
+- `app/schemas/campaign.py`: request validation and response schemas.
 - `app/models/campaign.py`: campaign, detail, and evaluation mappings.
 - `app/services/campaigns.py`: persistence and manual evaluation operations.
 - `app/database/session.py`: engine, base metadata, per-request sessions.
 - `app/core/config.py`: environment settings.
 - `alembic/`: versioned database schema.
 - `tests/`: API workflow, validation, status, filtering, and migration tests.
+
+## How the campaign API works
+
+The campaign API separates HTTP requests, data validation, business logic, and database storage into layers:
+
+| Layer | File | Responsibility |
+| --- | --- | --- |
+| Application | [app/main.py](app/main.py) | Creates the FastAPI app and registers its routers. |
+| Routes | [app/api/campaigns.py](app/api/campaigns.py) | Defines URLs and HTTP methods, receives validated input, and calls services. |
+| Schemas | [app/schemas/campaign.py](app/schemas/campaign.py) | Defines accepted request fields, validation rules, and response fields using Pydantic. |
+| Services | [app/services/campaigns.py](app/services/campaigns.py) | Checks business rules and creates, reads, or updates records. |
+| Models | [app/models/campaign.py](app/models/campaign.py) | Maps Python classes to database tables and relationships using SQLAlchemy. |
+| Database session | [app/database/session.py](app/database/session.py) | Provides the connection engine and database session used by each request. |
+
+### Schemas versus models
+
+**Schemas define what the API accepts and returns. Models define how data is stored.**
+
+- `CampaignCreate`: input for creating a campaign or updating its basic information (`bank_name`, `project`, `campaign_url`).
+- `DetailsInput`: optional campaign content, such as headline, main message, and notes.
+- `EvaluationInput`: five required scores and optional evaluation notes.
+- `CampaignRead` and `EvaluationRead`: fields returned in API responses.
+- `Campaign`, `CampaignDetails`, and `Evaluation`: database models mapped to the `campaigns`, `campaign_details`, and `evaluations` tables.
+
+For example, the schema checks that `bank_name` contains 1–120 characters, while the model maps it to a database column. The service checks that the selected project exists in the project catalog.
+
+### Example: creating a campaign
+
+```text
+Frontend sends POST /api/campaigns with JSON
+    ↓
+CampaignCreate validates the request fields
+    ↓
+The route calls create_campaign(db, data)
+    ↓
+The service checks the project and creates a Campaign model
+    ↓
+The database session saves and refreshes the record
+    ↓
+CampaignRead defines the response fields
+    ↓
+Frontend receives campaign JSON with HTTP 201 Created
+```
+
+The frontend sends this request through `createCampaign()` in [frontend/src/api/campaigns.ts](../frontend/src/api/campaigns.ts).
+
+### Where to change basic campaign information
+
+- **Accepted fields or validation:** edit `CampaignCreate` in `app/schemas/campaign.py`.
+- **Response fields:** edit `CampaignRead` in the same schema file.
+- **Creation or update behavior:** edit `create_campaign()` or `update_basic()` in `app/services/campaigns.py`.
+- **URLs or HTTP methods:** edit `app/api/campaigns.py`.
+- **Stored fields:** edit `Campaign` in `app/models/campaign.py` and create an Alembic migration for the database change.
+- **Frontend input:** update `CampaignInput` in `frontend/src/api/campaigns.ts` and the form that collects those values.
+
+When adding a new stored basic-info field, update the request schema, model, migration, service assignments, response schema, and frontend together.
 
 ## Start
 
@@ -49,6 +105,7 @@ Run commands from `backend/` so `.env` and migration paths resolve. If Vite uses
 | PUT | `/api/campaigns/{id}` | Update bank, project, and source URL; preserves details and evaluation |
 | PUT | `/api/campaigns/{id}/details` | Add/update provided fields; omitted fields preserved, null/blank clears |
 | POST | `/api/campaigns/{id}/evaluation` | Create/update manual evaluation; returns evaluation, HTTP 200 |
+| DELETE | `/api/campaigns/{id}` | Delete campaign, details, and evaluation; HTTP 204 |
 
 Unknown records return 404; invalid inputs return 422. Basic creation requires a nonblank bank name, a supported project, and an HTTP(S) URL. Detail observations validate dropdown values and lengths. All five scores are required integer values from 1–5; the server never infers or averages scores.
 
