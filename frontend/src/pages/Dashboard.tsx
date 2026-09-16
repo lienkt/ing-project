@@ -17,9 +17,19 @@ import {
   getCampaigns,
   label,
 } from "../api/campaigns";
-import { Loading, Notice, Status } from "../components/shared";
+import { getComparison, ComparisonPage } from "../api/compare";
+import { Loading, Notice } from "../components/shared";
+import { FeatureStatus } from "../components/FeatureControls";
 export default function Dashboard() {
   const location = useLocation();
+  useEffect(() => {
+    if (location.hash !== "#label") return;
+    const frame = requestAnimationFrame(() => {
+      const target = document.getElementById("label");
+      target?.focus(); target?.scrollIntoView({ block: "start" });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [location.key, location.hash]);
   const [deleting, setDeleting] = useState<number | null>(null);
   const [actionError, setActionError] = useState("");
   const [success, setSuccess] = useState<string>(location.state?.message || "");
@@ -43,6 +53,8 @@ export default function Dashboard() {
       setDeleting(null);
     }
   }
+  const [metadata, setMetadata] = useState<Record<number, ComparisonPage>>({});
+  const [metadataError, setMetadataError] = useState("");
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -55,8 +67,15 @@ export default function Dashboard() {
     setLoading(true);
     setError("");
     getCampaigns()
-      .then((c) => {
-        if (active) setCampaigns(c);
+      .then(async (c) => {
+        if (!active) return;
+        setCampaigns(c); setMetadata({}); setMetadataError("");
+        const results = await Promise.allSettled([...new Set(c.map(page => page.project))].map(category => getComparison(category)));
+        if (!active) return;
+        const entries: Record<number, ComparisonPage> = {};
+        results.forEach(result => { if (result.status === "fulfilled") result.value.pages.forEach(page => { entries[page.campaign_id] = page; }); });
+        setMetadata(entries);
+        if (results.some(result => result.status === "rejected")) setMetadataError("Some product and language details could not be loaded. Refresh the dataset to retry.");
       })
       .catch((e) => {
         if (active) setError(e.message);
@@ -76,47 +95,48 @@ export default function Dashboard() {
         .toLowerCase()
         .includes(search.toLowerCase()),
   );
-  const evaluated = campaigns.filter((c) => c.status === "Evaluated").length;
+  const evaluated = campaigns.filter((c) => c.labeling_status === "Completed").length;
   return (
     <>
+      {location.hash === "#label" && <section id="label" tabIndex={-1} className="card form-card compare-section" aria-labelledby="label-entry-title"><h2 id="label-entry-title">Choose a campaign to label</h2><p>Open a campaign by clicking its bank name, then choose its Campaign Feature Framework.</p></section>}
       <div className="page-heading">
         <div>
           <h1>
-            Campaign overview<span className="heading-dot">.</span>
-          </h1>
+            Campaign dataset
+          </h1><p>Choose a page, label its communication, then compare banks.</p>
         </div>
         <Link className="button" to="/campaigns/new">
           <Plus size={17} /> Add campaign
         </Link>
       </div>
-      <div className="stats">
-        <div className="stat card">
+      <div className="stats dataset-stats" role="region" aria-label="Campaign summary">
+        <div className="stat card stat-total">
           <div>
             <span>Total campaigns</span>
             <strong>{loading || error ? "—" : campaigns.length}</strong>
-            <small>Your growing research library</small>
+            <small>Pages in your dataset</small>
           </div>
           <span className="stat-icon">
             <Layers3 size={21} />
           </span>
         </div>
-        <div className="stat card">
+        <div className="stat card stat-progress">
           <div>
             <span>In progress</span>
             <strong>
               {loading || error ? "—" : campaigns.length - evaluated}
             </strong>
-            <small>Ready for a closer look</small>
+            <small>Awaiting completed labeling</small>
           </div>
           <span className="stat-icon amber">
             <FileText size={21} />
           </span>
         </div>
-        <div className="stat card">
+        <div className="stat card stat-complete">
           <div>
-            <span>Evaluated</span>
+            <span>Labeling completed</span>
             <strong>{loading || error ? "—" : evaluated}</strong>
-            <small>Observations turned into insights</small>
+            <small>Available for analytical review</small>
           </div>
           <span className="stat-icon green">
             <CheckCheck size={21} />
@@ -128,23 +148,24 @@ export default function Dashboard() {
           <span className="small-spark">✳</span>
           <div>
             <strong>From discovery to understanding</strong>
-            <p>Three simple steps to a complete campaign review.</p>
+            <p>Dataset → Label → Compare: turn page observations into evidence.</p>
           </div>
         </div>
         <div className="mini-steps">
           <span>
-            <b>1</b> Collect
+            <b>1</b> Dataset
           </span>
           <ArrowRight size={14} />
           <span>
-            <b>2</b> Observe
+            <b>2</b> Label
           </span>
           <ArrowRight size={14} />
           <span>
-            <b>3</b> Evaluate
+            <b>3</b> Compare
           </span>
         </div>
       </div>
+      <Notice message={metadataError} />
       <Notice message={actionError} />
       <Notice message={success} success />
       <section className="card library">
@@ -204,59 +225,18 @@ export default function Dashboard() {
               <table>
                 <thead>
                   <tr>
-                    <th>CAMPAIGN / BANK</th>
-                    <th>PROJECT</th>
-                    <th>STATUS</th>
-                    <th>DATE ADDED</th>
+                    <th>BANK</th><th>PRODUCT</th><th>CATEGORY</th><th>LANGUAGE</th><th>LABELING STATUS</th>
                     <th>ACTIONS</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filtered.map((c) => (
                     <tr key={c.id}>
-                      <td>
-                        <div className="table-bank">
-                          <div
-                            className={`bank-avatar ${c.bank_name.toLowerCase() === "ing" ? "orange" : ""}`}
-                          >
-                            {c.bank_name.slice(0, 2).toUpperCase()}
-                          </div>
-                          <div>
-                            <Link
-                              className="campaign-title"
-                              to={`/campaigns/${c.id}`}
-                            >
-                              {c.details?.campaign_name || c.bank_name}
-                            </Link>
-                            {c.details?.campaign_name && (
-                              <small>{c.bank_name}</small>
-                            )}
-                            <a
-                              className="table-url"
-                              title={c.campaign_url}
-                              href={c.campaign_url}
-                              target="_blank"
-                              rel="noreferrer"
-                            >
-                              {new URL(c.campaign_url).hostname}
-                              <ArrowUpRight size={12} />
-                            </a>
-                          </div>
-                        </div>
-                      </td>
-                      <td>
-                        <span className="project-tag">{label(c.project)}</span>
-                      </td>
-                      <td>
-                        <Status value={c.status} />
-                      </td>
-                      <td className="date">
-                        {new Date(c.created_at).toLocaleDateString(undefined, {
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
-                        })}
-                      </td>
+                      <td><Link className="campaign-title" to={`/campaigns/${c.id}`}>{c.bank_name}</Link><a className="table-url" href={c.campaign_url} target="_blank" rel="noreferrer">Source <ArrowUpRight size={14} /></a></td>
+                      <td>{metadata[c.id]?.product_name || "Not recorded"}</td>
+                      <td>{label(c.project)}</td>
+                      <td>{metadata[c.id]?.language || "Not recorded"}</td>
+                      <td><FeatureStatus value={c.labeling_status} /></td>
                       <td>
                         <div className="row-actions">
                           <button
@@ -279,7 +259,7 @@ export default function Dashboard() {
             </div>
             <div className="table-footer">
               Showing {filtered.length} of {campaigns.length} campaigns
-              <span>Manually collected. Thoughtfully evaluated.</span>
+              <span>Manually labeled. Compare within a product category.</span>
             </div>
           </>
         ) : (

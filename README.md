@@ -1,114 +1,143 @@
 # Banking campaigns comparator
 
-A local research workspace for collecting and manually evaluating bank communication campaigns. Capture a source URL, add communication observations, and save five independently chosen scores. No scraping, AI scoring, authentication, or competitor algorithms are included.
+Save bank webpages, label their communication, and compare similar products.
 
-## Architecture
+## First-time installation
 
-React + TypeScript (Vite) → FastAPI REST API → SQLAlchemy → PostgreSQL.
+Follow these steps in order. This starts the app with demo data. Commands use macOS/Linux terminals.
 
-The dashboard shows workflow status and filters by bank and product category. Campaign details and evaluations live in separate related tables. Alembic manages the schema; the application never creates tables on startup.
+### 1. Install the required tools
 
-```text
-.
-├── backend/              # FastAPI, SQLAlchemy, schemas, services, migrations, tests
-├── frontend/             # React pages, shared components, typed API client
-├── docker-compose.yml   # PostgreSQL with persistent storage
-└── README.md
+Install these tools if missing:
+
+- **Docker Desktop:** install it, open it, and wait until Docker is running. PostgreSQL runs inside Docker; no separate PostgreSQL installation is needed.
+- **Python 3.11 or newer**.
+- **Node.js 22.12 or newer in the 22.x series**, including npm.
+
+Check them in a terminal:
+
+```bash
+docker --version
+docker compose version
+python3 --version
+node --version
+npm --version
 ```
 
-## Run locally
+### 2. Start the database
 
-Prerequisites: Python 3.11+, Node.js 20.19+ (or 22.12+), npm, and Docker with Compose. Run these commands from the repository root unless stated otherwise.
+Open a terminal in the project root: the folder containing this README and `docker-compose.yml`.
 
-1. Start PostgreSQL:
+```bash
+docker compose up -d --wait db
+docker compose ps
+```
 
-   ```bash
-   docker compose up -d --wait
-   ```
+Wait until `db` is healthy before continuing. This downloads PostgreSQL 17 and starts it on port 5432. Its data survives container restarts.
 
-   If Docker isn’t installed. Your Python virtual environment doesn’t include it. Install Docker Desktop:
+### 3. Install the backend
 
-   ```bash
-   brew install --cask docker
-   ```
-
-   Then, Open Docker Desktop from Applications and wait for it to finish starting. From the repository root, retry:
-
-   ```bash
-   docker compose up -d --wait
-   ```
-
-2. Start the backend in one terminal:
-
-   ```bash
-   cd backend
-   python3 -m venv .venv
-   source .venv/bin/activate
-   pip install -r requirements.txt
-   cp .env.example .env
-   alembic upgrade head
-   uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
-   ```
-
-3. Start the frontend in a second terminal:
-
-   ```bash
-   cd frontend
-   cp .env.example .env
-   npm ci
-   npm run dev
-   ```
-
-4. Open **http://localhost:5173**. API docs: **http://localhost:8000/docs**.
-
-PostgreSQL is available at localhost:5432, database `campaign_db`, user/password `postgres`/`postgres`. These credentials are for local development. If you already have PostgreSQL, create an empty database and set `DATABASE_URL` instead of using Compose. If port 5432 is occupied, adjust the Compose host port and backend environment together.
-
-## Try the complete workflow
-
-1. Add campaign → enter bank, product category, and HTTP(S) URL.
-2. The saved record opens on its details page; a success message confirms creation.
-3. Enter observations and save details; continue to evaluation.
-4. Select all five scores (1–5) and save. Overall score is also selected manually.
-5. Return to the dashboard. The campaign now shows **Evaluated**.
-
-Campaigns remain available after refresh or service restart. Submitting an evaluation again updates its existing manual evaluation. Filters and text search apply to the current campaign library; an empty installation has no fabricated sample data.
-
-## Verification
+In the same terminal:
 
 ```bash
 cd backend
+python3 -m venv .venv
 source .venv/bin/activate
-python -m pytest -q
-alembic check
+pip install -r requirements.txt
+cp .env.example .env
 ```
 
-Tests use isolated SQLite databases with real Alembic upgrades and downgrades by default. To test against PostgreSQL, supply a **dedicated empty test database** (tests remove their tables):
+Copy `.env` only if it does not already exist. Open `backend/.env` and set these values; keep the other settings:
+
+```dotenv
+DATA_MODE=demo
+DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/campaign_db
+DEMO_DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/campaign_demo_db
+```
+
+### 4. Load demo data and start the backend
+
+Still in `backend/`, with `.venv` activated:
 
 ```bash
-TEST_DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/campaign_test python -m pytest -q
+python -m scripts.setup_demo
+uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
+
+The setup command creates the demo database, creates its tables, and adds sample campaigns. Leave this terminal running. Check the API at **http://localhost:8000/docs**.
+
+### 5. Install and start the frontend
+
+Open a **second terminal in the project root**:
 
 ```bash
 cd frontend
-npm run build
+npm ci
+cp .env.example .env
+npm run dev
 ```
 
-See [backend documentation](backend/README.md) and [frontend documentation](frontend/README.md) for structure and API details. `docker compose stop` stops PostgreSQL while preserving data; `docker compose up -d --wait` resumes it.
+Copy `.env` only if it does not already exist. Its `VITE_API_URL` should be `http://localhost:8000`. Leave this terminal running.
 
-## Implementation verification
+### 6. Open the app
 
-Verified during implementation:
+Open **http://localhost:5173**. The header should show **Demo database · Synthetic data**.
 
-- 14 backend tests pass, including create/list/details/evaluation, input validation, filtering, status changes, and migration upgrade/downgrade.
-- TypeScript checking and the Vite production build pass.
-- FastAPI and Vite both start successfully.
-- A headless Chrome check completes creation, details editing, evaluation, dashboard navigation, filtering, and persistence after refresh; no browser errors or page overflow at 390px width.
-- Alembic applies to a temporary SQLite database, `alembic check` reports no model/schema differences, and PostgreSQL migration SQL generates successfully.
+- **Dataset:** click a bank name to open a campaign and its labeling.
+- **Compare:** choose **Current Account**, then select at least two labeled pages. Observations appear above the chart.
+- **Settings:** add campaigns, banks, or product categories.
 
-The implementation environment had neither Docker nor PostgreSQL installed. **Live PostgreSQL migration and workflow verification remain to be run** using the Compose instructions above. Browser verification used a temporary SQLite database, not the default PostgreSQL configuration.
+Demo labels are synthetic; they are for exploring the app.
 
-### Add banks and projects
+## Run the app next time
 
-Use **Add bank** or **Add project** below **Add campaign** in the sidebar. Saved options are available when creating and editing campaigns. For an existing installation, run `alembic upgrade head` from `backend/` to create and seed the option tables while preserving campaigns.
+Do not repeat installation or demo setup. Open Docker Desktop, then use two terminals.
 
-Campaigns can be edited or deleted from the dashboard. Bank and project pages support adding, editing, and deleting options. Renames update linked campaigns. Options still in use cannot be deleted until their campaigns are reassigned or removed. Campaign deletion also removes its details and scores and asks for confirmation.
+**Terminal 1 — from the project root:**
+
+```bash
+docker compose up -d --wait db
+cd backend
+source .venv/bin/activate
+uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+```
+
+**Terminal 2 — from the project root:**
+
+```bash
+cd frontend
+npm run dev
+```
+
+Open http://localhost:5173. Stop each app with `Ctrl+C`. To stop PostgreSQL, run `docker compose stop db` from the project root. Do not use `docker compose down -v`: it deletes stored databases.
+
+## Use real data instead
+
+Stop the backend. From `backend/`, with `.venv` activated:
+
+```bash
+DATA_MODE=real alembic upgrade head
+DATA_MODE=real python -m scripts.seed_catalog
+```
+
+Set `DATA_MODE=real` in `backend/.env`, then restart the backend using the command above. The real database is separate from demo data. Use Settings → Add campaign to enter research pages.
+
+To switch back, set `DATA_MODE=demo` and restart the backend. Existing records in both databases are preserved.
+
+## If setup fails
+
+| Problem | Action |
+| --- | --- |
+| `command not found` | Install the missing tool, then reopen the terminal |
+| Cannot connect to Docker | Open Docker Desktop and wait for it to start |
+| Port 5432 is occupied | Stop the conflicting local PostgreSQL service, or follow the existing-server guide below |
+| Backend cannot connect to PostgreSQL | Check `docker compose ps` and the URLs in `backend/.env` |
+| Missing Python module | Activate `backend/.venv` and install `requirements.txt` |
+| Frontend cannot reach the API | Keep the backend running on port 8000; check `VITE_API_URL` |
+| Wrong data appears | Check `DATA_MODE`, restart the backend, and refresh the browser |
+
+## Further documentation
+
+- [Database operations](docs/database-guide.md): existing/shared PostgreSQL, migrations, backup, restore, and team data.
+- [Development checks](docs/development.md): tests and frontend build.
+- [Documentation index](docs/README.md): architecture, labeling reference, API, and comparison.
