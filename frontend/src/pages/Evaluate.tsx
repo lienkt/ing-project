@@ -88,7 +88,7 @@ export default function Evaluate() {
         </div>
         <span className="project-tag">Manual evaluation</span>
       </div>
-      <Steps current={3} id={id} />
+      <Steps current={0} id={id} />
       <CampaignContext campaign={campaign} />
       {saved ? (
         <div className="card empty">

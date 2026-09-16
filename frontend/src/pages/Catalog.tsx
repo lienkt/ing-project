@@ -103,6 +103,7 @@ export default function Catalog({ kind }: { kind: "bank" | "project" }) {
         <div>
           <div className="eyebrow">WORKSPACE OPTIONS</div>
           <h1>Manage {kind === "bank" ? "banks" : "projects"}</h1>
+          <p>Maintain the options available when adding a campaign.</p>
         </div>
       </div>
       <Notice message={error} />

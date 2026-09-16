@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowUpRight, Check, ChevronRight } from "lucide-react";
+import { ArrowUpRight, ChevronRight } from "lucide-react";
 import { Campaign, getCampaign, label } from "../api/campaigns";
 export function Notice({
   message,
@@ -75,32 +75,20 @@ export function CampaignContext({ campaign }: { campaign: Campaign }) {
   );
 }
 export function Steps({ current, id }: { current: number; id?: string }) {
-  return (
-    <div className="steps">
-      {["Basic information", "Campaign details", "Evaluation"].map(
-        (name, i) => (
-          <div
-            key={name}
-            className={
-              i + 1 === current ? "active" : i + 1 < current ? "done" : ""
-            }
-          >
-            <span>{i + 1 < current ? <Check size={14} /> : i + 1}</span>
-            {id ? (
-              <Link
-                to={`/campaigns/${id}${i === 0 ? "/edit" : i === 2 ? "/evaluate" : ""}`}
-              >
-                {name}
-              </Link>
-            ) : (
-              name
-            )}
-            {i < 2 && <ChevronRight size={15} className="step-chevron" />}
-          </div>
-        ),
-      )}
-    </div>
-  );
+  const links = [
+    { name: "Dataset", to: "/" },
+    { name: "Label", to: id ? `/campaigns/${id}/label` : null },
+    { name: "Compare", to: "/compare" },
+    { name: "Insights", to: "/compare#insights" },
+  ];
+  return <nav className="steps" aria-label="Analytical workflow">
+    {links.map((step, index) => <div key={step.name} className={current === index + 1 ? "active" : ""}>
+      <span>{index + 1}</span>
+      {step.to ? <Link to={step.to}>{step.name}</Link> : <span>{step.name}</span>}
+      {index < links.length - 1 && <ChevronRight size={15} className="step-chevron" />}
+    </div>)}
+    {id && <details className="secondary-page-actions"><summary>Campaign options</summary><div><Link to={`/campaigns/${id}/edit`}>Edit basic info</Link><Link to={`/campaigns/${id}`}>Details</Link><Link to={`/campaigns/${id}/evaluate`}>Optional evaluation</Link></div></details>}
+  </nav>;
 }
 export function Loading() {
   return (

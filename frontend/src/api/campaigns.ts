@@ -48,6 +48,9 @@ export type CampaignInput = {
   campaign_url: string;
 };
 export type Campaign = CampaignInput & {
+  labeling_status: "Not Started" | "In Progress" | "Completed";
+  labeling_progress: number;
+  labeling_updated_at: string | null;
   id: number;
   created_at: string;
   updated_at: string;
@@ -59,7 +62,7 @@ const base = (import.meta.env.VITE_API_URL || "http://localhost:8000").replace(
   /\/$/,
   "",
 );
-async function request<T>(
+export async function request<T>(
   path: string,
   method = "GET",
   data?: unknown,
