@@ -41,6 +41,9 @@ class EvaluationRead(EvaluationInput):
     updated_at: datetime
 
 class CampaignRead(Schema):
+    labeling_status: Literal["Not Started", "In Progress", "Completed"] = "Not Started"
+    labeling_progress: int = 0
+    labeling_updated_at: datetime | None = None
     id: int
     bank_name: str
     project: str = Field(min_length=1, max_length=40)

@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { request } from "./api/campaigns";
 import ReactDOM from "react-dom/client";
 import {
   BrowserRouter,
@@ -7,15 +8,27 @@ import {
   Outlet,
   Route,
   Routes,
+  useLocation,
 } from "react-router-dom";
-import { LayoutDashboard, Plus, ArrowUpRight } from "lucide-react";
+import { LayoutDashboard, ChartColumn, ChevronDown, FilePlus2, Landmark, PackagePlus } from "lucide-react";
+import Compare from "./pages/Compare";
 import Dashboard from "./pages/Dashboard";
 import Create from "./pages/Create";
 import Catalog from "./pages/Catalog";
 import DetailsPage from "./pages/Details";
+import LabelPage from "./pages/Label";
 import Evaluate from "./pages/Evaluate";
 import "./styles.css";
 function Layout() {
+  const [mode, setMode] = useState<"real" | "demo" | null>(null);
+  useEffect(() => {
+    let active = true;
+    request<{data_mode: "real" | "demo"}>("/environment")
+      .then(result => { if (active) setMode(result.data_mode); })
+      .catch(() => { if (active) setMode(null); });
+    return () => { active = false; };
+  }, []);
+  const { pathname } = useLocation();
   return (
     <div className="app">
       <aside className="sidebar">
@@ -39,21 +52,23 @@ function Layout() {
             <span className="brand-comparator">Comparator</span>
           </span>
         </Link>
-        <div className="nav-label"></div>
+        <div className="nav-label">ANALYSIS</div>
         <nav>
           <NavLink to="/" end>
-            <LayoutDashboard size={18} /> Overview
+            <LayoutDashboard size={18} /> Dataset
           </NavLink>
-          <NavLink to="/campaigns/new">
-            <Plus size={18} /> Add campaign
-          </NavLink>
-          <NavLink to="/banks/new">
-            <Plus size={18} /> Add bank
-          </NavLink>
-          <NavLink to="/projects/new">
-            <Plus size={18} /> Add project
+          <NavLink to="/compare">
+            <ChartColumn size={18} /> Compare
           </NavLink>
         </nav>
+        <details className="workspace-menu">
+          <summary><span>SETTINGS</span><ChevronDown size={16} aria-hidden="true" /></summary>
+          <nav aria-label="Settings">
+            <NavLink to="/campaigns/new"><FilePlus2 size={18} aria-hidden="true" /> Add campaign</NavLink>
+            <NavLink to="/banks/new"><Landmark size={18} aria-hidden="true" /> Add bank</NavLink>
+            <NavLink to="/projects/new"><PackagePlus size={18} aria-hidden="true" /> Add product</NavLink>
+          </nav>
+        </details>
         <div className="sidebar-note"></div>
         <div className="workspace-user">
           <span className="user-avatar">BC</span>
@@ -65,9 +80,17 @@ function Layout() {
       </aside>
       <div className="main-wrap">
         <header className="topbar">
-          <span>Bank communication research</span>
+          <span>Bank communication research</span><span className={`data-mode ${mode === "demo" ? "demo" : ""}`}>{mode === "demo" ? "Demo database · Synthetic data" : mode === "real" ? "Real database" : "Database mode unavailable"}</span>
         </header>
-        <main>
+        <main
+          className={
+            pathname === "/" || pathname === "/compare"
+              ? "wide-page"
+              : pathname.endsWith("/label")
+                ? "label-page"
+                : "form-page"
+          }
+        >
           <Outlet />
         </main>
         <footer>
@@ -84,6 +107,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
       <Routes>
         <Route element={<Layout />}>
           <Route index element={<Dashboard />} />
+          <Route path="compare" element={<Compare />} />
           <Route
             path="banks/new"
             element={<Catalog key="bank" kind="bank" />}
@@ -95,6 +119,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           <Route path="campaigns/new" element={<Create />} />
           <Route path="campaigns/:id/edit" element={<Create />} />
           <Route path="campaigns/:id" element={<DetailsPage />} />
+          <Route path="campaigns/:id/label" element={<LabelPage />} />
           <Route path="campaigns/:id/evaluate" element={<Evaluate />} />
           <Route
             path="*"

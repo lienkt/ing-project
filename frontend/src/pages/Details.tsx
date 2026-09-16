@@ -15,6 +15,7 @@ import {
   Steps,
   useCampaign,
 } from "../components/shared";
+import { FeatureStatus } from "../components/FeatureControls";
 const empty: Details = {
   campaign_name: null,
   headline: null,
@@ -128,6 +129,14 @@ export default function DetailsPage() {
       </div>
       <Steps current={2} id={id} />
       <CampaignContext campaign={campaign} />
+      <section className="card form-card feature-progress">
+        <h2>Campaign Feature Framework</h2>
+        <FeatureStatus value={campaign.labeling_status} />
+        <p>Progress: {campaign.labeling_progress}%</p>
+        <progress max={100} value={campaign.labeling_progress} aria-label="Feature labeling progress" />
+        <p>Last updated: {campaign.labeling_updated_at ? new Date(campaign.labeling_updated_at).toLocaleString() : "Not started"}</p>
+        <Link className="button" to={`/campaigns/${id}/label`}>{campaign.labeling_status === "Completed" ? "Edit Labeling" : campaign.labeling_status === "In Progress" ? "Continue Labeling" : "Start Manual Labeling"}</Link>
+      </section>
       <Notice message={success} success />
       <Notice message={saveError} />
       <form onSubmit={submit}>
@@ -227,20 +236,20 @@ export default function DetailsPage() {
       </form>
       <div className="next-step">
         <div>
-          <h3>Ready for the next step?</h3>
+          <h3>Compare this product category</h3>
           <p>
             {dirty
               ? "Save your changes before continuing."
-              : "Evaluate this campaign across five communication dimensions."}
+              : "Compare labeled features with other pages in the same category."}
           </p>
         </div>
         {dirty ? (
           <button disabled>
-            Continue to evaluation <ArrowRight size={16} />
+            Continue to comparison <ArrowRight size={16} />
           </button>
         ) : (
-          <Link className="button" to={`/campaigns/${id}/evaluate`}>
-            Continue to evaluation <ArrowRight size={16} />
+          <Link className="button" to={`/compare?product_category=${encodeURIComponent(campaign.project)}`}>
+            Continue to comparison <ArrowRight size={16} />
           </Link>
         )}
       </div>

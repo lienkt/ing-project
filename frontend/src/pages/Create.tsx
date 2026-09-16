@@ -100,7 +100,7 @@ export default function Create() {
           <div className="eyebrow">GROW YOUR RESEARCH LIBRARY</div>
           <h1>{id ? "Edit basic information" : "Add a campaign"}</h1>
           <p>
-            Start with the basics. You can add observations and scores later.
+            Add a source page, label its features, then compare it with other banks.
           </p>
         </div>
       </div>
@@ -193,9 +193,9 @@ export default function Create() {
           <div className="help-divider" />
           <span className="eyebrow">WHAT HAPPENS NEXT</span>
           <ol>
-            <li>Add communication details</li>
-            <li>Score five key dimensions</li>
-            <li>Keep everything in one place</li>
+            <li>Label the campaign feature framework</li>
+            <li>Select comparable pages</li>
+            <li>Compare features and review findings</li>
           </ol>
         </aside>
       </div>

@@ -1,0 +1,13 @@
+{
+  "banks": ["ING", "KBC", "Belfius", "BNP Paribas Fortis"],
+  "projects": [
+    {"key": "credit_card", "name": "Credit Card"},
+    {"key": "savings_account", "name": "Savings Account"},
+    {"key": "current_account", "name": "Current Account"},
+    {"key": "personal_loan", "name": "Personal Loan"},
+    {"key": "mortgage", "name": "Mortgage"},
+    {"key": "insurance", "name": "Insurance"},
+    {"key": "investment", "name": "Investment"},
+    {"key": "other", "name": "Other"}
+  ]
+}

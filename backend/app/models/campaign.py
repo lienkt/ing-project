@@ -4,6 +4,8 @@ from sqlalchemy import CheckConstraint, DateTime, ForeignKey, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database.session import Base
 
+from app.models.features import CampaignFeature, FEATURE_FIELDS, missing_fields
+
 class Project(str, Enum):
     credit_card = "credit_card"
     savings_account = "savings_account"
@@ -24,6 +26,20 @@ class Campaign(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     details: Mapped["CampaignDetails | None"] = relationship(cascade="all, delete-orphan", lazy="selectin", uselist=False)
     evaluation: Mapped["Evaluation | None"] = relationship(cascade="all, delete-orphan", lazy="selectin", uselist=False)
+
+    features: Mapped["CampaignFeature | None"] = relationship(cascade="all, delete-orphan", lazy="selectin", uselist=False)
+
+    @property
+    def labeling_status(self) -> str:
+        return self.features.labeling_status if self.features else "Not Started"
+
+    @property
+    def labeling_progress(self) -> int:
+        return round(100 * (len(FEATURE_FIELDS) - len(missing_fields(self.features))) / len(FEATURE_FIELDS))
+
+    @property
+    def labeling_updated_at(self) -> datetime | None:
+        return self.features.updated_at if self.features else None
 
     @property
     def status(self) -> str:
