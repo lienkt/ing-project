@@ -1590,3 +1590,16 @@ summary:focus-visible { outline: 3px solid #94b797; outline-offset: 4px; }
 .status-help-done { --help-bg: #edf7ef; --help-border: #cee5d3; --help-text: #28663b; }
 .labeling-help-panel .status-help-note { display: flex; align-items: flex-start; gap: 8px; padding: 12px 2px 0; margin: 0; font-size: 13px; color: #526258; }
 .status-help-note svg { flex-shrink: 0; margin-top: 2px; }
+
+.source-controls.card { padding: 0; overflow: hidden; }
+.source-controls .filters { padding: 20px; margin: 0; }
+.source-controls .source-actions { padding: 0 20px 20px; align-items: center; }
+.source-controls .source-actions > button:last-child { margin-left: auto; }
+.source-table { min-width: 740px; white-space: normal; }
+.source-table th, .source-table td { padding: 16px; vertical-align: middle; }
+.source-table th:first-child, .source-table td:first-child { width: 48px; text-align: center; }
+.source-table input[type="checkbox"] { width: 18px; height: 18px; min-height: 0; margin: 0; accent-color: #315b42; }
+.source-table small { display: block; margin-top: 4px; color: #526258; font-size: 14px; }
+.source-table a { font-size: 14px; white-space: nowrap; }
+.source-failed { background: #fff0ed; color: #9d483d; }
+.source-error { margin-top: 8px; max-width: 240px; font-size: 14px; overflow-wrap: anywhere; }
