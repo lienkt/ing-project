@@ -126,21 +126,31 @@ To switch back, set `DATA_MODE=demo` and restart the backend. Existing records i
 
 ## If setup fails
 
-| Problem | Action |
-| --- | --- |
-| `command not found` | Install the missing tool, then reopen the terminal |
-| Cannot connect to Docker | Open Docker Desktop and wait for it to start |
-| Port 5432 is occupied | Stop the conflicting local PostgreSQL service, or follow the existing-server guide below |
-| Backend cannot connect to PostgreSQL | Check `docker compose ps` and the URLs in `backend/.env` |
-| Missing Python module | Activate `backend/.venv` and install `requirements.txt` |
-| Frontend cannot reach the API | Keep the backend running on port 8000; check `VITE_API_URL` |
-| Wrong data appears | Check `DATA_MODE`, restart the backend, and refresh the browser |
+| Problem                              | Action                                                                                   |
+| ------------------------------------ | ---------------------------------------------------------------------------------------- |
+| `command not found`                  | Install the missing tool, then reopen the terminal                                       |
+| Cannot connect to Docker             | Open Docker Desktop and wait for it to start                                             |
+| Port 5432 is occupied                | Stop the conflicting local PostgreSQL service, or follow the existing-server guide below |
+| Backend cannot connect to PostgreSQL | Check `docker compose ps` and the URLs in `backend/.env`                                 |
+| Missing Python module                | Activate `backend/.venv` and install `requirements.txt`                                  |
+| Frontend cannot reach the API        | Keep the backend running on port 8000; check `VITE_API_URL`                              |
+| Wrong data appears                   | Check `DATA_MODE`, restart the backend, and refresh the browser                          |
 
 ## Try source import and Auto Label
 
-In demo mode, open **Tools → Scraping**, select example sources, and click **Scrape Selected**. In Dataset, choose **Auto Label**, review the suggestions, then save or complete labeling. Demo results are placeholders, not collected evidence.
+In demo mode, open **Tools → Scraping**, check which sources are **Auto supported**, select sources, and click **Scrape Selected**. The ING example supports Auto Label after import; KBC requires manual labeling, and Revolut requires manual collection. Unsupported cases are reported individually. Review any generated suggestions before saving or completing labeling. Demo results are placeholders, not collected evidence.
 
 For an existing installation, apply `DATA_MODE=demo alembic upgrade head` from `backend/` before starting the updated app. See [collection workflow](docs/collection-workflow.md) for details and developer handoff.
+
+## Development tools (optional)
+
+From the project root, install the Python formatter:
+
+```bash
+backend/.venv/bin/python -m pip install -r backend/requirements-dev.txt
+```
+
+Prettier is included in the frontend dependencies installed above. In VS Code, install the workspace's recommended **Prettier** and **Ruff** extensions to format on save. See [formatting commands](docs/development.md#formatting).
 
 ## Further documentation
 

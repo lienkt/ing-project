@@ -1,88 +1,61 @@
-# Collection and Automatic Suggestions
+# Collection and Auto Labeling
 
 [Documentation index](README.md)
 
 ```text
-Source catalog → Scraping → Dataset → Auto suggestions → Human review
-                                  ↘ Manual labeling ↗       ↓
-                                                       Completed → Compare
+Source information → scraping/config.py → matching function or manual work
+Imported campaign + page → auto_labeling/config.py → matching function or manual labeling
+Suggestions → human review → existing CampaignFeature → Compare
 ```
 
-## Try it
+## What is supported?
 
-Use the [README setup](../README.md), with the demo database selected. Existing installations must apply migration `0005` before starting the updated app:
+These two files are the only support lists:
 
-```bash
-# From backend/, with .venv activated:
-DATA_MODE=demo alembic upgrade head
-```
+- [SCRAPING_SUPPORT](../backend/app/scraping/config.py)
+- [AUTO_LABEL_SUPPORT](../backend/app/auto_labeling/config.py)
 
-1. Open **Tools → Scraping**.
-2. Filter sources or select the three example pages. Click **Scrape Selected**.
-3. Read each result, then open **Dataset**.
-4. On an unfinished imported row, choose **Auto Label**, or **Review suggestions** if a proposal already exists. Completed rows show neither action. For manual labeling, open the campaign by its bank name. Import details stay out of the Dataset table; the app header still identifies demo mode.
-5. Auto Label opens the existing framework. Suggested values fill empty fields; existing manual values remain. Each proposed field includes an “Auto suggested” hint. Use the proposal list to replace an existing value explicitly.
-6. Keep, change, or clear values. **Save Reviewed Draft** saves In Progress; **Complete Labeling** saves the review and uses existing completion checks.
-7. Compare reads the existing feature records, never the pending suggestions.
+Each `config.py` contains only the support list; `dispatcher.py` checks it and calls the function. Both lists use `(bank, category, product, language)` keys. Case and whitespace are normalized; category underscores match spaces; EN/English, NL/Dutch, FR/French are equivalent. Other differences do not match. There is no fallback or fuzzy matching.
 
-Autosave is disabled during suggestion review. Reloading before saving resets review edits. Save any recovered manual draft before entering review. Pending proposals survive reloads and can be reopened from Dataset.
+Only finished functions belong in the support lists. Current explicit demo cases:
 
-## Boundaries
+| Case                                                             | Scraping       | Auto Label                  |
+| ---------------------------------------------------------------- | -------------- | --------------------------- |
+| ING / Current Account / ING example current account / EN         | Demo supported | Demo supported after import |
+| KBC / Current Account / KBC example current account / EN         | Demo supported | Manual only                 |
+| Revolut / Current Account / Revolut example current account / EN | Manual only    | Manual only                 |
 
-| Component | Owns |
-| --- | --- |
-| `services/source_catalog.py` | File loading, validation, filters, stable source lookup |
-| `scraping/` | Source → page contract and engine selection |
-| `feature_extraction/` | Page → suggestions contract and engine selection |
-| `services/collection.py` | Import transactions, duplicates, proposals, human review |
-| Existing feature services | Manual saves, completion, analytical values |
-| Existing Compare | Feature values only; no proposal access |
+Demo cases run only in the demo database. No real algorithms are registered. The old `SCRAPING_ENGINE` and `FEATURE_EXTRACTION_ENGINE` environment settings are no longer used.
 
-## Storage and safety
+## Use the screens
 
-Migration `0005` adds two tables without changing existing feature fields:
+1. Open **Tools → Scraping** and check **Automation** for each source.
+2. Select sources and click **Scrape Selected**. Each returns imported, existing, failed, or manual required independently. Unsupported cases do not call a function or create a campaign.
+3. Open Dataset. Backend support flags determine whether **Auto Label** is available. Otherwise use **Label Manually**. For manual collection, inspect the source yourself and use Settings → Add campaign; saving a URL alone does not create a scraped snapshot.
+4. Auto Label creates suggestions, never final labels. **Review suggestions** opens the existing form. Keep, edit, or clear values, then explicitly save the review.
+5. Complete labeling using the existing completion action. Compare continues reading CampaignFeature, never pending suggestions.
 
-- `source_imports`: one latest attempt per source, unique normalized URL, optional campaign link, snapshot, engine/demo provenance, time, error. Successful imports create campaigns; failed ones do not.
-- `feature_proposals`: one latest suggestion set per campaign, engine/demo flag, review state, token, and baseline for detecting edits during review.
+Completed rows retain the existing compact presentation. Imported status alone does not imply auto-label support. A registered labeling case also needs valid scraped data matching the campaign URL.
 
-Repeated imports return the existing campaign, including manual records with the same normalized URL. Such manual records are not given synthetic scraped data. Source ID and URL uniqueness protect concurrent imports; campaign deletion removes its import/proposal records.
+## Input and storage
 
-Generating suggestions never edits final/manual features. Review rejects an outdated token or changed feature snapshot. Changing the source URL blocks extraction from its old snapshot. Reviewed saves use record-level `manual_override` provenance; individual accepted/edited fields are not tracked historically.
+Shared types live in `app/schemas/automation.py`. Before import, catalog entries supply the four values and have no campaign ID. For Dataset campaigns, bank/category come from the campaign; product/language come from saved features, falling back to imported source metadata when unset. Missing metadata cannot match a registered case.
 
-## Demo configuration
+No schema migration is required for this simplification. Existing tables remain:
 
-Defaults in `backend/.env.example`:
+- `source_imports`: latest import attempt, source identity, page snapshot, provenance, error, campaign link.
+- `feature_proposals`: latest suggestions, review state, token, and baseline for detecting stale reviews.
 
-```dotenv
-SCRAPING_ENGINE=demo
-FEATURE_EXTRACTION_ENGINE=demo
-```
-
-Demo engines write only to `DATA_MODE=demo`. The source page, Dataset, and review screen identify synthetic data. The sample catalog uses placeholder URLs and is not evidence about the named banks.
+Duplicate imports preserve existing records. Generation never changes saved labels. Existing pending proposals remain reviewable even if their case is no longer registered; they do not establish current automation support. Existing demo fixtures and edits remain intact.
 
 ## Limits
 
-- Synchronous batches of up to 50 IDs; results appear when the batch finishes. No queues or live per-source progress.
-- Imports skip existing campaigns; no refresh/rescrape or history UI.
-- Single-campaign Auto Label only; optional bulk extraction is deferred.
-- Manual drafts remain visible in Compare as before. Pending automatic suggestions are never included.
-- No scraper/ML/LLM algorithm added. Existing experimental scripts remain separate.
-- Review saves have stale-data protection; the legacy manual editor still has its original concurrency behavior.
+Batches are synchronous, up to 50 IDs. No rescrape UI, bulk Auto Label, or per-field provenance history. Review edits require an explicit save; reload resets unsaved review edits. Existing manual drafts remain visible in Compare as before.
 
-## Engine handoff
+## Developer handoff
 
-- [Scraper developer](../backend/app/scraping/README.md)
-- [Feature-extraction developer](../backend/app/feature_extraction/README.md)
-- [API contracts](api-reference.md#collection-and-suggestions)
+Implement a function, test it, then add its key to config:
 
-## Prepared demo examples
-
-Demo setup also seeds three Current Account examples alongside the manual-labeling fixtures:
-
-| Bank | Product | State |
-| --- | --- | --- |
-| ING | Auto review example — pending | Scraped; Auto Suggested; no saved feature labels yet |
-| KBC | Auto review example — draft | Suggestions reviewed and edited; In Progress |
-| Revolut | Auto review example — completed | Suggestions reviewed and edited; Completed with acknowledged omissions |
-
-All three have synthetic page snapshots and proposals. Reviewed records use `manual_override` provenance. Re-running demo setup adds missing URLs without resetting your edits.
+- [Scraping functions](../backend/app/scraping/README.md)
+- [Auto-label functions](../backend/app/auto_labeling/README.md)
+- [API reference](api-reference.md#collection-and-suggestions)

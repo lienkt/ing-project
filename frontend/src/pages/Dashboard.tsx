@@ -11,12 +11,7 @@ import {
   SlidersHorizontal,
   Trash2,
 } from "lucide-react";
-import {
-  Campaign,
-  deleteCampaign,
-  getCampaigns,
-  label,
-} from "../api/campaigns";
+import { Campaign, deleteCampaign, getCampaigns, label } from "../api/campaigns";
 import { getComparison, ComparisonPage } from "../api/compare";
 import { Loading, Notice } from "../components/shared";
 import { LabelingStatusHelp } from "../components/LabelingStatusHelp";
@@ -26,17 +21,28 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const [labeling, setLabeling] = useState<number | null>(null);
   async function suggest(campaign: Campaign) {
-    setLabeling(campaign.id); setActionError("");
-    try { await autoLabel(campaign.id); navigate(`/campaigns/${campaign.id}/label?review=1`); }
-    catch (e) { setActionError((e as Error).message); }
-    finally { setLabeling(null); }
+    setLabeling(campaign.id);
+    setActionError("");
+    try {
+      const result = await autoLabel(campaign.id);
+      if ("status" in result) {
+        setActionError(result.message);
+        return;
+      }
+      navigate(`/campaigns/${campaign.id}/label?review=1`);
+    } catch (e) {
+      setActionError((e as Error).message);
+    } finally {
+      setLabeling(null);
+    }
   }
   const location = useLocation();
   useEffect(() => {
     if (location.hash !== "#label") return;
     const frame = requestAnimationFrame(() => {
       const target = document.getElementById("label");
-      target?.focus(); target?.scrollIntoView({ block: "start" });
+      target?.focus();
+      target?.scrollIntoView({ block: "start" });
     });
     return () => cancelAnimationFrame(frame);
   }, [location.key, location.hash]);
@@ -79,13 +85,27 @@ export default function Dashboard() {
     getCampaigns()
       .then(async (c) => {
         if (!active) return;
-        setCampaigns(c); setMetadata({}); setMetadataError("");
-        const results = await Promise.allSettled([...new Set(c.map(page => page.project))].map(category => getComparison(category)));
+        setCampaigns(c);
+        setMetadata({});
+        setMetadataError("");
+        const results = await Promise.allSettled(
+          [...new Set(c.map((page) => page.project))].map((category) =>
+            getComparison(category),
+          ),
+        );
         if (!active) return;
         const entries: Record<number, ComparisonPage> = {};
-        results.forEach(result => { if (result.status === "fulfilled") result.value.pages.forEach(page => { entries[page.campaign_id] = page; }); });
+        results.forEach((result) => {
+          if (result.status === "fulfilled")
+            result.value.pages.forEach((page) => {
+              entries[page.campaign_id] = page;
+            });
+        });
         setMetadata(entries);
-        if (results.some(result => result.status === "rejected")) setMetadataError("Some product and language details could not be loaded. Refresh the dataset to retry.");
+        if (results.some((result) => result.status === "rejected"))
+          setMetadataError(
+            "Some product and language details could not be loaded. Refresh the dataset to retry.",
+          );
       })
       .catch((e) => {
         if (active) setError(e.message);
@@ -108,12 +128,24 @@ export default function Dashboard() {
   const evaluated = campaigns.filter((c) => c.labeling_status === "Completed").length;
   return (
     <>
-      {location.hash === "#label" && <section id="label" tabIndex={-1} className="card form-card compare-section" aria-labelledby="label-entry-title"><h2 id="label-entry-title">Choose a campaign to label</h2><p>Open a campaign by clicking its bank name, then choose its Campaign Feature Framework.</p></section>}
+      {location.hash === "#label" && (
+        <section
+          id="label"
+          tabIndex={-1}
+          className="card form-card compare-section"
+          aria-labelledby="label-entry-title"
+        >
+          <h2 id="label-entry-title">Choose a campaign to label</h2>
+          <p>
+            Open a campaign by clicking its bank name, then choose its Campaign Feature
+            Framework.
+          </p>
+        </section>
+      )}
       <div className="page-heading">
         <div>
-          <h1>
-            Campaign dataset
-          </h1><p>Choose a page, label its communication, then compare banks.</p>
+          <h1>Campaign dataset</h1>
+          <p>Choose a page, label its communication, then compare banks.</p>
         </div>
         <Link className="button" to="/campaigns/new">
           <Plus size={17} /> Add campaign
@@ -133,9 +165,7 @@ export default function Dashboard() {
         <div className="stat card stat-progress">
           <div>
             <span>In progress</span>
-            <strong>
-              {loading || error ? "—" : campaigns.length - evaluated}
-            </strong>
+            <strong>{loading || error ? "—" : campaigns.length - evaluated}</strong>
             <small>Awaiting completed labeling</small>
           </div>
           <span className="stat-icon amber">
@@ -235,23 +265,80 @@ export default function Dashboard() {
               <table>
                 <thead>
                   <tr>
-                    <th>BANK</th><th>PRODUCT</th><th>CATEGORY</th><th>LANGUAGE</th><th>LABELING STATUS <LabelingStatusHelp /></th>
+                    <th>BANK</th>
+                    <th>PRODUCT</th>
+                    <th>CATEGORY</th>
+                    <th>LANGUAGE</th>
+                    <th>
+                      LABELING STATUS <LabelingStatusHelp />
+                    </th>
                     <th>ACTIONS</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filtered.map((c) => (
                     <tr key={c.id}>
-                      <td><Link className="campaign-title" to={`/campaigns/${c.id}`}>{c.bank_name}</Link><a className="table-url" href={c.campaign_url} target="_blank" rel="noreferrer">Source <ArrowUpRight size={14} /></a></td>
-                      <td>{metadata[c.id]?.product_name || c.collection?.product_name || "Not recorded"}</td>
+                      <td>
+                        <Link className="campaign-title" to={`/campaigns/${c.id}`}>
+                          {c.bank_name}
+                        </Link>
+                        <a
+                          className="table-url"
+                          href={c.campaign_url}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          Source <ArrowUpRight size={14} />
+                        </a>
+                      </td>
+                      <td>
+                        {metadata[c.id]?.product_name ||
+                          c.collection?.product_name ||
+                          "Not recorded"}
+                      </td>
                       <td>{label(c.project)}</td>
-                      <td>{metadata[c.id]?.language || c.collection?.language || "Not recorded"}</td>
-                      <td><FeatureStatus value={c.labeling_status} />
-                        {c.labeling_status !== "Completed" && (
-                          c.has_suggestions
-                            ? <div className="collection-actions"><Link to={`/campaigns/${c.id}/label?review=1`}>Review suggestions</Link></div>
-                            : c.collection && <div className="collection-actions"><button type="button" className="secondary" disabled={labeling !== null} onClick={() => void suggest(c)}>{labeling === c.id ? "Generating…" : "Auto Label"}</button></div>
-                        )}
+                      <td>
+                        {metadata[c.id]?.language ||
+                          c.collection?.language ||
+                          "Not recorded"}
+                      </td>
+                      <td>
+                        <FeatureStatus value={c.labeling_status} />
+                        <div>
+                          <small
+                            title={c.automation.auto_labeling.message || undefined}
+                          >
+                            {c.automation.auto_labeling.available
+                              ? `Auto supported${c.automation.auto_labeling.is_demo ? " · Demo" : ""}`
+                              : c.automation.auto_labeling.supported
+                                ? c.automation.auto_labeling.message
+                                : "Manual only"}
+                          </small>
+                        </div>
+                        {c.labeling_status !== "Completed" &&
+                          (c.has_suggestions ? (
+                            <div className="collection-actions">
+                              <Link to={`/campaigns/${c.id}/label?review=1`}>
+                                Review suggestions
+                              </Link>
+                            </div>
+                          ) : (
+                            <div className="collection-actions">
+                              {c.automation.auto_labeling.available && (
+                                <button
+                                  type="button"
+                                  className="secondary"
+                                  disabled={labeling !== null}
+                                  onClick={() => void suggest(c)}
+                                >
+                                  {labeling === c.id ? "Generating…" : "Auto Label"}
+                                </button>
+                              )}
+                              <Link to={`/campaigns/${c.id}/label`}>
+                                Label Manually
+                              </Link>
+                            </div>
+                          ))}
                       </td>
                       <td>
                         <div className="row-actions">
@@ -313,7 +400,8 @@ export default function Dashboard() {
         )}
       </section>
       <div className="dashboard-note">
-        <span className="online-dot" /> A space for human review. Automatic suggestions require explicit acceptance.
+        <span className="online-dot" /> A space for human review. Automatic suggestions
+        require explicit acceptance.
       </div>
     </>
   );

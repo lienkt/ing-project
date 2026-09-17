@@ -16,8 +16,7 @@ import {
 import { Notice } from "../components/shared";
 
 type Option = BankOption | ProjectOption;
-const identifier = (item: Option) =>
-  "id" in item ? String(item.id) : item.key;
+const identifier = (item: Option) => ("id" in item ? String(item.id) : item.key);
 export default function Catalog({ kind }: { kind: "bank" | "project" }) {
   const [name, setName] = useState("");
   const [items, setItems] = useState<Option[]>([]);
@@ -26,7 +25,8 @@ export default function Catalog({ kind }: { kind: "bank" | "project" }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const title = kind === "bank" ? "Bank" : "Project";
+  const title = kind === "bank" ? "Bank" : "Project category";
+  const itemLabel = kind === "bank" ? "bank" : "product category";
   useEffect(() => {
     let active = true;
     (kind === "bank" ? getBanks() : getProjects())
@@ -56,9 +56,7 @@ export default function Catalog({ kind }: { kind: "bank" | "project" }) {
         : await (kind === "bank" ? addBank(name) : addProject(name));
       setItems((previous) =>
         [
-          ...previous.filter(
-            (p) => !editing || identifier(p) !== identifier(editing),
-          ),
+          ...previous.filter((p) => !editing || identifier(p) !== identifier(editing)),
           item,
         ].sort((a, b) => a.name.localeCompare(b.name)),
       );
@@ -74,7 +72,7 @@ export default function Catalog({ kind }: { kind: "bank" | "project" }) {
   async function remove(item: Option) {
     if (
       !window.confirm(
-        `Delete ${item.name}? Banks and projects used by campaigns cannot be deleted until those campaigns are reassigned or deleted.`,
+        `Delete ${item.name}? Banks and product categories used by campaigns cannot be deleted until those campaigns are reassigned or deleted.`,
       )
     )
       return;
@@ -102,7 +100,7 @@ export default function Catalog({ kind }: { kind: "bank" | "project" }) {
       <div className="page-heading">
         <div>
           <div className="eyebrow">WORKSPACE OPTIONS</div>
-          <h1>Manage {kind === "bank" ? "banks" : "projects"}</h1>
+          <h1>Manage {kind === "bank" ? "banks" : "product categories"}</h1>
           <p>Maintain the options available when adding a campaign.</p>
         </div>
       </div>
@@ -112,7 +110,7 @@ export default function Catalog({ kind }: { kind: "bank" | "project" }) {
         <form className="card form-card" onSubmit={submit}>
           <div className="section-heading">
             <h2>
-              {editing ? "Edit" : "Add"} {kind}
+              {editing ? "Edit" : "Add"} {itemLabel}
             </h2>
           </div>
           <label>
@@ -122,9 +120,7 @@ export default function Catalog({ kind }: { kind: "bank" | "project" }) {
               disabled={saving}
               maxLength={kind === "bank" ? 120 : 40}
               value={name}
-              placeholder={
-                kind === "bank" ? "e.g. Argenta" : "e.g. Business loan"
-              }
+              placeholder={kind === "bank" ? "e.g. Argenta" : "e.g. Business loan"}
               onChange={(e) => {
                 setName(e.target.value);
                 setSuccess("");
@@ -152,13 +148,13 @@ export default function Catalog({ kind }: { kind: "bank" | "project" }) {
             )}
             <button disabled={saving || loading}>
               <Plus size={16} />
-              {saving ? "Saving…" : editing ? "Save changes" : `Add ${kind}`}
+              {saving ? "Saving…" : editing ? "Save changes" : `Add ${itemLabel}`}
             </button>
           </div>
         </form>
         <aside className="card form-card">
           <div className="section-heading">
-            <h2>Available {kind === "bank" ? "banks" : "projects"}</h2>
+            <h2>Available {kind === "bank" ? "banks" : "product categories"}</h2>
           </div>
           {loading ? (
             <p role="status">Loading options…</p>
@@ -184,8 +180,8 @@ export default function Catalog({ kind }: { kind: "bank" | "project" }) {
                     <button
                       type="button"
                       className="danger-link delete-icon"
-                      title={`Delete ${kind}`}
-                      aria-label={`Delete ${kind} ${item.name}`}
+                      title={`Delete ${itemLabel}`}
+                      aria-label={`Delete ${itemLabel} ${item.name}`}
                       disabled={saving}
                       onClick={() => remove(item)}
                     >
@@ -197,8 +193,8 @@ export default function Catalog({ kind }: { kind: "bank" | "project" }) {
             </ul>
           ) : (
             <p>
-              No {kind === "bank" ? "banks" : "projects"} yet. Add one using the
-              form.
+              No {kind === "bank" ? "banks" : "product categories"} yet. Add one using
+              the form.
             </p>
           )}
         </aside>

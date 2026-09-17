@@ -41,16 +41,16 @@ Docker inspection/backup/restore examples later in this guide target the local c
 
 The default local setup stores PostgreSQL 17 data in a Docker volume, not a SQLite `.db` file. External servers manage their own storage.
 
-| Component | Purpose |
-| --- | --- |
-| `campaign_db` | Default real/research database |
-| `campaign_demo_db` | Separate database containing synthetic demo data |
-| Docker service `db` | Runs PostgreSQL for both databases |
-| Docker volume `campaign_data` | Persists PostgreSQL data; the actual volume name usually includes the project prefix |
-| `backend/.env` | Selects the database mode and connection URLs |
-| `backend/data/demo_campaigns.json` | Input fixtures for demo seeding, not the running database |
-| `backend/data/taxonomy.json` | Default bank and product-category options for seeding |
-| `backend/alembic/versions/` | Versioned database schema migrations |
+| Component                          | Purpose                                                                              |
+| ---------------------------------- | ------------------------------------------------------------------------------------ |
+| `campaign_db`                      | Default real/research database                                                       |
+| `campaign_demo_db`                 | Separate database containing synthetic demo data                                     |
+| Docker service `db`                | Runs PostgreSQL for both databases                                                   |
+| Docker volume `campaign_data`      | Persists PostgreSQL data; the actual volume name usually includes the project prefix |
+| `backend/.env`                     | Selects the database mode and connection URLs                                        |
+| `backend/data/demo_campaigns.json` | Input fixtures for demo seeding, not the running database                            |
+| `backend/data/taxonomy.json`       | Default bank and product-category options for seeding                                |
+| `backend/alembic/versions/`        | Versioned database schema migrations                                                 |
 
 The volume is mounted at `/var/lib/postgresql/data` inside the container. Editing a JSON fixture does not automatically update records already stored in PostgreSQL.
 
@@ -296,17 +296,17 @@ TEST_DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/campaign
 
 ## 13. Troubleshooting
 
-| Symptom | What to check |
-| --- | --- |
-| Cannot connect to PostgreSQL | Check Docker, `docker compose ps`, service logs, and port 5432 |
-| Demo database does not exist | Run `python -m scripts.setup_demo` from `backend/` |
-| Database creation permission denied | Ask the PostgreSQL administrator to create the empty demo database and grant appropriate access |
-| Old data still appears after switching mode | Restart the backend; check `/api/environment` and shell environment overrides |
-| Missing tables or columns after a code update | Run `alembic upgrade head` with the correct `DATA_MODE` |
-| Demo seeding is refused | Run `DATA_MODE=demo python -m scripts.seed_demo` |
-| Editing JSON does not change the UI | JSON is seed input; existing records are preserved rather than synchronized |
-| Restore reports existing tables | Restore into a new, empty database |
-| Teammates cannot see new changes | Dumps do not synchronize; export a new snapshot or use shared PostgreSQL |
+| Symptom                                       | What to check                                                                                   |
+| --------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| Cannot connect to PostgreSQL                  | Check Docker, `docker compose ps`, service logs, and port 5432                                  |
+| Demo database does not exist                  | Run `python -m scripts.setup_demo` from `backend/`                                              |
+| Database creation permission denied           | Ask the PostgreSQL administrator to create the empty demo database and grant appropriate access |
+| Old data still appears after switching mode   | Restart the backend; check `/api/environment` and shell environment overrides                   |
+| Missing tables or columns after a code update | Run `alembic upgrade head` with the correct `DATA_MODE`                                         |
+| Demo seeding is refused                       | Run `DATA_MODE=demo python -m scripts.seed_demo`                                                |
+| Editing JSON does not change the UI           | JSON is seed input; existing records are preserved rather than synchronized                     |
+| Restore reports existing tables               | Restore into a new, empty database                                                              |
+| Teammates cannot see new changes              | Dumps do not synchronize; export a new snapshot or use shared PostgreSQL                        |
 
 ## Related documentation
 

@@ -3,10 +3,11 @@ from typing import Literal
 from pydantic import Field
 from app.schemas.campaign import Schema
 from app.schemas.features import FeatureInput
-from app.scraping.contracts import SourceDefinition
+from app.schemas.automation import SourceDefinition
 
 
 class SourceView(SourceDefinition):
+    scraping: dict[str, bool | str | None]
     import_status: str = "Ready"
     campaign_id: int | None = None
     error: str | None = None
@@ -17,10 +18,6 @@ class CatalogResponse(Schema):
     sources: list[SourceView]
     banks: list[str]
     categories: list[str]
-    scraping_engine: str
-    scraping_is_demo: bool
-    extraction_engine: str
-    extraction_is_demo: bool
     data_mode: str
 
 
@@ -29,8 +26,10 @@ class ScrapeInput(Schema):
 
 
 class ImportResult(Schema):
+    supported: bool = False
+    message: str | None = None
     source_id: str
-    status: Literal["success", "existing", "failed"]
+    status: Literal["success", "existing", "failed", "manual_required"]
     campaign_id: int | None = None
     error: str | None = None
 

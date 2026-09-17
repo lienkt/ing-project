@@ -4,18 +4,18 @@
 
 ## Purpose
 
-Compare how bank webpages communicate similar products using reviewed observations. The main workflow is **Dataset → Label → Compare → Insights**. Secondary collection tools import sources and propose labels through demo engines; no real scraping or AI algorithm is connected.
+Compare how bank webpages communicate similar products using reviewed observations. The main workflow is **Dataset → Label → Compare → Insights**. Secondary collection tools import sources and propose labels through explicitly registered functions; no real scraping or AI algorithm is connected.
 
 ## Terms
 
-| Term | Meaning | Example |
-| --- | --- | --- |
-| Campaign | One saved webpage to review | A bank's current-account landing page |
-| Bank | The organization publishing the page | ING |
-| Product | The specific offer named on the page; recorded during labeling | A named account package |
-| Category | The shared product family used to group comparisons | Current Account (`current_account`) |
-| Labeling | Structured observations about the page | Language, word count, tone, CTA prominence |
-| Evaluation | Optional, separate five-score subjective assessment | Clarity score |
+| Term       | Meaning                                                        | Example                                    |
+| ---------- | -------------------------------------------------------------- | ------------------------------------------ |
+| Campaign   | One saved webpage to review                                    | A bank's current-account landing page      |
+| Bank       | The organization publishing the page                           | ING                                        |
+| Product    | The specific offer named on the page; recorded during labeling | A named account package                    |
+| Category   | The shared product family used to group comparisons            | Current Account (`current_account`)        |
+| Labeling   | Structured observations about the page                         | Language, word count, tone, CTA prominence |
+| Evaluation | Optional, separate five-score subjective assessment            | Clarity score                              |
 
 The API calls a category `project`. **Settings → Add product** currently manages these categories, not the product-name field in labeling.
 
@@ -23,16 +23,16 @@ The API calls a category `project`. **Settings → Add product** currently manag
 
 ### Banks
 
-| Bank     | website                           | Nb customers | Category    |
-| -------- | -------                           | ------       | -------     |
-| BNP      | https://www.bnpparibasfortis.be/  | 3.5 M        | Traditional |
-| Belfius  | https://www.belfius.be/           | 3.5 M        | Traditional |
-| KBC      | https://www.kbc.be/               | 3.4 M        | Traditional |
-| ING      | https://www.ing.be/               | 2.5 M        | Traditional |
-| Argenta  | https://www.argenta.be/           | 1.7 M        | Traditional |
-| Crelan   | https://www.crelan.be/            | 1.2 M        | Traditional |
-| Revolut  | https://www.revolut.com           | 1 M          | Neobank     |
-| Beobank  | https://www.beobank.be            | 0.75 M       | Traditional |
+| Bank    | website                          | Nb customers | Category    |
+| ------- | -------------------------------- | ------------ | ----------- |
+| BNP     | https://www.bnpparibasfortis.be/ | 3.5 M        | Traditional |
+| Belfius | https://www.belfius.be/          | 3.5 M        | Traditional |
+| KBC     | https://www.kbc.be/              | 3.4 M        | Traditional |
+| ING     | https://www.ing.be/              | 2.5 M        | Traditional |
+| Argenta | https://www.argenta.be/          | 1.7 M        | Traditional |
+| Crelan  | https://www.crelan.be/           | 1.2 M        | Traditional |
+| Revolut | https://www.revolut.com          | 1 M          | Neobank     |
+| Beobank | https://www.beobank.be           | 0.75 M       | Traditional |
 
 ### Products
 
@@ -57,25 +57,24 @@ The API calls a category `project`. **Settings → Add product** currently manag
 | **Investment & Wealth Products** | Investment Fund / Regular Saving Plan | —                                                                | Plan d'investissement         | Beleggingsplan              |
 | **Investment & Wealth Products** | Online Trading & Securities Account   | —                                                                | Compte-titres                 | Effectenrekening            |
 
-
 ## Navigation and pages
 
 The sidebar contains **Dataset**, **Compare**, **Tools → Scraping**, and **Settings**. Settings contains **Add campaign**, **Add bank**, and **Add product**.
 
-| Route | Purpose |
-| --- | --- |
-| `/` | Dataset, counts, filters, and campaign deletion |
-| `/campaigns/new` | Create a campaign |
-| `/campaigns/:id` | Campaign context and communication details |
-| `/campaigns/:id/edit` | Edit bank, category, and source URL |
-| `/campaigns/:id/label` | Label features and complete review |
-| `/scraping` | Select sources and import them into Dataset |
-| `/compare` | Select comparable pages and inspect findings, chart, and table |
-| `/campaigns/:id/evaluate` | Optional subjective evaluation |
-| `/banks/new` | Manage bank options |
-| `/projects/new` | Manage category options |
+| Route                     | Purpose                                                        |
+| ------------------------- | -------------------------------------------------------------- |
+| `/`                       | Dataset, counts, filters, and campaign deletion                |
+| `/campaigns/new`          | Create a campaign                                              |
+| `/campaigns/:id`          | Campaign context and communication details                     |
+| `/campaigns/:id/edit`     | Edit bank, category, and source URL                            |
+| `/campaigns/:id/label`    | Label features and complete review                             |
+| `/scraping`               | Select sources and import them into Dataset                    |
+| `/compare`                | Select comparable pages and inspect findings, chart, and table |
+| `/campaigns/:id/evaluate` | Optional subjective evaluation                                 |
+| `/banks/new`              | Manage bank options                                            |
+| `/projects/new`           | Manage category options                                        |
 
-Open a campaign by clicking its bank name in Dataset, then enter labeling. Dataset's Actions column contains Delete. Unfinished imported rows offer Auto Label or Review suggestions, depending on whether a proposal exists. Completed rows show neither. Manual labeling is available inside the campaign. Campaign options expose secondary editing and evaluation tasks. Insights is a section within comparison, not a separate analysis page.
+Open a campaign by clicking its bank name in Dataset, then enter labeling. Dataset's Actions column contains Delete. Unfinished rows offer Auto Label only when backend support and scraped input allow it; otherwise use Label Manually. Existing proposals can be opened with Review suggestions. Completed rows show neither. Manual labeling is available inside the campaign. Campaign options expose secondary editing and evaluation tasks. Insights is a section within comparison, not a separate analysis page.
 
 ## Data and review status
 

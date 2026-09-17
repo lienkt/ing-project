@@ -37,7 +37,10 @@ class Taxonomy(BaseModel):
     @classmethod
     def normalize_banks(cls, values):
         if isinstance(values, list):
-            return [" ".join(value.split()) if isinstance(value, str) else value for value in values]
+            return [
+                " ".join(value.split()) if isinstance(value, str) else value
+                for value in values
+            ]
         return values
 
 
@@ -72,8 +75,13 @@ def main():
         with SessionLocal.begin() as db:
             banks, projects = seed_catalog(db, taxonomy)
     except SQLAlchemyError:
-        parser.exit(1, "Catalog import failed; no changes committed. Check database connectivity and run alembic upgrade head.\n")
-    print(f"Added {banks} bank(s) and {projects} project(s). Existing entries preserved.")
+        parser.exit(
+            1,
+            "Catalog import failed; no changes committed. Check database connectivity and run alembic upgrade head.\n",
+        )
+    print(
+        f"Added {banks} bank(s) and {projects} project(s). Existing entries preserved."
+    )
 
 
 if __name__ == "__main__":

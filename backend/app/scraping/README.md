@@ -1,52 +1,46 @@
-# Scraping Engine Handoff
+# Scraping: Add a Supported Case
 
-## Purpose
+Open [config.py](config.py). `SCRAPING_SUPPORT` is the complete list of supported cases. Missing combination = manual scraping required. No default scraper runs.
 
-Convert one catalog source into a typed page snapshot. The service handles imports, duplicates, failures, and database writes. React and Compare do not depend on the algorithm.
+## Two steps
 
-## Contract
-
-- Input: `SourceDefinition` in [contracts.py](contracts.py): stable ID, bank, bank type, country, product, category key, language, page type, HTTP(S) URL, example flag.
-- Output: `ScrapedPage`: unchanged source, title/text, string lists for headings/paragraphs/images/buttons/links/sections, string metadata, timestamp, success, demo flag, warnings/error.
-- `images` contains descriptions or URLs, not binaries. Return `success=False` with an error, or raise an exception, for failure. One source failure does not cancel the batch.
-- Return the exact source identity; the service revalidates the result before writing.
-
-## Current implementation
-
-[demo_engine.py](demo_engine.py) → `DemoScrapingEngine` returns synthetic content without fetching a URL. It can write only to `DATA_MODE=demo`.
-
-Existing `scrape_text_features_ing.py` and `scrape_text_features_bel.py` are independent experimental scripts. They are preserved and are **not** called by this workflow. Empty legacy parser/cleaner/scraper/schema files are also unchanged.
-
-## Plug in the real engine
-
-1. Add `app/scraping/real_engine.py` with `RealScrapingEngine`:
+1. Implement and test `scrape_ing_current_account_lion_en(campaign)` in [functions.py](functions.py), or another clearly named function in that file.
+2. Import it in `config.py` and add:
 
    ```python
-   from app.scraping.contracts import SourceDefinition, ScrapedPage
-
-   class RealScrapingEngine:
-       name = "real"
-       is_demo = False
-
-       def scrape(self, source: SourceDefinition) -> ScrapedPage:
-           # Implement collection and return the documented contract.
-           raise NotImplementedError
+   SCRAPING_SUPPORT = {
+       # Keep other finished entries here.
+       build_case_key(
+           "ING", "Current Account", "ING Lion Account", "EN"
+       ): scrape_ing_current_account_lion_en,
+   }
    ```
 
-2. In [engine.py](engine.py), add a `settings.scraping_engine == "real"` branch to `get_scraping_engine()` returning this class. Keep the demo branch for offline tests.
-3. Set `SCRAPING_ENGINE=real` in `backend/.env`; restart the backend.
-4. Replace example catalog entries with verified sources. The real engine cannot import entries marked `is_example=true`.
+Do not register the current TODO function until it works. Restart the backend after editing config. No API, UI, database, or router changes are needed.
 
-Do not modify API routes, import services, React, CampaignFeature, or Compare. Use finite network timeouts; requests currently run synchronously, at most 50 source IDs per batch.
+## Function contract
+
+- Input: `SourceDefinition` from [automation.py](../schemas/automation.py). It includes bank, category, product, language, URL, source ID, and optional `campaign_id` (None before import).
+- Output: `ScrapedPage` from the same file. Keep `source` unchanged; return collected text/lists, timestamp, `is_demo=False`, and success/error information.
+- No database writes. The import service stores the snapshot and creates the campaign.
+- Raise an exception or return `success=False` for collection failure. The batch continues.
+
+Keys ignore case, repeated whitespace, category underscores versus spaces, and EN/English, NL/Dutch, FR/French spelling. They never guess products.
+
+## Current support
+
+Only the exact ING and KBC **example current account / EN** cases are registered, using `scrape_demo_page`. These are synthetic and require the demo database. Revolut is manual-only. Real source entries must have verified URLs and `is_example=false`.
+
+Your existing `scrape_text_features_ing.py` and `scrape_text_features_bel.py` remain independent experiments. Nothing imports or executes them automatically.
 
 ## Tests
 
-From `backend/`, with `.venv` activated:
+From `backend/`, with `.venv` active:
 
 ```bash
 env -u TEST_DATABASE_URL python -m pytest tests/test_collection.py -q
 ```
 
-Tests cover typed output, malformed catalogs, partial failure, duplicate imports, invalid engine output, and review/Compare integration. Add fixture-based tests for your implementation, returning `ScrapedPage` through the same boundary. Do not make the regular suite depend on live bank websites.
+Add fixture-based tests for your function before registering it. See [workflow](../../../docs/collection-workflow.md).
 
-See [collection workflow](../../../docs/collection-workflow.md) for persistence and limitations.
+`config.py` owns the case list; `dispatcher.py` checks support and calls the matching function; `functions.py` holds the algorithms.

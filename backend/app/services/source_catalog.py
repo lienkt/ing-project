@@ -1,9 +1,10 @@
 """All source JSON reading/validation stays here, separate from Dataset."""
+
 import json
 from pathlib import Path
 from pydantic import Field
 from app.schemas.campaign import Schema
-from app.scraping.contracts import SourceDefinition
+from app.schemas.automation import SourceDefinition
 
 CATALOG_DIRECTORY = Path(__file__).resolve().parents[2] / "data" / "sources"
 
@@ -35,8 +36,12 @@ def load_sources(directory: Path | None = None) -> list[SourceDefinition]:
 
 
 def filter_sources(sources, bank=None, product_category=None):
-    return [s for s in sources if (not bank or s.bank.casefold() == bank.casefold())
-            and (not product_category or s.product_category == product_category)]
+    return [
+        s
+        for s in sources
+        if (not bank or s.bank.casefold() == bank.casefold())
+        and (not product_category or s.product_category == product_category)
+    ]
 
 
 def find_source(sources, source_id):

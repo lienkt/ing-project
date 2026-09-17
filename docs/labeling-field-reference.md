@@ -12,15 +12,15 @@ Recommended team conventions below are review guidance, not automated rules. Agr
 
 ## Value rules
 
-| Type | How to enter it |
-| --- | --- |
-| Count | Whole number from 0 to 2,147,483,647. Use 0 only when you checked and found none. |
-| Boolean | Yes (`true`), No (`false`), or Not set (`null`). Unknown is not No. |
-| Scale | Integer 1–5 using the exact definitions below. Higher does not universally mean better. |
-| Choice | One listed option, or Not set. API values are case-sensitive. |
-| Text | An observation or copied wording, within the stated character limit. |
-| Date | Review date in `YYYY-MM-DD` format. |
-| Derived | Calculated by the app; do not enter or send it in a draft request. |
+| Type    | How to enter it                                                                         |
+| ------- | --------------------------------------------------------------------------------------- |
+| Count   | Whole number from 0 to 2,147,483,647. Use 0 only when you checked and found none.       |
+| Boolean | Yes (`true`), No (`false`), or Not set (`null`). Unknown is not No.                     |
+| Scale   | Integer 1–5 using the exact definitions below. Higher does not universally mean better. |
+| Choice  | One listed option, or Not set. API values are case-sensitive.                           |
+| Text    | An observation or copied wording, within the stated character limit.                    |
+| Date    | Review date in `YYYY-MM-DD` format.                                                     |
+| Derived | Calculated by the app; do not enter or send it in a draft request.                      |
 
 All framework inputs may be left unset. Unknown and not applicable both use null; explain the distinction in notes. No automatic cross-field applicability rules clear other fields for you. A completed record may therefore contain missing values.
 
@@ -28,11 +28,11 @@ All framework inputs may be left unset. Unknown and not applicable both use null
 
 These are edited in campaign basic information, not in the labeling form.
 
-| Reference field | Stored/API field | Meaning |
-| --- | --- | --- |
-| `bank_name` | `campaign.bank_name` | Name of the bank publishing the page. |
-| `product_category` | `campaign.project` | Shared category key, such as `current_account`, used to group comparisons. |
-| `page_url` | `campaign.campaign_url` | Public HTTP(S) source page being reviewed. |
+| Reference field    | Stored/API field        | Meaning                                                                    |
+| ------------------ | ----------------------- | -------------------------------------------------------------------------- |
+| `bank_name`        | `campaign.bank_name`    | Name of the bank publishing the page.                                      |
+| `product_category` | `campaign.project`      | Shared category key, such as `current_account`, used to group comparisons. |
+| `page_url`         | `campaign.campaign_url` | Public HTTP(S) source page being reviewed.                                 |
 
 The remaining **68 fields** appear below: **67 stored inputs and one derived value**, across eight sections. Together with campaign context, they cover 71 reference fields.
 
@@ -125,13 +125,13 @@ Judge how text-heavy the page feels overall.
 
 **Type:** integer scale, 1–5.
 
-| Score | Meaning |
-| --- | --- |
-| 1 | Very little text |
-| 2 | Low amount of text |
-| 3 | Moderate amount of text |
-| 4 | High amount of text |
-| 5 | Very text-heavy page |
+| Score | Meaning                 |
+| ----- | ----------------------- |
+| 1     | Very little text        |
+| 2     | Low amount of text      |
+| 3     | Moderate amount of text |
+| 4     | High amount of text     |
+| 5     | Very text-heavy page    |
 
 ### `text_style`
 
@@ -145,13 +145,13 @@ Assess how difficult the information is to understand.
 
 **Type:** integer scale, 1–5.
 
-| Score | Meaning |
-| --- | --- |
-| 1 | Very simple |
-| 2 | Simple |
-| 3 | Moderate |
-| 4 | Complex |
-| 5 | Very complex |
+| Score | Meaning      |
+| ----- | ------------ |
+| 1     | Very simple  |
+| 2     | Simple       |
+| 3     | Moderate     |
+| 4     | Complex      |
+| 5     | Very complex |
 
 ## 3. Messaging & Tone
 
@@ -165,13 +165,13 @@ Assess language formality.
 
 **Type:** integer scale, 1–5.
 
-| Score | Meaning |
-| --- | --- |
-| 1 | Very casual |
-| 2 | Mostly casual |
-| 3 | Balanced |
-| 4 | Mostly formal |
-| 5 | Very formal |
+| Score | Meaning       |
+| ----- | ------------- |
+| 1     | Very casual   |
+| 2     | Mostly casual |
+| 3     | Balanced      |
+| 4     | Mostly formal |
+| 5     | Very formal   |
 
 ### `tone_friendliness`
 
@@ -179,13 +179,13 @@ Assess warmth and conversational style.
 
 **Type:** integer scale, 1–5.
 
-| Score | Meaning |
-| --- | --- |
-| 1 | Distant |
-| 2 | Slightly friendly |
-| 3 | Neutral/balanced |
-| 4 | Friendly |
-| 5 | Very friendly |
+| Score | Meaning           |
+| ----- | ----------------- |
+| 1     | Distant           |
+| 2     | Slightly friendly |
+| 3     | Neutral/balanced  |
+| 4     | Friendly          |
+| 5     | Very friendly     |
 
 ### `tone_persuasiveness`
 
@@ -193,13 +193,13 @@ Assess strength of selling/persuasion.
 
 **Type:** integer scale, 1–5.
 
-| Score | Meaning |
-| --- | --- |
-| 1 | Purely informative |
-| 2 | Mostly informative |
-| 3 | Balanced |
-| 4 | Persuasive |
-| 5 | Highly persuasive |
+| Score | Meaning            |
+| ----- | ------------------ |
+| 1     | Purely informative |
+| 2     | Mostly informative |
+| 3     | Balanced           |
+| 4     | Persuasive         |
+| 5     | Highly persuasive  |
 
 ### `emotional_vs_rational`
 
@@ -207,13 +207,13 @@ Emotional = feelings/lifestyle; Rational = facts/features/conditions.
 
 **Type:** integer scale, 1–5.
 
-| Score | Meaning |
-| --- | --- |
-| 1 | Strongly emotional |
-| 2 | Mostly emotional |
-| 3 | Balanced |
-| 4 | Mostly rational |
-| 5 | Strongly rational |
+| Score | Meaning            |
+| ----- | ------------------ |
+| 1     | Strongly emotional |
+| 2     | Mostly emotional   |
+| 3     | Balanced           |
+| 4     | Mostly rational    |
+| 5     | Strongly rational  |
 
 ### `customer_vs_product_focus`
 
@@ -221,13 +221,13 @@ Assess whether messaging starts from customer needs or product characteristics.
 
 **Type:** integer scale, 1–5.
 
-| Score | Meaning |
-| --- | --- |
-| 1 | Strongly customer-focused |
-| 2 | Mostly customer-focused |
-| 3 | Balanced |
-| 4 | Mostly product-focused |
-| 5 | Strongly product-focused |
+| Score | Meaning                   |
+| ----- | ------------------------- |
+| 1     | Strongly customer-focused |
+| 2     | Mostly customer-focused   |
+| 3     | Balanced                  |
+| 4     | Mostly product-focused    |
+| 5     | Strongly product-focused  |
 
 ### `feature_vs_benefit_focus`
 
@@ -235,13 +235,13 @@ Feature = what product has; Benefit = what customer gains.
 
 **Type:** integer scale, 1–5.
 
-| Score | Meaning |
-| --- | --- |
-| 1 | Strongly feature-focused |
-| 2 | Mostly feature-focused |
-| 3 | Balanced |
-| 4 | Mostly benefit-focused |
-| 5 | Strongly benefit-focused |
+| Score | Meaning                  |
+| ----- | ------------------------ |
+| 1     | Strongly feature-focused |
+| 2     | Mostly feature-focused   |
+| 3     | Balanced                 |
+| 4     | Mostly benefit-focused   |
+| 5     | Strongly benefit-focused |
 
 ### `message_focus`
 
@@ -339,13 +339,13 @@ Assess relative dominance of visuals over text.
 
 **Type:** integer scale, 1–5.
 
-| Score | Meaning |
-| --- | --- |
-| 1 | Almost entirely text |
-| 2 | Mostly text with a few visuals |
-| 3 | Balanced text and visuals |
-| 4 | Highly visual |
-| 5 | Visuals dominate the page |
+| Score | Meaning                        |
+| ----- | ------------------------------ |
+| 1     | Almost entirely text           |
+| 2     | Mostly text with a few visuals |
+| 3     | Balanced text and visuals      |
+| 4     | Highly visual                  |
+| 5     | Visuals dominate the page      |
 
 ## 5. Colour & Design
 
@@ -371,13 +371,13 @@ How strongly recognizable brand colours dominate.
 
 **Type:** integer scale, 1–5.
 
-| Score | Meaning |
-| --- | --- |
-| 1 | Brand colours barely visible |
-| 2 | Limited use |
-| 3 | Moderate use |
-| 4 | Strong use |
-| 5 | Brand colours dominate |
+| Score | Meaning                      |
+| ----- | ---------------------------- |
+| 1     | Brand colours barely visible |
+| 2     | Limited use                  |
+| 3     | Moderate use                 |
+| 4     | Strong use                   |
+| 5     | Brand colours dominate       |
 
 ### `colour_contrast`
 
@@ -385,13 +385,13 @@ Assess visual contrast used to separate/highlight content.
 
 **Type:** integer scale, 1–5.
 
-| Score | Meaning |
-| --- | --- |
-| 1 | Very low |
-| 2 | Low |
-| 3 | Moderate |
-| 4 | High |
-| 5 | Very high |
+| Score | Meaning   |
+| ----- | --------- |
+| 1     | Very low  |
+| 2     | Low       |
+| 3     | Moderate  |
+| 4     | High      |
+| 5     | Very high |
 
 ### `design_complexity`
 
@@ -399,13 +399,13 @@ Assess number and complexity of competing design elements.
 
 **Type:** integer scale, 1–5.
 
-| Score | Meaning |
-| --- | --- |
-| 1 | Very minimal |
-| 2 | Simple |
-| 3 | Moderate |
-| 4 | Complex |
-| 5 | Very complex |
+| Score | Meaning      |
+| ----- | ------------ |
+| 1     | Very minimal |
+| 2     | Simple       |
+| 3     | Moderate     |
+| 4     | Complex      |
+| 5     | Very complex |
 
 ### `visual_consistency`
 
@@ -413,13 +413,13 @@ Assess consistency of visual language across the page.
 
 **Type:** integer scale, 1–5.
 
-| Score | Meaning |
-| --- | --- |
-| 1 | Very inconsistent |
-| 2 | Somewhat inconsistent |
-| 3 | Moderate |
-| 4 | Consistent |
-| 5 | Highly consistent |
+| Score | Meaning               |
+| ----- | --------------------- |
+| 1     | Very inconsistent     |
+| 2     | Somewhat inconsistent |
+| 3     | Moderate              |
+| 4     | Consistent            |
+| 5     | Highly consistent     |
 
 ### `attention_focus`
 
@@ -487,13 +487,13 @@ Assess how clearly the page is organized.
 
 **Type:** integer scale, 1–5.
 
-| Score | Meaning |
-| --- | --- |
-| 1 | Very confusing |
-| 2 | Difficult to understand |
-| 3 | Average |
-| 4 | Clear |
-| 5 | Very clear |
+| Score | Meaning                 |
+| ----- | ----------------------- |
+| 1     | Very confusing          |
+| 2     | Difficult to understand |
+| 3     | Average                 |
+| 4     | Clear                   |
+| 5     | Very clear              |
 
 ### `scannability`
 
@@ -501,13 +501,13 @@ How easily a visitor can scan and understand key sections/messages.
 
 **Type:** integer scale, 1–5.
 
-| Score | Meaning |
-| --- | --- |
-| 1 | Very difficult |
-| 2 | Difficult |
-| 3 | Average |
-| 4 | Easy |
-| 5 | Very easy |
+| Score | Meaning        |
+| ----- | -------------- |
+| 1     | Very difficult |
+| 2     | Difficult      |
+| 3     | Average        |
+| 4     | Easy           |
+| 5     | Very easy      |
 
 ## 7. Call to Action
 
@@ -545,13 +545,13 @@ Assess visual prominence, not effectiveness.
 
 **Type:** integer scale, 1–5.
 
-| Score | Meaning |
-| --- | --- |
-| 1 | Very difficult to notice |
-| 2 | Low visibility |
-| 3 | Clearly visible |
-| 4 | Highly prominent |
-| 5 | Dominant action on the page |
+| Score | Meaning                     |
+| ----- | --------------------------- |
+| 1     | Very difficult to notice    |
+| 2     | Low visibility              |
+| 3     | Clearly visible             |
+| 4     | Highly prominent            |
+| 5     | Dominant action on the page |
 
 ### `cta_type`
 
@@ -577,13 +577,13 @@ Assess prominence only when price/rate is present.
 
 **Type:** integer scale, 1–5.
 
-| Score | Meaning |
-| --- | --- |
-| 1 | Very difficult to notice |
-| 2 | Low visibility |
-| 3 | Clearly visible |
-| 4 | Highly prominent |
-| 5 | Price dominates the communication |
+| Score | Meaning                           |
+| ----- | --------------------------------- |
+| 1     | Very difficult to notice          |
+| 2     | Low visibility                    |
+| 3     | Clearly visible                   |
+| 4     | Highly prominent                  |
+| 5     | Price dominates the communication |
 
 ### `promotion_present`
 
@@ -641,13 +641,13 @@ Choose the dominant value driver.
 
 ## Notes and system fields
 
-| Field | Meaning | Editable during labeling? |
-| --- | --- | --- |
-| `labeling_notes` | Up to 10,000 characters explaining counting scope, uncertainty, exceptions, or inapplicability | Yes |
-| `campaign_id` | Campaign linked to this feature record | No |
-| `labeling_status` | Not Started, In Progress, or Completed | Through save/complete actions only |
-| `source` | Record-level provenance: manual, automatic, or manual_override | No |
-| `created_at`, `updated_at` | Record timestamps | No |
+| Field                      | Meaning                                                                                        | Editable during labeling?          |
+| -------------------------- | ---------------------------------------------------------------------------------------------- | ---------------------------------- |
+| `labeling_notes`           | Up to 10,000 characters explaining counting scope, uncertainty, exceptions, or inapplicability | Yes                                |
+| `campaign_id`              | Campaign linked to this feature record                                                         | No                                 |
+| `labeling_status`          | Not Started, In Progress, or Completed                                                         | Through save/complete actions only |
+| `source`                   | Record-level provenance: manual, automatic, or manual_override                                 | No                                 |
+| `created_at`, `updated_at` | Record timestamps                                                                              | No                                 |
 
 For progress calculation and save behavior, see [Feature framework](feature-framework.md).
 
