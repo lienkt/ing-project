@@ -62,10 +62,36 @@ def test_demo_seed_repeat_preserves_edits():
     Base.metadata.create_all(engine)
     rows = TypeAdapter(list[DemoCampaign]).validate_python(json.loads(Path('data/demo_campaigns.json').read_text()))
     with Session(engine) as db, db.begin():
-        assert seed_demo(db, rows) == 5
+        assert seed_demo(db, rows) == len(rows)
         first = db.scalar(select(Campaign).order_by(Campaign.id))
         first.features.word_count = 999
         db.flush()
         assert seed_demo(db, rows) == 0
         assert first.features.word_count == 999
         assert all(not page.bank_name.startswith('DEMO') for page in db.scalars(select(Campaign)))
+
+
+def test_auto_demo_examples_preserve_pending_review_and_existing_edits():
+    rows = TypeAdapter(list[DemoCampaign]).validate_python(json.loads(
+        (Path(__file__).resolve().parents[1] / 'data' / 'demo_campaigns.json').read_text()))
+    auto_rows = [row for row in rows if row.auto_stage]
+    assert len(auto_rows) == 3
+    engine = create_engine('sqlite://')
+    Base.metadata.create_all(engine)
+    with Session(engine) as db, db.begin():
+        assert seed_demo(db, auto_rows) == 3
+    with Session(engine) as db, db.begin():
+        campaigns = {c.bank_name: c for c in db.scalars(select(Campaign))}
+        pending = campaigns['ING']
+        assert pending.features is None and pending.has_suggestions
+        assert pending.source_import.page['is_demo']
+        assert pending.proposal.values['word_count'] > 0
+        assert campaigns['KBC'].labeling_status == 'In Progress'
+        assert campaigns['KBC'].features.source == 'manual_override'
+        assert campaigns['Revolut'].labeling_status == 'Completed'
+        assert campaigns['Revolut'].proposal.reviewed
+        campaigns['KBC'].features.word_count = 12345
+    with Session(engine) as db, db.begin():
+        assert seed_demo(db, auto_rows) == 0
+        assert db.scalar(select(Campaign).where(Campaign.bank_name == 'KBC')).features.word_count == 12345
+    engine.dispose()

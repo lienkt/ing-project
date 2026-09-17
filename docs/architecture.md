@@ -18,6 +18,8 @@ React pages → typed API clients → FastAPI routes → services → SQLAlchemy
 | `backend/app/api/` | HTTP endpoints and database session injection |
 | `backend/app/schemas/` | Request and response validation |
 | `backend/app/services/` | Business rules and persistence operations |
+| `backend/app/scraping/` | Source-to-page contract and replaceable engine |
+| `backend/app/feature_extraction/` | Page-to-suggestions contract and replaceable engine |
 | `backend/app/models/` | SQLAlchemy table mappings and relationships |
 | `backend/app/core/config.py` | Environment and real/demo connection selection |
 | `backend/app/database/session.py` | Engine and per-request sessions |
@@ -49,3 +51,5 @@ The bank catalog supplies name suggestions; the category catalog supplies valida
 - [Database operations](database-guide.md): migrations and catalog seeding.
 - [API reference](api-reference.md): endpoint contracts.
 - [Labeling](feature-framework.md) and [comparison](comparison.md): UI behavior.
+
+See [collection architecture and engine handoff](collection-workflow.md) for import snapshots and pending suggestions, which remain separate from CampaignFeature.

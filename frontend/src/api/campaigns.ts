@@ -48,6 +48,8 @@ export type CampaignInput = {
   campaign_url: string;
 };
 export type Campaign = CampaignInput & {
+  collection: { source_id: string; status: string; scraped_at: string | null; is_demo: boolean; engine: string; product_name: string | null; language: string | null } | null;
+  has_suggestions: boolean;
   labeling_status: "Not Started" | "In Progress" | "Completed";
   labeling_progress: number;
   labeling_updated_at: string | null;

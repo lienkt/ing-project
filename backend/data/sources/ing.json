@@ -1,0 +1,16 @@
+{
+  "sources": [
+    {
+      "source_id": "ing-example-current-account-en",
+      "bank": "ING",
+      "bank_type": "Traditional",
+      "country": "Belgium",
+      "product_name": "ING example current account",
+      "product_category": "current_account",
+      "language": "English",
+      "page_type": "Product Page",
+      "url": "https://example.com/source-catalog/ing/current-account",
+      "is_example": true
+    }
+  ]
+}

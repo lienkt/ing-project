@@ -136,6 +136,12 @@ To switch back, set `DATA_MODE=demo` and restart the backend. Existing records i
 | Frontend cannot reach the API | Keep the backend running on port 8000; check `VITE_API_URL` |
 | Wrong data appears | Check `DATA_MODE`, restart the backend, and refresh the browser |
 
+## Try source import and Auto Label
+
+In demo mode, open **Tools → Scraping**, select example sources, and click **Scrape Selected**. In Dataset, choose **Auto Label**, review the suggestions, then save or complete labeling. Demo results are placeholders, not collected evidence.
+
+For an existing installation, apply `DATA_MODE=demo alembic upgrade head` from `backend/` before starting the updated app. See [collection workflow](docs/collection-workflow.md) for details and developer handoff.
+
 ## Further documentation
 
 - [Database operations](docs/database-guide.md): existing/shared PostgreSQL, migrations, backup, restore, and team data.

@@ -4,6 +4,7 @@ from sqlalchemy import CheckConstraint, DateTime, ForeignKey, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database.session import Base
 
+from app.models.collection import SourceImport, FeatureProposal
 from app.models.features import CampaignFeature, FEATURE_FIELDS, missing_fields
 
 class Project(str, Enum):
@@ -28,6 +29,24 @@ class Campaign(Base):
     evaluation: Mapped["Evaluation | None"] = relationship(cascade="all, delete-orphan", lazy="selectin", uselist=False)
 
     features: Mapped["CampaignFeature | None"] = relationship(cascade="all, delete-orphan", lazy="selectin", uselist=False)
+
+    source_import: Mapped["SourceImport | None"] = relationship(cascade="all, delete-orphan", lazy="selectin", uselist=False)
+    proposal: Mapped["FeatureProposal | None"] = relationship(cascade="all, delete-orphan", lazy="selectin", uselist=False)
+
+    @property
+    def collection(self):
+        record = self.source_import
+        if not record:
+            return None
+        source = (record.page or {}).get("source", {})
+        return {"source_id": record.source_id, "status": record.status,
+                "scraped_at": (record.page or {}).get("scraped_at"), "is_demo": record.is_demo,
+                "engine": record.engine, "product_name": source.get("product_name"),
+                "language": source.get("language")}
+
+    @property
+    def has_suggestions(self) -> bool:
+        return self.proposal is not None and not self.proposal.reviewed
 
     @property
     def labeling_status(self) -> str:

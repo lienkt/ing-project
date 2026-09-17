@@ -40,7 +40,19 @@ class EvaluationRead(EvaluationInput):
     created_at: datetime
     updated_at: datetime
 
+class CollectionRead(Schema):
+    source_id: str
+    status: str
+    scraped_at: datetime | None
+    is_demo: bool
+    engine: str
+    product_name: str | None
+    language: str | None
+
+
 class CampaignRead(Schema):
+    collection: CollectionRead | None = None
+    has_suggestions: bool = False
     labeling_status: Literal["Not Started", "In Progress", "Completed"] = "Not Started"
     labeling_progress: int = 0
     labeling_updated_at: datetime | None = None

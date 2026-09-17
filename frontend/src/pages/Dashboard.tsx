@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   ArrowRight,
   ArrowUpRight,
@@ -19,8 +19,18 @@ import {
 } from "../api/campaigns";
 import { getComparison, ComparisonPage } from "../api/compare";
 import { Loading, Notice } from "../components/shared";
+import { LabelingStatusHelp } from "../components/LabelingStatusHelp";
 import { FeatureStatus } from "../components/FeatureControls";
+import { autoLabel } from "../api/collection";
 export default function Dashboard() {
+  const navigate = useNavigate();
+  const [labeling, setLabeling] = useState<number | null>(null);
+  async function suggest(campaign: Campaign) {
+    setLabeling(campaign.id); setActionError("");
+    try { await autoLabel(campaign.id); navigate(`/campaigns/${campaign.id}/label?review=1`); }
+    catch (e) { setActionError((e as Error).message); }
+    finally { setLabeling(null); }
+  }
   const location = useLocation();
   useEffect(() => {
     if (location.hash !== "#label") return;
@@ -225,7 +235,7 @@ export default function Dashboard() {
               <table>
                 <thead>
                   <tr>
-                    <th>BANK</th><th>PRODUCT</th><th>CATEGORY</th><th>LANGUAGE</th><th>LABELING STATUS</th>
+                    <th>BANK</th><th>PRODUCT</th><th>CATEGORY</th><th>LANGUAGE</th><th>LABELING STATUS <LabelingStatusHelp /></th>
                     <th>ACTIONS</th>
                   </tr>
                 </thead>
@@ -233,10 +243,16 @@ export default function Dashboard() {
                   {filtered.map((c) => (
                     <tr key={c.id}>
                       <td><Link className="campaign-title" to={`/campaigns/${c.id}`}>{c.bank_name}</Link><a className="table-url" href={c.campaign_url} target="_blank" rel="noreferrer">Source <ArrowUpRight size={14} /></a></td>
-                      <td>{metadata[c.id]?.product_name || "Not recorded"}</td>
+                      <td>{metadata[c.id]?.product_name || c.collection?.product_name || "Not recorded"}</td>
                       <td>{label(c.project)}</td>
-                      <td>{metadata[c.id]?.language || "Not recorded"}</td>
-                      <td><FeatureStatus value={c.labeling_status} /></td>
+                      <td>{metadata[c.id]?.language || c.collection?.language || "Not recorded"}</td>
+                      <td><FeatureStatus value={c.labeling_status} />
+                        {c.labeling_status !== "Completed" && (
+                          c.has_suggestions
+                            ? <div className="collection-actions"><Link to={`/campaigns/${c.id}/label?review=1`}>Review suggestions</Link></div>
+                            : c.collection && <div className="collection-actions"><button type="button" className="secondary" disabled={labeling !== null} onClick={() => void suggest(c)}>{labeling === c.id ? "Generating…" : "Auto Label"}</button></div>
+                        )}
+                      </td>
                       <td>
                         <div className="row-actions">
                           <button
@@ -259,7 +275,7 @@ export default function Dashboard() {
             </div>
             <div className="table-footer">
               Showing {filtered.length} of {campaigns.length} campaigns
-              <span>Manually labeled. Compare within a product category.</span>
+              <span>Review labels before comparing within a product category.</span>
             </div>
           </>
         ) : (
@@ -297,8 +313,7 @@ export default function Dashboard() {
         )}
       </section>
       <div className="dashboard-note">
-        <span className="online-dot" /> A space for human observation. All
-        evaluations are entered manually.
+        <span className="online-dot" /> A space for human review. Automatic suggestions require explicit acceptance.
       </div>
     </>
   );

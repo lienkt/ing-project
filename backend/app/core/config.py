@@ -5,6 +5,8 @@ from sqlalchemy.engine import make_url
 
 
 class Settings(BaseSettings):
+    scraping_engine: str = "demo"
+    feature_extraction_engine: str = "demo"
     data_mode: Literal["real", "demo"] = "real"
     database_url: str = "postgresql+psycopg://postgres:postgres@localhost:5432/campaign_db"
     demo_database_url: str = "postgresql+psycopg://postgres:postgres@localhost:5432/campaign_demo_db"

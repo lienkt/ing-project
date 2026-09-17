@@ -2,6 +2,7 @@
 import json
 from pathlib import Path
 from typing import Literal
+from uuid import uuid4
 
 from pydantic import Field, TypeAdapter
 from sqlalchemy import select
@@ -12,11 +13,16 @@ from app.core.config import settings
 from app.models.campaign import Campaign, CampaignDetails
 from app.models.catalog import Bank, ProjectOption
 from app.models.features import CampaignFeature
+from app.models.collection import SourceImport, FeatureProposal
+from app.scraping.contracts import SourceDefinition
+from app.scraping.demo_engine import DemoScrapingEngine
+from app.feature_extraction.demo_engine import DemoFeatureExtractionEngine
 from app.schemas.campaign import CampaignCreate
 from app.schemas.features import FeatureInput
 
 
 class DemoCampaign(CampaignCreate):
+    auto_stage: Literal["pending", "reviewed"] | None = None
     campaign_name: str = Field(max_length=300)
     labeling_status: Literal["Not Started", "In Progress", "Completed"]
     features: FeatureInput | None
@@ -39,6 +45,27 @@ def seed_demo(db: Session, rows: list[DemoCampaign]) -> int:
         if row.features is not None:
             campaign.features = CampaignFeature(**row.features.model_dump(),
                 labeling_status=row.labeling_status, source="manual")
+        if row.auto_stage:
+            source = SourceDefinition(source_id=f"demo-auto-{url.rsplit('/', 1)[-1]}", bank=row.bank_name,
+                bank_type="Neobank" if row.bank_name == "Revolut" else "Traditional",
+                product_name=row.campaign_name, product_category=row.project, language="English",
+                page_type="Product Page", url=url, is_example=True)
+            page = DemoScrapingEngine().scrape(source)
+            suggestions = DemoFeatureExtractionEngine().extract(page)
+            reviewed = row.auto_stage == "reviewed"
+            if reviewed:
+                values = {**suggestions.values.model_dump(exclude_unset=True),
+                          **(row.features.model_dump(exclude_unset=True) if row.features else {})}
+                campaign.features = CampaignFeature(**values, labeling_status=row.labeling_status,
+                    source="manual_override")
+            else:
+                campaign.features = None
+            campaign.source_import = SourceImport(source_id=source.source_id, source_url=url,
+                status="Scraped", engine="demo", is_demo=True, page=page.model_dump(mode="json"),
+                attempted_at=page.scraped_at)
+            campaign.proposal = FeatureProposal(token=str(uuid4()), engine="demo", is_demo=True,
+                values=suggestions.values.model_dump(mode="json", exclude_unset=True),
+                warnings=suggestions.warnings, baseline={"url": url, "features": None}, reviewed=reviewed)
         db.add(campaign)
         db.flush()
         added += 1

@@ -83,7 +83,7 @@ export function Steps({ current, id }: { current: number; id?: string }) {
   ];
   return <nav className="steps" aria-label="Analytical workflow">
     {links.map((step, index) => <div key={step.name} className={current === index + 1 ? "active" : ""}>
-      <span>{index + 1}</span>
+      <span className="step-number">{index + 1}</span>
       {step.to ? <Link to={step.to}>{step.name}</Link> : <span>{step.name}</span>}
       {index < links.length - 1 && <ChevronRight size={15} className="step-chevron" />}
     </div>)}

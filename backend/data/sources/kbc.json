@@ -1,0 +1,16 @@
+{
+  "sources": [
+    {
+      "source_id": "kbc-example-current-account-en",
+      "bank": "KBC",
+      "bank_type": "Traditional",
+      "country": "Belgium",
+      "product_name": "KBC example current account",
+      "product_category": "current_account",
+      "language": "English",
+      "page_type": "Product Page",
+      "url": "https://example.com/source-catalog/kbc/current-account",
+      "is_example": true
+    }
+  ]
+}

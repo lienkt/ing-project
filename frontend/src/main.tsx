@@ -10,7 +10,8 @@ import {
   Routes,
   useLocation,
 } from "react-router-dom";
-import { LayoutDashboard, ChartColumn, ChevronDown, FilePlus2, Landmark, PackagePlus } from "lucide-react";
+import { LayoutDashboard, ChartColumn, ChevronDown, FilePlus2, Landmark, PackagePlus, Download } from "lucide-react";
+import Scraping from "./pages/Scraping";
 import Compare from "./pages/Compare";
 import Dashboard from "./pages/Dashboard";
 import Create from "./pages/Create";
@@ -61,6 +62,8 @@ function Layout() {
             <ChartColumn size={18} /> Compare
           </NavLink>
         </nav>
+        <div className="nav-label">TOOLS</div>
+        <nav aria-label="Tools"><NavLink to="/scraping"><Download size={18} aria-hidden="true" /> Scraping</NavLink></nav>
         <details className="workspace-menu">
           <summary><span>SETTINGS</span><ChevronDown size={16} aria-hidden="true" /></summary>
           <nav aria-label="Settings">
@@ -107,6 +110,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
       <Routes>
         <Route element={<Layout />}>
           <Route index element={<Dashboard />} />
+          <Route path="scraping" element={<Scraping />} />
           <Route path="compare" element={<Compare />} />
           <Route
             path="banks/new"

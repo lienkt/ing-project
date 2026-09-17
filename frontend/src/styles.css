@@ -654,7 +654,7 @@ td:first-child {
   color: #4d604c;
   font-size: 14px;
 }
-.steps > div > span {
+.steps > div > .step-number {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -668,12 +668,12 @@ td:first-child {
   color: #365a3c;
   font-weight: 600;
 }
-.steps .active > span {
+.steps .active > .step-number {
   background: #315b42;
   color: white;
   border-color: #315b42;
 }
-.steps .done > span {
+.steps .done > .step-number {
   background: #e4ecdf;
   color: #4d604c;
 }
@@ -1055,7 +1055,7 @@ label small {
   .step-chevron {
     display: none;
   }
-  .steps > div > span {
+  .steps > div > .step-number {
     width: 19px;
     height: 19px;
   }
@@ -1558,3 +1558,35 @@ summary:focus-visible { outline: 3px solid #94b797; outline-offset: 4px; }
 .data-mode { font-size: 14px; padding: 4px 10px; border-radius: 6px; background: #edf3ef; color: #315b50; }
 .data-mode.demo { background: #fff3dc; color: #754b1c; }
 @media (max-width: 760px) { .topbar { height: auto; min-height: 56px; flex-wrap: wrap; gap: 8px; padding: 12px 20px; } }
+
+/* Collection tools stay secondary to the analytical workspace. */
+.source-controls { border: 0; padding: 0; min-width: 0; }
+.source-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin: 24px 0; }
+.source-card { padding: 24px; overflow-wrap: anywhere; }
+.source-card label { display: flex; align-items: flex-start; gap: 12px; }
+.source-card input[type="checkbox"] { width: auto; margin-top: 6px; }
+.source-card small { display: block; margin: 8px 0; }
+.source-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+.collection-status { display: block; margin: 8px 0; }
+.collection-actions { display: flex; flex-direction: column; align-items: center; gap: 8px; margin-top: 12px; }
+.collection-actions button { padding: 8px 12px; font-size: 14px; }
+
+/* Status guide: labels and icons reinforce color meanings. */
+.labeling-help-button { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; min-width: 24px; min-height: 24px; max-width: 24px; max-height: 24px; flex-shrink: 0; box-sizing: border-box; padding: 0; margin-left: 4px; border: 1px solid #bfd3c8; border-radius: 50%; background: #e9f3ed; color: #245640; font-size: 14px; font-weight: 700; line-height: 1; vertical-align: middle; }
+.labeling-help-button:hover, .labeling-help-button[aria-expanded="true"] { background: #245640; color: white; }
+.labeling-help-button:focus-visible { outline: 2px solid #315b42; outline-offset: 3px; }
+.labeling-help-panel { position: fixed; z-index: 1000; width: 320px; max-width: calc(100vw - 24px); overflow-y: auto; padding: 16px; border: 1px solid #dce6df; border-radius: 14px; background: white; color: #243b30; box-shadow: 0 12px 36px #20342026; font-size: 14px; line-height: 1.5; }
+.status-help-heading { display: grid; gap: 4px; padding: 2px 2px 12px; }
+.status-help-heading > span { font-size: 11px; font-weight: 700; letter-spacing: 1.4px; color: #52705e; }
+.status-help-heading > strong { font-size: 16px; }
+.labeling-help-panel .status-help-list { display: grid; gap: 8px; margin: 0; }
+.status-help-item { padding: 11px 12px; border: 1px solid var(--help-border); border-radius: 9px; background: var(--help-bg); }
+.status-help-item dt { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 14px; font-weight: 700; color: var(--help-text); }
+.status-help-item dt svg { flex-shrink: 0; }
+.status-help-item dd { margin: 4px 0 0 26px; color: #415047; font-size: 14px; }
+.status-help-idle { --help-bg: #f5f6f7; --help-border: #e3e6e9; --help-text: #52606d; }
+.status-help-auto { --help-bg: #f3efff; --help-border: #e4daf8; --help-text: #6c43a6; }
+.status-help-draft { --help-bg: #fff7e5; --help-border: #f0dfb6; --help-text: #8b5d13; }
+.status-help-done { --help-bg: #edf7ef; --help-border: #cee5d3; --help-text: #28663b; }
+.labeling-help-panel .status-help-note { display: flex; align-items: flex-start; gap: 8px; padding: 12px 2px 0; margin: 0; font-size: 13px; color: #526258; }
+.status-help-note svg { flex-shrink: 0; margin-top: 2px; }

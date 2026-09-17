@@ -70,3 +70,17 @@ Filters combine with AND; bank names match case-insensitively. IDs cannot bypass
 The response contains `product_category` and `pages`. Each page includes `campaign_id`, `bank_name`, `bank_type`, `product_name`, `product_category`, `page_url`, `language`, `capture_date`, `labeling_status`, and the existing `FeatureRead` object as `features`. A page without labeling has `features: null` and `Not Started` status. Missing fields remain null; zero/false remain actual values. Multiple pages from a bank remain separate records; there is no implicit bank aggregation.
 
 See [feature framework](feature-framework.md) and [comparison methodology](comparison.md) for interpretation.
+
+## Collection and suggestions
+
+| Method | Endpoint | Result |
+| --- | --- | --- |
+| GET | `/api/scraping/sources` | Validated catalog, import states, engine/demo flags; optional `bank` and `product_category` filters |
+| POST | `/api/scraping/run` | `{ "source_ids": ["ing-example-current-account-en"] }`; 1–50 IDs, independent success/existing/failed results |
+| POST | `/api/campaigns/{id}/auto-label` | Generate and persist pending suggestions; never update CampaignFeature |
+| GET | `/api/campaigns/{id}/suggestions` | Latest proposal or null |
+| POST | `/api/campaigns/{id}/suggestions/review` | `{ "token": "returned-token", "values": { "word_count": 42 } }`; explicitly save reviewed values as In Progress |
+
+Campaign responses now include `collection` (nullable import metadata) and `has_suggestions`. Unknown campaign returns 404; missing scraped data, stale reviews, changed source URLs, or demo operations in real mode return 409. Invalid requests/engine suggestions return 422. Batch source failures remain individual results in a 200 response. A malformed catalog returns 500 with the filename and validation details.
+
+Review `values` uses the existing partial FeatureInput contract: omitted final fields are preserved, null clears them. Completion still uses the existing feature endpoint. See [collection workflow](collection-workflow.md) for safety and provenance.

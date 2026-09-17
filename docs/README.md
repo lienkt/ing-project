@@ -42,6 +42,7 @@ backend/
 | ------------------------------------------------------- | ----------------------------------------------------------------------- |
 | [Database guide](database-guide.md)                     | Existing servers, database maintenance, migrations, backup, and restore |
 | [Application overview](application-overview.md)         | Terms, navigation, and scope                                            |
+| [Collection workflow](collection-workflow.md) | Source catalog, scraping, automatic suggestions, and engine handoff |
 | [Architecture](architecture.md)                         | File responsibilities and where to change code                          |
 | [Feature framework](feature-framework.md)               | Saving, completion, and progress                                        |
 | [Labeling field reference](labeling-field-reference.md) | Every field, allowed values, examples, and scale definitions            |

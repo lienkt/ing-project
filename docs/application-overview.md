@@ -4,7 +4,7 @@
 
 ## Purpose
 
-Compare how bank webpages communicate similar products using manually recorded observations. The workflow is **Dataset → Label → Compare → Insights**. There is no scraper, automatic analysis, or AI scoring.
+Compare how bank webpages communicate similar products using reviewed observations. The main workflow is **Dataset → Label → Compare → Insights**. Secondary collection tools import sources and propose labels through demo engines; no real scraping or AI algorithm is connected.
 
 ## Terms
 
@@ -60,7 +60,7 @@ The API calls a category `project`. **Settings → Add product** currently manag
 
 ## Navigation and pages
 
-The sidebar contains **Dataset**, **Compare**, and **Settings**. Settings contains **Add campaign**, **Add bank**, and **Add product**.
+The sidebar contains **Dataset**, **Compare**, **Tools → Scraping**, and **Settings**. Settings contains **Add campaign**, **Add bank**, and **Add product**.
 
 | Route | Purpose |
 | --- | --- |
@@ -69,12 +69,13 @@ The sidebar contains **Dataset**, **Compare**, and **Settings**. Settings contai
 | `/campaigns/:id` | Campaign context and communication details |
 | `/campaigns/:id/edit` | Edit bank, category, and source URL |
 | `/campaigns/:id/label` | Label features and complete review |
+| `/scraping` | Select sources and import them into Dataset |
 | `/compare` | Select comparable pages and inspect findings, chart, and table |
 | `/campaigns/:id/evaluate` | Optional subjective evaluation |
 | `/banks/new` | Manage bank options |
 | `/projects/new` | Manage category options |
 
-Open a campaign by clicking its bank name in Dataset, then enter labeling. Dataset's Actions column only contains Delete. Campaign options expose secondary editing and evaluation tasks. Insights is a section within comparison, not a separate analysis page.
+Open a campaign by clicking its bank name in Dataset, then enter labeling. Dataset's Actions column contains Delete. Unfinished imported rows offer Auto Label or Review suggestions, depending on whether a proposal exists. Completed rows show neither. Manual labeling is available inside the campaign. Campaign options expose secondary editing and evaluation tasks. Insights is a section within comparison, not a separate analysis page.
 
 ## Data and review status
 
@@ -91,3 +92,5 @@ Dataset's In progress summary counts campaigns whose labeling is not completed, 
 Real and demo modes use separate PostgreSQL databases. The header identifies the active mode. Demo bank names are normal names, but values are synthetic and source URLs are placeholders. Use them to explore the workflow, not as research evidence.
 
 See [feature definitions and progress](feature-framework.md), [comparison rules](comparison.md), and [database operations](database-guide.md).
+
+See [collection workflow](collection-workflow.md) for source import and automatic suggestion review. Auto Suggested means a separate pending proposal; it does not mean Completed.
