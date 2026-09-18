@@ -137,9 +137,7 @@ export default function Create() {
             <select
               required
               value={data.project}
-              onChange={(e) =>
-                setData({ ...data, project: e.target.value as Project })
-              }
+              onChange={(e) => setData({ ...data, project: e.target.value as Project })}
             >
               <option value="">Select a project</option>
               {projects.map((p) => (
@@ -159,9 +157,7 @@ export default function Create() {
               maxLength={2048}
               placeholder="https://www.bank.com/campaign"
               value={data.campaign_url}
-              onChange={(e) =>
-                setData({ ...data, campaign_url: e.target.value })
-              }
+              onChange={(e) => setData({ ...data, campaign_url: e.target.value })}
             />
             <small>Link to the original campaign or product page.</small>
           </label>
@@ -170,11 +166,7 @@ export default function Create() {
               Cancel
             </Link>
             <button disabled={saving}>
-              {saving
-                ? "Saving…"
-                : id
-                  ? "Save basic information"
-                  : "Create campaign"}
+              {saving ? "Saving…" : id ? "Save basic information" : "Create campaign"}
               <ArrowRight size={16} />
             </button>
           </div>
@@ -187,8 +179,8 @@ export default function Create() {
             with a source.
           </h3>
           <p>
-            Add the page you want to study. Then capture its message,
-            communication style, and your own evaluation.
+            Add the page you want to study. Then capture its message, communication
+            style, and your own evaluation.
           </p>
           <div className="help-divider" />
           <span className="eyebrow">WHAT HAPPENS NEXT</span>

@@ -1,4 +1,5 @@
 """Add optional campaign feature labeling without changing existing campaigns."""
+
 from alembic import op
 import sqlalchemy as sa
 
@@ -7,9 +8,16 @@ down_revision = "0002"
 branch_labels = None
 depends_on = None
 
+
 def upgrade():
-    op.create_table("campaign_features",
-        sa.Column("campaign_id", sa.Integer(), sa.ForeignKey("campaigns.id", ondelete="CASCADE"), primary_key=True),
+    op.create_table(
+        "campaign_features",
+        sa.Column(
+            "campaign_id",
+            sa.Integer(),
+            sa.ForeignKey("campaigns.id", ondelete="CASCADE"),
+            primary_key=True,
+        ),
         sa.Column("word_count", sa.Integer, nullable=True),
         sa.Column("heading_count", sa.Integer, nullable=True),
         sa.Column("paragraph_count", sa.Integer, nullable=True),
@@ -73,52 +81,134 @@ def upgrade():
         sa.Column("sustainability_message_present", sa.Boolean, nullable=True),
         sa.Column("main_value_driver", sa.String(300), nullable=True),
         sa.Column("labeling_notes", sa.Text(), nullable=True),
-        sa.Column("labeling_status", sa.String(20), nullable=False, server_default="Not Started"),
+        sa.Column(
+            "labeling_status",
+            sa.String(20),
+            nullable=False,
+            server_default="Not Started",
+        ),
         sa.Column("source", sa.String(20), nullable=False, server_default="manual"),
-        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
-        sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
-        sa.CheckConstraint('word_count >= 0', name="ck_cf_word_count"),
-        sa.CheckConstraint('heading_count >= 0', name="ck_cf_heading_count"),
-        sa.CheckConstraint('paragraph_count >= 0', name="ck_cf_paragraph_count"),
-        sa.CheckConstraint('bullet_list_count >= 0', name="ck_cf_bullet_list_count"),
-        sa.CheckConstraint('text_density BETWEEN 1 AND 5', name="ck_cf_text_density"),
-        sa.CheckConstraint("text_style IN ('Concise', 'Balanced', 'Detailed')", name="ck_cf_text_style"),
-        sa.CheckConstraint('information_complexity BETWEEN 1 AND 5', name="ck_cf_information_complexity"),
-        sa.CheckConstraint('tone_formality BETWEEN 1 AND 5', name="ck_cf_tone_formality"),
-        sa.CheckConstraint('tone_friendliness BETWEEN 1 AND 5', name="ck_cf_tone_friendliness"),
-        sa.CheckConstraint('tone_persuasiveness BETWEEN 1 AND 5', name="ck_cf_tone_persuasiveness"),
-        sa.CheckConstraint('emotional_vs_rational BETWEEN 1 AND 5', name="ck_cf_emotional_vs_rational"),
-        sa.CheckConstraint('customer_vs_product_focus BETWEEN 1 AND 5', name="ck_cf_customer_vs_product_focus"),
-        sa.CheckConstraint('feature_vs_benefit_focus BETWEEN 1 AND 5', name="ck_cf_feature_vs_benefit_focus"),
-        sa.CheckConstraint("message_focus IN ('Product', 'Feature', 'Benefit', 'Lifestyle', 'Price')", name="ck_cf_message_focus"),
-        sa.CheckConstraint('image_count >= 0', name="ck_cf_image_count"),
-        sa.CheckConstraint("hero_image_size IN ('None', 'Small', 'Medium', 'Large', 'Full-width')", name="ck_cf_hero_image_size"),
-        sa.CheckConstraint('people_image_count >= 0', name="ck_cf_people_image_count"),
-        sa.CheckConstraint('icon_count >= 0', name="ck_cf_icon_count"),
-        sa.CheckConstraint('video_count >= 0', name="ck_cf_video_count"),
-        sa.CheckConstraint("visual_style IN ('Photography', 'Illustration', '3D', 'UI-Product', 'Mixed')", name="ck_cf_visual_style"),
-        sa.CheckConstraint('visual_intensity BETWEEN 1 AND 5', name="ck_cf_visual_intensity"),
-        sa.CheckConstraint('number_of_major_colours >= 0', name="ck_cf_number_of_major_colours"),
-        sa.CheckConstraint('brand_colour_dominance BETWEEN 1 AND 5', name="ck_cf_brand_colour_dominance"),
-        sa.CheckConstraint('colour_contrast BETWEEN 1 AND 5', name="ck_cf_colour_contrast"),
-        sa.CheckConstraint('design_complexity BETWEEN 1 AND 5', name="ck_cf_design_complexity"),
-        sa.CheckConstraint('visual_consistency BETWEEN 1 AND 5', name="ck_cf_visual_consistency"),
-        sa.CheckConstraint("attention_focus IN ('Text', 'Image', 'CTA', 'Product', 'Mixed')", name="ck_cf_attention_focus"),
-        sa.CheckConstraint('section_count >= 0', name="ck_cf_section_count"),
-        sa.CheckConstraint("page_length IN ('Short', 'Medium', 'Long')", name="ck_cf_page_length"),
-        sa.CheckConstraint("content_pattern IN ('Text-first', 'Image-first', 'Alternating', 'Cards', 'Mixed')", name="ck_cf_content_pattern"),
-        sa.CheckConstraint('layout_clarity BETWEEN 1 AND 5', name="ck_cf_layout_clarity"),
-        sa.CheckConstraint('scannability BETWEEN 1 AND 5', name="ck_cf_scannability"),
-        sa.CheckConstraint('cta_count >= 0', name="ck_cf_cta_count"),
-        sa.CheckConstraint('cta_prominence BETWEEN 1 AND 5', name="ck_cf_cta_prominence"),
-        sa.CheckConstraint("cta_type IN ('Apply', 'Buy', 'Open', 'Learn', 'Contact', 'Calculate', 'Other')", name="ck_cf_cta_type"),
-        sa.CheckConstraint('price_prominence BETWEEN 1 AND 5', name="ck_cf_price_prominence"),
-        sa.CheckConstraint('benefit_count >= 0', name="ck_cf_benefit_count"),
-        sa.CheckConstraint('feature_count >= 0', name="ck_cf_feature_count"),
-        sa.CheckConstraint("main_value_driver IN ('Price', 'Convenience', 'Security', 'Flexibility', 'Lifestyle', 'Digital', 'Service', 'Other')", name="ck_cf_main_value_driver"),
-        sa.CheckConstraint("labeling_status IN ('Not Started', 'In Progress', 'Completed')", name="ck_cf_labeling_status"),
-        sa.CheckConstraint("source IN ('manual', 'automatic', 'manual_override')", name="ck_cf_source"),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            nullable=False,
+            server_default=sa.func.now(),
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            nullable=False,
+            server_default=sa.func.now(),
+        ),
+        sa.CheckConstraint("word_count >= 0", name="ck_cf_word_count"),
+        sa.CheckConstraint("heading_count >= 0", name="ck_cf_heading_count"),
+        sa.CheckConstraint("paragraph_count >= 0", name="ck_cf_paragraph_count"),
+        sa.CheckConstraint("bullet_list_count >= 0", name="ck_cf_bullet_list_count"),
+        sa.CheckConstraint("text_density BETWEEN 1 AND 5", name="ck_cf_text_density"),
+        sa.CheckConstraint(
+            "text_style IN ('Concise', 'Balanced', 'Detailed')", name="ck_cf_text_style"
+        ),
+        sa.CheckConstraint(
+            "information_complexity BETWEEN 1 AND 5",
+            name="ck_cf_information_complexity",
+        ),
+        sa.CheckConstraint(
+            "tone_formality BETWEEN 1 AND 5", name="ck_cf_tone_formality"
+        ),
+        sa.CheckConstraint(
+            "tone_friendliness BETWEEN 1 AND 5", name="ck_cf_tone_friendliness"
+        ),
+        sa.CheckConstraint(
+            "tone_persuasiveness BETWEEN 1 AND 5", name="ck_cf_tone_persuasiveness"
+        ),
+        sa.CheckConstraint(
+            "emotional_vs_rational BETWEEN 1 AND 5", name="ck_cf_emotional_vs_rational"
+        ),
+        sa.CheckConstraint(
+            "customer_vs_product_focus BETWEEN 1 AND 5",
+            name="ck_cf_customer_vs_product_focus",
+        ),
+        sa.CheckConstraint(
+            "feature_vs_benefit_focus BETWEEN 1 AND 5",
+            name="ck_cf_feature_vs_benefit_focus",
+        ),
+        sa.CheckConstraint(
+            "message_focus IN ('Product', 'Feature', 'Benefit', 'Lifestyle', 'Price')",
+            name="ck_cf_message_focus",
+        ),
+        sa.CheckConstraint("image_count >= 0", name="ck_cf_image_count"),
+        sa.CheckConstraint(
+            "hero_image_size IN ('None', 'Small', 'Medium', 'Large', 'Full-width')",
+            name="ck_cf_hero_image_size",
+        ),
+        sa.CheckConstraint("people_image_count >= 0", name="ck_cf_people_image_count"),
+        sa.CheckConstraint("icon_count >= 0", name="ck_cf_icon_count"),
+        sa.CheckConstraint("video_count >= 0", name="ck_cf_video_count"),
+        sa.CheckConstraint(
+            "visual_style IN ('Photography', 'Illustration', '3D', 'UI-Product', 'Mixed')",
+            name="ck_cf_visual_style",
+        ),
+        sa.CheckConstraint(
+            "visual_intensity BETWEEN 1 AND 5", name="ck_cf_visual_intensity"
+        ),
+        sa.CheckConstraint(
+            "number_of_major_colours >= 0", name="ck_cf_number_of_major_colours"
+        ),
+        sa.CheckConstraint(
+            "brand_colour_dominance BETWEEN 1 AND 5",
+            name="ck_cf_brand_colour_dominance",
+        ),
+        sa.CheckConstraint(
+            "colour_contrast BETWEEN 1 AND 5", name="ck_cf_colour_contrast"
+        ),
+        sa.CheckConstraint(
+            "design_complexity BETWEEN 1 AND 5", name="ck_cf_design_complexity"
+        ),
+        sa.CheckConstraint(
+            "visual_consistency BETWEEN 1 AND 5", name="ck_cf_visual_consistency"
+        ),
+        sa.CheckConstraint(
+            "attention_focus IN ('Text', 'Image', 'CTA', 'Product', 'Mixed')",
+            name="ck_cf_attention_focus",
+        ),
+        sa.CheckConstraint("section_count >= 0", name="ck_cf_section_count"),
+        sa.CheckConstraint(
+            "page_length IN ('Short', 'Medium', 'Long')", name="ck_cf_page_length"
+        ),
+        sa.CheckConstraint(
+            "content_pattern IN ('Text-first', 'Image-first', 'Alternating', 'Cards', 'Mixed')",
+            name="ck_cf_content_pattern",
+        ),
+        sa.CheckConstraint(
+            "layout_clarity BETWEEN 1 AND 5", name="ck_cf_layout_clarity"
+        ),
+        sa.CheckConstraint("scannability BETWEEN 1 AND 5", name="ck_cf_scannability"),
+        sa.CheckConstraint("cta_count >= 0", name="ck_cf_cta_count"),
+        sa.CheckConstraint(
+            "cta_prominence BETWEEN 1 AND 5", name="ck_cf_cta_prominence"
+        ),
+        sa.CheckConstraint(
+            "cta_type IN ('Apply', 'Buy', 'Open', 'Learn', 'Contact', 'Calculate', 'Other')",
+            name="ck_cf_cta_type",
+        ),
+        sa.CheckConstraint(
+            "price_prominence BETWEEN 1 AND 5", name="ck_cf_price_prominence"
+        ),
+        sa.CheckConstraint("benefit_count >= 0", name="ck_cf_benefit_count"),
+        sa.CheckConstraint("feature_count >= 0", name="ck_cf_feature_count"),
+        sa.CheckConstraint(
+            "main_value_driver IN ('Price', 'Convenience', 'Security', 'Flexibility', 'Lifestyle', 'Digital', 'Service', 'Other')",
+            name="ck_cf_main_value_driver",
+        ),
+        sa.CheckConstraint(
+            "labeling_status IN ('Not Started', 'In Progress', 'Completed')",
+            name="ck_cf_labeling_status",
+        ),
+        sa.CheckConstraint(
+            "source IN ('manual', 'automatic', 'manual_override')", name="ck_cf_source"
+        ),
     )
+
 
 def downgrade():
     op.drop_table("campaign_features")

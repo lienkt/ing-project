@@ -33,11 +33,7 @@ const choices: Partial<Record<keyof Details, string[]>> = {
   text_density: ["low", "medium", "high"],
   feature_vs_benefit: ["feature_focused", "balanced", "benefit_focused"],
   emotional_vs_rational: ["emotional", "balanced", "rational"],
-  customer_vs_product_focus: [
-    "customer_focused",
-    "balanced",
-    "product_focused",
-  ],
+  customer_vs_product_focus: ["customer_focused", "balanced", "product_focused"],
 };
 export default function DetailsPage() {
   const navigate = useNavigate();
@@ -133,9 +129,24 @@ export default function DetailsPage() {
         <h2>Campaign Feature Framework</h2>
         <FeatureStatus value={campaign.labeling_status} />
         <p>Progress: {campaign.labeling_progress}%</p>
-        <progress max={100} value={campaign.labeling_progress} aria-label="Feature labeling progress" />
-        <p>Last updated: {campaign.labeling_updated_at ? new Date(campaign.labeling_updated_at).toLocaleString() : "Not started"}</p>
-        <Link className="button" to={`/campaigns/${id}/label`}>{campaign.labeling_status === "Completed" ? "Edit Labeling" : campaign.labeling_status === "In Progress" ? "Continue Labeling" : "Start Manual Labeling"}</Link>
+        <progress
+          max={100}
+          value={campaign.labeling_progress}
+          aria-label="Feature labeling progress"
+        />
+        <p>
+          Last updated:{" "}
+          {campaign.labeling_updated_at
+            ? new Date(campaign.labeling_updated_at).toLocaleString()
+            : "Not started"}
+        </p>
+        <Link className="button" to={`/campaigns/${id}/label`}>
+          {campaign.labeling_status === "Completed"
+            ? "Edit Labeling"
+            : campaign.labeling_status === "In Progress"
+              ? "Continue Labeling"
+              : "Start Manual Labeling"}
+        </Link>
       </section>
       <Notice message={success} success />
       <Notice message={saveError} />
@@ -144,8 +155,8 @@ export default function DetailsPage() {
           <div className="section-heading">
             <h2>Message & content</h2>
             <p>
-              Review the source page and record your observations. All fields
-              are optional.
+              Review the source page and record your observations. All fields are
+              optional.
             </p>
           </div>
           <div className="form-grid">
@@ -161,9 +172,7 @@ export default function DetailsPage() {
             ).map((key) => (
               <label
                 key={key}
-                className={
-                  ["main_message", "notes"].includes(key) ? "full" : ""
-                }
+                className={["main_message", "notes"].includes(key) ? "full" : ""}
               >
                 {key === "cta_text" ? "CTA text" : label(key)}
                 {["main_message", "notes"].includes(key) ? (
@@ -223,9 +232,7 @@ export default function DetailsPage() {
           </div>
           <div className="form-actions">
             <span className="muted">
-              {dirty
-                ? "You have unsaved changes"
-                : "Your observations, in your words."}
+              {dirty ? "You have unsaved changes" : "Your observations, in your words."}
             </span>
             <button disabled={saving || deleting}>
               <Save size={16} />
@@ -248,7 +255,10 @@ export default function DetailsPage() {
             Continue to comparison <ArrowRight size={16} />
           </button>
         ) : (
-          <Link className="button" to={`/compare?product_category=${encodeURIComponent(campaign.project)}`}>
+          <Link
+            className="button"
+            to={`/compare?product_category=${encodeURIComponent(campaign.project)}`}
+          >
             Continue to comparison <ArrowRight size={16} />
           </Link>
         )}

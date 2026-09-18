@@ -14,13 +14,20 @@ export type ComparisonPage = {
   features: FeatureRecord | null;
 };
 export type Comparison = { product_category: string; pages: ComparisonPage[] };
-export function getComparison(category: string, campaignIds: number[] = [], bankNames: string[] = []) {
+export function getComparison(
+  category: string,
+  campaignIds: number[] = [],
+  bankNames: string[] = [],
+) {
   const params = new URLSearchParams({ product_category: category });
-  campaignIds.forEach(id => params.append("campaign_ids", String(id)));
-  bankNames.forEach(name => params.append("bank_names", name));
+  campaignIds.forEach((id) => params.append("campaign_ids", String(id)));
+  bankNames.forEach((name) => params.append("bank_names", name));
   return request<Comparison>(`/compare?${params}`);
 }
-export const analyticalFields = featureFields.filter(field => field.section !== "Identification & Metadata");
-export const scaleFields = analyticalFields.filter(field => field.kind === "scale");
-export type ScaleDefinition = typeof scaleFields[number];
-export const pageTitle = (page: ComparisonPage) => `${page.bank_name} · ${page.product_name || "Product not recorded"} · Page #${page.campaign_id}`;
+export const analyticalFields = featureFields.filter(
+  (field) => field.section !== "Identification & Metadata",
+);
+export const scaleFields = analyticalFields.filter((field) => field.kind === "scale");
+export type ScaleDefinition = (typeof scaleFields)[number];
+export const pageTitle = (page: ComparisonPage) =>
+  `${page.bank_name} · ${page.product_name || "Product not recorded"} · Page #${page.campaign_id}`;

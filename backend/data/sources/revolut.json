@@ -1,0 +1,16 @@
+{
+  "sources": [
+    {
+      "source_id": "revolut-example-current-account-en",
+      "bank": "Revolut",
+      "bank_type": "Neobank",
+      "country": "Belgium",
+      "product_name": "Revolut example current account",
+      "product_category": "current_account",
+      "language": "English",
+      "page_type": "Product Page",
+      "url": "https://example.com/source-catalog/revolut/current-account",
+      "is_example": true
+    }
+  ]
+}

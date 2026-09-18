@@ -2,6 +2,7 @@ from playwright.sync_api import sync_playwright
 import re
 import json
 
+
 # -----------------------------
 # Extract headings using ARIA roles
 # -----------------------------
@@ -15,13 +16,36 @@ def extract_headings(page):
 def filter_real_headings(headings):
 
     remove_patterns = [
-        r"belfius", r"producten", r"professioneel", r"menu", r"contact",
-        r"privacy", r"cookie", r"voorwaarden", r"help", r"jobs", r"social",
-        r"volg ons", r"footer", r"navigatie", r"tarieven", r"documenten",
-        r"pdf", r"tools", r"zoek", r"login", r"mybelfius", r"openingsuren",
-        r"kantoren", r"faq", r"sparen-beleggen",
-        r"andere websites", r"online bankieren", r"diensten",
-        r"sectoren", r"een noodgeval",
+        r"belfius",
+        r"producten",
+        r"professioneel",
+        r"menu",
+        r"contact",
+        r"privacy",
+        r"cookie",
+        r"voorwaarden",
+        r"help",
+        r"jobs",
+        r"social",
+        r"volg ons",
+        r"footer",
+        r"navigatie",
+        r"tarieven",
+        r"documenten",
+        r"pdf",
+        r"tools",
+        r"zoek",
+        r"login",
+        r"mybelfius",
+        r"openingsuren",
+        r"kantoren",
+        r"faq",
+        r"sparen-beleggen",
+        r"andere websites",
+        r"online bankieren",
+        r"diensten",
+        r"sectoren",
+        r"een noodgeval",
     ]
 
     cleaned = []
@@ -57,8 +81,12 @@ def scrape_page(url: str):
         paragraphs = page.locator("p").all_inner_texts()
 
         cookie_patterns = [
-            r"deze cookies", r"cookies", r"advertentie", r"socialmediacookies",
-            r"veiligheid en de goede werking", r"voorkeuren te onthouden",
+            r"deze cookies",
+            r"cookies",
+            r"advertentie",
+            r"socialmediacookies",
+            r"veiligheid en de goede werking",
+            r"voorkeuren te onthouden",
             r"hoeveel mensen onze websites bezoeken",
             r"gepersonaliseerde aanbevelingen",
         ]
@@ -75,12 +103,21 @@ def scrape_page(url: str):
         raw_bullets = page.locator("ul li, ol li").all_inner_texts()
 
         exclude_bullets = [
-            r"producten", r"spaar", r"beleggingsoplossingen",
-            r"elektronische afschriften", r"coda", r"veiligheid",
-            r"medische beroepen", r"juridische beroepen",
-            r"meld een fraude", r"geef een schade aan",
-            r"blokkeer een kaart", r"checkbox", r"label",
-            r"belfius direct net", r"belfius mobile app",
+            r"producten",
+            r"spaar",
+            r"beleggingsoplossingen",
+            r"elektronische afschriften",
+            r"coda",
+            r"veiligheid",
+            r"medische beroepen",
+            r"juridische beroepen",
+            r"meld een fraude",
+            r"geef een schade aan",
+            r"blokkeer een kaart",
+            r"checkbox",
+            r"label",
+            r"belfius direct net",
+            r"belfius mobile app",
         ]
 
         bullet_lists = []
@@ -97,7 +134,7 @@ def scrape_page(url: str):
             "title": title,
             "headings": headings,
             "paragraphs": paragraphs,
-            "bullet_lists": bullet_lists
+            "bullet_lists": bullet_lists,
         }
 
 
@@ -107,33 +144,49 @@ def scrape_page(url: str):
 def count_words(text_list):
     return sum(len(re.findall(r"\w+", t)) for t in text_list)
 
+
 def average_paragraph_length(paragraphs):
     if len(paragraphs) == 0:
         return 0
     return count_words(paragraphs) / len(paragraphs)
+
 
 def headline_length(headings):
     if len(headings) == 0:
         return 0
     return len(re.findall(r"\w+", headings[0]))
 
+
 def text_density(word_count):
-    if word_count < 150: return 1
-    elif word_count < 300: return 2
-    elif word_count < 600: return 3
-    elif word_count < 1000: return 4
-    else: return 5
+    if word_count < 150:
+        return 1
+    elif word_count < 300:
+        return 2
+    elif word_count < 600:
+        return 3
+    elif word_count < 1000:
+        return 4
+    else:
+        return 5
+
 
 def text_style(avg_len):
-    if avg_len < 15: return "Concise"
-    elif avg_len < 35: return "Balanced"
-    else: return "Detailed"
+    if avg_len < 15:
+        return "Concise"
+    elif avg_len < 35:
+        return "Balanced"
+    else:
+        return "Detailed"
+
 
 def information_complexity(word_count, heading_count):
     score = 1
-    if word_count > 300: score += 1
-    if word_count > 600: score += 1
-    if heading_count > 5: score += 1
+    if word_count > 300:
+        score += 1
+    if word_count > 600:
+        score += 1
+    if heading_count > 5:
+        score += 1
     return min(score, 5)
 
 
@@ -162,7 +215,7 @@ def extract_features(url):
         "headline_length": headline_len,
         "text_density": density,
         "text_style": style,
-        "information_complexity": complexity
+        "information_complexity": complexity,
     }
 
     # Save JSON

@@ -314,5 +314,40 @@
       "main_value_driver": "Price",
       "labeling_notes": "DEMO DATA ONLY. All values are synthetic fixtures for testing software. No bank webpage was analyzed; do not use these records as research evidence."
     }
+  },
+  {
+    "bank_name": "ING",
+    "project": "current_account",
+    "campaign_url": "https://example.com/bank-comparison-demo/auto-pending",
+    "campaign_name": "Auto review example \u2014 pending",
+    "auto_stage": "pending",
+    "labeling_status": "Not Started",
+    "features": null
+  },
+  {
+    "bank_name": "KBC",
+    "project": "current_account",
+    "campaign_url": "https://example.com/bank-comparison-demo/auto-draft",
+    "campaign_name": "Auto review example \u2014 draft",
+    "auto_stage": "reviewed",
+    "labeling_status": "In Progress",
+    "features": {
+      "tone_formality": 4,
+      "labeling_notes": "Synthetic demo: automatic suggestions reviewed and edited; draft not completed."
+    }
+  },
+  {
+    "bank_name": "Revolut",
+    "project": "current_account",
+    "campaign_url": "https://example.com/bank-comparison-demo/auto-completed",
+    "campaign_name": "Auto review example \u2014 completed",
+    "auto_stage": "reviewed",
+    "labeling_status": "Completed",
+    "features": {
+      "tone_formality": 2,
+      "tone_friendliness": 5,
+      "visual_intensity": 4,
+      "labeling_notes": "Synthetic demo: suggestions reviewed and edited, completed with missing fields acknowledged."
+    }
   }
 ]

@@ -47,7 +47,24 @@ export type CampaignInput = {
   project: Project;
   campaign_url: string;
 };
+export type AutomationSupport = {
+  supported: boolean;
+  available: boolean;
+  is_demo: boolean;
+  message: string | null;
+};
 export type Campaign = CampaignInput & {
+  automation: { scraping: AutomationSupport; auto_labeling: AutomationSupport };
+  collection: {
+    source_id: string;
+    status: string;
+    scraped_at: string | null;
+    is_demo: boolean;
+    engine: string;
+    product_name: string | null;
+    language: string | null;
+  } | null;
+  has_suggestions: boolean;
   labeling_status: "Not Started" | "In Progress" | "Completed";
   labeling_progress: number;
   labeling_updated_at: string | null;
@@ -98,14 +115,11 @@ export async function request<T>(
   if (response.status === 204) return undefined as T;
   return response.json();
 }
-export const getCampaigns = (
-  filters: { bank_name?: string; project?: string } = {},
-) =>
+export const getCampaigns = (filters: { bank_name?: string; project?: string } = {}) =>
   request<Campaign[]>(
     `/campaigns?${new URLSearchParams(Object.entries(filters).filter(([, v]) => v))}`,
   );
-export const getCampaign = (id: string) =>
-  request<Campaign>(`/campaigns/${id}`);
+export const getCampaign = (id: string) => request<Campaign>(`/campaigns/${id}`);
 export const createCampaign = (data: CampaignInput) =>
   request<Campaign>("/campaigns", "POST", data);
 export const updateCampaignDetails = (id: string, data: Details) =>
@@ -129,8 +143,7 @@ export const deleteCampaign = (id: number) =>
   request<void>(`/campaigns/${id}`, "DELETE");
 export const editBank = (id: number, name: string) =>
   request<BankOption>(`/banks/${id}`, "PUT", { name });
-export const deleteBank = (id: number) =>
-  request<void>(`/banks/${id}`, "DELETE");
+export const deleteBank = (id: number) => request<void>(`/banks/${id}`, "DELETE");
 export const editProject = (key: string, name: string) =>
   request<ProjectOption>(`/projects/${encodeURIComponent(key)}`, "PUT", {
     name,

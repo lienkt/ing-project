@@ -8,12 +8,12 @@ Open a campaign from Dataset, enter labeling, and inspect **Open Original Page**
 
 ## Save and complete
 
-| Action | Result |
-| --- | --- |
-| Change a value | Autosaves after 1.2 seconds of inactivity |
-| Save Draft | Saves immediately; status becomes In Progress |
-| Complete Labeling | Sets Completed; requires at least one filled field and confirmation of any omissions |
-| Save edits to completed labels | Returns status to In Progress |
+| Action                         | Result                                                                               |
+| ------------------------------ | ------------------------------------------------------------------------------------ |
+| Change a value                 | Autosaves after 1.2 seconds of inactivity                                            |
+| Save Draft                     | Saves immediately; status becomes In Progress                                        |
+| Complete Labeling              | Sets Completed; requires at least one filled field and confirmation of any omissions |
+| Save edits to completed labels | Returns status to In Progress                                                        |
 
 Review metadata counts toward the completion minimum. An empty record cannot be completed. Failed saves retain entered values for retry; browser local storage also holds unsaved edits for recovery.
 
@@ -27,6 +27,6 @@ There are no automatic applicability rules. Explain inapplicable fields in notes
 
 Each campaign has one current feature record, separate from communication details and optional evaluation. Saves have no stale-edit conflict detection; coordinate editing within the team.
 
-Labeling is manual. Provenance is record-level, not a per-field history; manually saving an automatic record changes its source to `manual_override`. No automatic extractor is implemented.
+Labeling supports manual entry and [automatic suggestion review](collection-workflow.md). Auto-label availability comes from explicit case config; the currently registered labeling function is demo-only. Provenance is record-level, not a per-field history; explicitly saving a reviewed proposal uses `manual_override`. During proposal review, autosave is disabled until an explicit review save.
 
 See [field reference](labeling-field-reference.md) for values and [API reference](api-reference.md#feature-labeling) for request contracts.
