@@ -2801,3 +2801,64 @@ summary:focus-visible {
   padding: 0 24px 24px;
   min-width: 0;
 }
+
+.library .dataset-table th,
+.library .dataset-table td {
+  width: calc((100% - 368px) / 4);
+}
+.library .dataset-table th:last-child,
+.library .dataset-table td:last-child {
+  width: 112px;
+}
+.library .dataset-table .dataset-row-number:first-child {
+  width: 36px;
+  padding-inline: 8px;
+  white-space: nowrap;
+  overflow-wrap: normal;
+  text-align: center;
+  color: #4d604c;
+  font-variant-numeric: tabular-nums;
+}
+.dataset-footer {
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.dataset-pagination {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.dataset-page-number {
+  min-width: 36px;
+  padding-inline: 10px;
+  font-variant-numeric: tabular-nums;
+}
+.dataset-footer span {
+  display: inline;
+}
+
+.library .dataset-table th:nth-child(6),
+.library .dataset-table td:nth-child(6) {
+  width: 220px;
+}
+.library .dataset-table th:nth-child(2),
+.library .dataset-table td:nth-child(2) {
+  text-align: left;
+}
+.dataset-table .campaign-title {
+  margin-left: 0;
+  margin-right: auto;
+  text-align: left;
+}
+.dataset-table .table-url {
+  justify-content: flex-start;
+}
+.dataset-status-heading {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  gap: 4px;
+}

@@ -59,6 +59,10 @@ export default function Dashboard() {
   const [project, setProject] = useState("");
   const [search, setSearch] = useState("");
   const [retry, setRetry] = useState(0);
+  const [page, setPage] = useState(1);
+  useEffect(() => {
+    setPage(1);
+  }, [bank, project, search]);
   useEffect(() => {
     let active = true;
     setLoading(true);
@@ -106,6 +110,19 @@ export default function Dashboard() {
         .toLowerCase()
         .includes(search.toLowerCase()),
   );
+  const pageSize = 10;
+  const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const currentPage = Math.min(page, pageCount);
+  const firstVisiblePage = Math.max(1, Math.min(currentPage - 1, pageCount - 2));
+  const pageNumbers = Array.from(
+    { length: Math.min(3, pageCount) },
+    (_, index) => firstVisiblePage + index,
+  );
+  const offset = (currentPage - 1) * pageSize;
+  const visibleCampaigns = filtered.slice(offset, offset + pageSize);
+  useEffect(() => {
+    setPage((previous) => Math.min(previous, pageCount));
+  }, [pageCount]);
   const evaluated = campaigns.filter((c) => c.labeling_status === "Completed").length;
   return (
     <>
@@ -242,22 +259,30 @@ export default function Dashboard() {
         ) : filtered.length ? (
           <>
             <div className="table-scroll">
-              <table>
+              <table className="dataset-table">
                 <thead>
                   <tr>
+                    <th
+                      scope="col"
+                      aria-label="Row number"
+                      className="dataset-row-number"
+                    />
                     <th>BANK</th>
                     <th>PRODUCT</th>
                     <th>CATEGORY</th>
                     <th>LANGUAGE</th>
                     <th>
-                      LABELING STATUS <LabelingStatusHelp />
+                      <span className="dataset-status-heading">
+                        LABELING STATUS <LabelingStatusHelp />
+                      </span>
                     </th>
                     <th>ACTIONS</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.map((c) => (
+                  {visibleCampaigns.map((c, index) => (
                     <tr key={c.id}>
+                      <td className="dataset-row-number">{offset + index + 1}</td>
                       <td>
                         <Link className="campaign-title" to={`/campaigns/${c.id}`}>
                           {c.bank_name}
@@ -313,9 +338,41 @@ export default function Dashboard() {
                 </tbody>
               </table>
             </div>
-            <div className="table-footer">
-              Showing {filtered.length} of {campaigns.length} campaigns
-              <span>Review labels before comparing within a product category.</span>
+            <div className="table-footer dataset-footer">
+              <span role="status">
+                Showing {offset + 1}–{offset + visibleCampaigns.length} of{" "}
+                {filtered.length} campaigns
+              </span>
+              <nav className="dataset-pagination" aria-label="Dataset pagination">
+                <button
+                  type="button"
+                  className="secondary"
+                  disabled={currentPage === 1}
+                  onClick={() => setPage(currentPage - 1)}
+                >
+                  ← Previous
+                </button>
+                {pageNumbers.map((number) => (
+                  <button
+                    key={number}
+                    type="button"
+                    className={`dataset-page-number${number === currentPage ? "" : " secondary"}`}
+                    aria-label={`Page ${number}`}
+                    aria-current={number === currentPage ? "page" : undefined}
+                    onClick={() => setPage(number)}
+                  >
+                    {number}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  className="secondary"
+                  disabled={currentPage === pageCount}
+                  onClick={() => setPage(currentPage + 1)}
+                >
+                  Next →
+                </button>
+              </nav>
             </div>
           </>
         ) : (
