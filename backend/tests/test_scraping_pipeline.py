@@ -13,9 +13,7 @@ def real_source():
     return next(s for s in load_sources() if s.source_id == "ing-youth-account-en")
 
 
-def test_real_case_import_prefills_draft_and_supports_labeling(
-    client, monkeypatch
-):
+def test_real_case_import_prefills_draft_and_supports_labeling(client, monkeypatch):
     async def collect(config, browser):
         assert config.language == "en" and config.product == "ING Youth Account"
         assert config.clean_page is False
@@ -64,15 +62,23 @@ def test_real_case_import_prefills_draft_and_supports_labeling(
     data = client.get(f"/api/campaigns/{campaign_id}/features").json()
     assert data["labeling_status"] == "In Progress"
     assert data["features"]["product_name"] == "ING Youth Account"
-    assert data["features"]["word_count"] == 5
+    assert data["features"]["word_count"] == 4
     assert data["features"]["image_count"] is None
     assert data["features"]["tone_formality"] is None
-    proposal = client.post(f"/api/campaigns/{campaign_id}/auto-label").json()
-    assert proposal["values"]["text_style"] == "Concise"
-    assert proposal["values"]["text_density"] == 1
+    assert data["features"]["text_style"] == "Concise"
+    assert data["features"]["text_density"] == 1
+    assert data["features"]["information_complexity"] == 1
     client.put(f"/api/campaigns/{campaign_id}/features", json={"word_count": 123})
-    client.post("/api/scraping/run", json={"source_ids": [real_source().source_id], "recapture": True})
-    assert client.get(f"/api/campaigns/{campaign_id}/features").json()["features"]["word_count"] == 123
+    client.post(
+        "/api/scraping/run",
+        json={"source_ids": [real_source().source_id], "recapture": True},
+    )
+    assert (
+        client.get(f"/api/campaigns/{campaign_id}/features").json()["features"][
+            "word_count"
+        ]
+        == 123
+    )
 
 
 def test_real_scraper_rejects_examples():

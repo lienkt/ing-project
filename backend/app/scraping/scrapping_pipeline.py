@@ -1,7 +1,7 @@
 """Optional standalone text scoring; the app collects via functions.py.
 
 Compatibility imports preserve the URL-file runner's public interface.
-Scoring is experimental and is not registered for app auto-labeling.
+The registered ING label extractor reuses the text scoring functions.
 """
 
 import re

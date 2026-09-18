@@ -1583,6 +1583,7 @@ button,
 .button {
   font-size: 15px;
   min-height: 44px;
+  min-width: 44px;
   padding: 10px 16px;
 }
 input,
@@ -2012,6 +2013,31 @@ th {
   font-weight: 400;
   color: #4d604c;
 }
+.label-section-number {
+  flex: 0 0 16px;
+  font-variant-numeric: tabular-nums;
+}
+.label-section-description {
+  flex: 1;
+  min-width: 0;
+}
+.label-section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.label-section-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 17px;
+  width: 17px;
+  height: 17px;
+  border: 1px solid #64856c;
+  border-radius: 50%;
+  color: #315b42;
+}
 .label-section-heading {
   padding: 24px 24px 12px;
 }
@@ -2096,7 +2122,7 @@ th {
   z-index: 1;
 }
 .label-notes {
-  padding: 16px 24px;
+  padding: 16px 0;
 }
 .label-notes summary {
   cursor: pointer;
@@ -2108,6 +2134,8 @@ th {
   justify-content: space-between;
   gap: 16px;
   padding: 16px 0;
+  margin-top: 20px;
+  border-top: 1px solid #dce4dc;
 }
 .labeling-actions {
   box-shadow: none;
@@ -2717,30 +2745,59 @@ summary:focus-visible {
   padding: 0;
   border: 0;
   border-radius: 16px;
-  overflow-y: auto;
-  overscroll-behavior: contain;
+  overflow: hidden;
   box-shadow: 0 24px 80px #10251c55;
 }
 .capture-dialog::backdrop {
   background: #10251cb3;
 }
 .capture-dialog .capture-viewer {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100dvh - 48px);
   margin: 0;
+  padding: 0;
   border: 0;
+  border-radius: inherit;
+  overflow: hidden;
 }
 .capture-dialog .capture-heading {
-  position: sticky;
-  top: -24px;
-  z-index: 1;
+  flex: 0 0 auto;
+  align-items: center;
   background: white;
-  padding: 12px 0;
+  padding: 8px 24px;
+  border-bottom: 1px solid #dce5df;
+}
+.capture-dialog .capture-heading h2 {
+  margin: 0;
+}
+.capture-dialog .capture-heading > button {
+  flex-shrink: 0;
+  padding: 6px;
+}
+.capture-body {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 24px 24px;
 }
 @media (max-width: 640px) {
   .capture-dialog {
     width: calc(100vw - 16px);
     max-height: calc(100dvh - 24px);
   }
-  .capture-dialog .capture-heading {
-    top: -16px;
+  .capture-dialog .capture-viewer {
+    max-height: calc(100dvh - 24px);
   }
+  .capture-dialog .capture-heading {
+    padding: 8px 16px;
+  }
+  .capture-body {
+    padding: 0 16px 16px;
+  }
+}
+
+.additional-observations-content {
+  padding: 0 24px 24px;
+  min-width: 0;
 }

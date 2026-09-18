@@ -13,10 +13,10 @@ from app.schemas.automation import (
 )
 from app.scraping import config as scraping
 from app.scraping.dispatcher import scrape_campaign
-from app.auto_labeling import config as labeling
-from app.auto_labeling.dispatcher import auto_label_campaign
+from app.scraping import config as labeling
+from app.scraping.dispatcher import auto_label_campaign
 from app.scraping.functions import scrape_demo_page
-from app.auto_labeling.functions import label_demo_page
+from app.scraping.labels import label_demo_page
 from app.services import source_catalog
 from app.services.source_catalog import load_sources, CatalogError
 from test_campaigns import client, create
@@ -260,12 +260,12 @@ def test_import_suggest_review_complete_compare(client):
     proposal = client.post(base + "/auto-label").json()
     assert proposal["is_demo"] and not proposal["reviewed"]
     assert client.get(base).json()["has_suggestions"]
-    assert client.get(base + "/features").json()["features"] is None
+    assert client.get(base + "/features").json()["features"]["source"] == "automatic"
     assert (
         client.get("/api/compare?product_category=current_account").json()["pages"][0][
             "features"
         ]
-        is None
+        is not None
     )
     values = {**proposal["values"], "tone_formality": 5, "tone_friendliness": None}
     reviewed = client.post(
@@ -488,7 +488,33 @@ def test_collected_content_available_in_campaign_detail(client):
     page = response.json()
     assert page["text"] and page["paragraphs"]
     assert page["source"]["bank"] == "ING"
-    assert client.get(f"/api/campaigns/{campaign_id}/features").json()["features"] is None
+    assert (
+        client.get(f"/api/campaigns/{campaign_id}/features").json()["labeling_status"]
+        == "In Progress"
+    )
     manual = create(client)
     assert client.get(f"/api/scraping/campaigns/{manual['id']}/content").json() is None
     assert client.get("/api/scraping/campaigns/999999/content").status_code == 404
+
+
+def test_scrape_label_failure_rolls_back_campaign(client, monkeypatch):
+    def fail(*args):
+        raise ValueError("Extraction failed")
+
+    monkeypatch.setattr("app.services.collection.auto_label_campaign", fail)
+    source = next(s for s in load_sources() if s.bank == "ING")
+    result = client.post(
+        "/api/scraping/run", json={"source_ids": [source.source_id]}
+    ).json()["results"][0]
+    assert result["status"] == "failed"
+    assert client.get("/api/campaigns").json() == []
+
+
+def test_scrape_demo_labels_available_without_second_action(client):
+    campaign_id = import_one(client)
+    data = client.get(f"/api/campaigns/{campaign_id}/features").json()
+    assert data["labeling_status"] == "In Progress"
+    assert data["features"]["source"] == "automatic"
+    assert data["features"]["tone_formality"] == 3
+    assert data["features"]["word_count"] > 0
+    assert client.get(f"/api/campaigns/{campaign_id}/suggestions").json() is None

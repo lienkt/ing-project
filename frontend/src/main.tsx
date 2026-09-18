@@ -130,10 +130,6 @@ function Layout() {
         >
           <Outlet />
         </main>
-        <footer>
-          <span></span>
-          <span>Observe with purpose. Evaluate with clarity.</span>
-        </footer>
       </div>
     </div>
   );

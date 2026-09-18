@@ -128,7 +128,9 @@ export default function Scraping() {
                 Clear
               </button>
               <button disabled={!selected.length} onClick={() => void run()}>
-                {running ? "Scraping…" : `Scrape Selected (${selected.length})`}
+                {running
+                  ? "Scraping & labeling…"
+                  : `Scrape & Label Selected (${selected.length})`}
               </button>
             </div>
             <div className="table-scroll">

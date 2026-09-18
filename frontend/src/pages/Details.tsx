@@ -1,22 +1,15 @@
 import { CaptureViewer } from "../components/CaptureViewer";
-import { FormEvent, useEffect, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import { ArrowLeft, ArrowRight, Camera, Save, Trash2 } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { ArrowLeft, Camera, Trash2 } from "lucide-react";
 import {
   Details,
   deleteCampaign,
   label,
   updateCampaignDetails,
 } from "../api/campaigns";
-import {
-  CampaignContext,
-  Loading,
-  Notice,
-  Status,
-  Steps,
-  useCampaign,
-} from "../components/shared";
-import { FeatureStatus } from "../components/FeatureControls";
+import { Loading, Notice, Steps, useCampaign } from "../components/shared";
+import { LabelEditor } from "./Label";
 const empty: Details = {
   campaign_name: null,
   headline: null,
@@ -38,6 +31,8 @@ const choices: Partial<Record<keyof Details, string[]>> = {
 };
 export default function DetailsPage() {
   const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const review = params.get("review") === "1";
   const [showCaptures, setShowCaptures] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const { id, campaign, setCampaign, error } = useCampaign();
@@ -59,20 +54,12 @@ export default function DetailsPage() {
     setDirty(true);
     setSuccess("");
   }
-  async function submit(e: FormEvent) {
-    e.preventDefault();
-    setSaving(true);
-    setSaveError("");
-    try {
-      setCampaign(await updateCampaignDetails(id, data));
-      setSuccess("Campaign details saved successfully. Ready to evaluate?");
-      setDirty(false);
-    } catch (e) {
-      setSaveError((e as Error).message);
-    } finally {
-      setSaving(false);
-    }
-  }
+  const saveObservations = useCallback(async () => {
+    if (!dirty) return;
+    const updated = await updateCampaignDetails(id, data);
+    setCampaign(updated);
+    setDirty(false);
+  }, [id, data, dirty, setCampaign]);
   async function remove() {
     if (
       !campaign ||
@@ -107,8 +94,10 @@ export default function DetailsPage() {
       <div className="page-heading">
         <div>
           <div className="eyebrow">OBSERVE THE COMMUNICATION</div>
-          <h1>Campaign details</h1>
-          <p>Capture what the campaign says, and how it says it.</p>
+          <h1>Campaign details & labels</h1>
+          <p>
+            Review the captured page, check the prefilled fields, and complete labeling.
+          </p>
         </div>
         <div className="campaign-header-actions">
           <button
@@ -118,7 +107,6 @@ export default function DetailsPage() {
           >
             <Camera size={18} /> View captures
           </button>
-          <Status value={campaign.status} />
           <button
             type="button"
             className="danger-link delete-icon"
@@ -144,36 +132,25 @@ export default function DetailsPage() {
         />
       )}
       <Steps current={2} id={id} />
-      <CampaignContext campaign={campaign} />
-      <section className="card form-card feature-progress">
-        <h2>Campaign Feature Framework</h2>
-        <FeatureStatus value={campaign.labeling_status} />
-        <p>Progress: {campaign.labeling_progress}%</p>
-        <progress
-          max={100}
-          value={campaign.labeling_progress}
-          aria-label="Feature labeling progress"
-        />
-        <p>
-          Last updated:{" "}
-          {campaign.labeling_updated_at
-            ? new Date(campaign.labeling_updated_at).toLocaleString()
-            : "Not started"}
-        </p>
-        <Link className="button" to={`/campaigns/${id}/label`}>
-          {campaign.labeling_status === "Completed"
-            ? "Edit Labeling"
-            : campaign.labeling_status === "In Progress"
-              ? "Continue Labeling"
-              : "Start Labeling"}
-        </Link>
-      </section>
       <Notice message={success} success />
       <Notice message={saveError} />
-      <form onSubmit={submit}>
-        <div className="card form-card">
+      <LabelEditor
+        key={`${id}:${review}`}
+        id={id}
+        review={review}
+        additionalDirty={dirty}
+        additionalTotal={Object.keys(empty).length}
+        additionalRecorded={
+          Object.keys(empty).filter((key) =>
+            Boolean(data[key as keyof Details]?.trim()),
+          ).length
+        }
+        saveAdditional={saveObservations}
+        onSavingChange={setSaving}
+      >
+        <div className="additional-observations-content">
           <div className="section-heading">
-            <h2>Message & content</h2>
+            <h3>Message & content</h3>
             <p>
               Review the source page and record your observations. All fields are
               optional.
@@ -220,7 +197,7 @@ export default function DetailsPage() {
             ))}
           </div>
           <div className="section-heading divided">
-            <h2>Communication style</h2>
+            <h3>Communication style</h3>
             <p>Describe the balance and tone of the campaign.</p>
           </div>
           <div className="form-grid">
@@ -250,39 +227,8 @@ export default function DetailsPage() {
               />
             </label>
           </div>
-          <div className="form-actions">
-            <span className="muted">
-              {dirty ? "You have unsaved changes" : "Your observations, in your words."}
-            </span>
-            <button disabled={saving || deleting}>
-              <Save size={16} />
-              {saving ? "Saving…" : "Save details"}
-            </button>
-          </div>
         </div>
-      </form>
-      <div className="next-step">
-        <div>
-          <h3>Compare this product category</h3>
-          <p>
-            {dirty
-              ? "Save your changes before continuing."
-              : "Compare labeled features with other pages in the same category."}
-          </p>
-        </div>
-        {dirty ? (
-          <button disabled>
-            Continue to comparison <ArrowRight size={16} />
-          </button>
-        ) : (
-          <Link
-            className="button"
-            to={`/compare?product_category=${encodeURIComponent(campaign.project)}`}
-          >
-            Continue to comparison <ArrowRight size={16} />
-          </Link>
-        )}
-      </div>
+      </LabelEditor>
     </>
   );
 }

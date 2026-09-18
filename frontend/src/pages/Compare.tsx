@@ -75,7 +75,7 @@ export default function Compare() {
     <>
       <div className="page-heading">
         <div>
-          <div className="eyebrow">DATASET → LABEL → COMPARE → INSIGHTS</div>
+          <div className="eyebrow">DATASET → LABEL → COMPARE</div>
           <h1>Compare Campaigns</h1>
           <p>Compare how banks communicate similar products.</p>
         </div>

@@ -77,11 +77,7 @@ export function CaptureViewer({
       >
         <header className="capture-heading">
           <div>
-            <span className="capture-eyebrow">
-              <Camera size={18} aria-hidden="true" /> PAGE CAPTURES
-            </span>
             <h2>{product}</h2>
-            <p>See the saved website screenshot, then explore its supporting text.</p>
           </div>
           <button
             className="secondary"
@@ -91,114 +87,141 @@ export function CaptureViewer({
             <X size={18} />
           </button>
         </header>
-        {loading && <p role="status">Loading captures…</p>}
-        {error && (
-          <div role="alert">
-            <p>{error}</p>
-            <button onClick={() => setRetry((n) => n + 1)}>Try again</button>
-          </div>
-        )}
-        {!loading && !error && !current && (
-          <div className="capture-empty">
-            <Camera size={32} />
-            <h3>No saved captures yet</h3>
-            <p>
-              Use Tools → Scraping to capture this product. Older imports may need to be
-              captured again.
-            </p>
-          </div>
-        )}
-        {current && (
-          <>
-            <div className="capture-toolbar">
-              <label>
-                Capture history · {captures.length} saved
-                <select value={selected} onChange={(e) => setSelected(e.target.value)}>
-                  {captures.map((c, i) => (
-                    <option key={c.id} value={c.id}>
-                      {i === 0 ? "Latest · " : ""}
-                      {new Date(c.page.scraped_at).toLocaleString()}
-                      {c.page.is_demo ? " · Demo" : ""}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              {current.has_screenshot && (
-                <a
-                  className="button"
-                  href={captureArtifactUrl(current.id, "screenshot.png")}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  <ExternalLink size={16} /> Open full-size screenshot
-                </a>
-              )}
+        <div
+          className="capture-body"
+          tabIndex={0}
+          role="region"
+          aria-label="Capture content"
+        >
+          {loading && <p role="status">Loading captures…</p>}
+          {error && (
+            <div role="alert">
+              <p>{error}</p>
+              <button onClick={() => setRetry((n) => n + 1)}>Try again</button>
             </div>
-            <p className="capture-caption">
-              Captured {new Date(current.page.scraped_at).toLocaleString()} · Saved
-              labels are unchanged when a new capture is added.
-            </p>
-            {current.has_screenshot ? (
-              <a
-                className="capture-preview"
-                href={captureArtifactUrl(current.id, "screenshot.png")}
-                target="_blank"
-                rel="noreferrer"
-                aria-label={`Open full-size screenshot of ${product}`}
-              >
-                <img
-                  key={current.id}
-                  src={captureArtifactUrl(current.id, "screenshot.png")}
-                  alt={`Saved website screenshot of ${product}`}
-                />
-                <span>Screenshot preview · Click to view the full page ↗</span>
-              </a>
-            ) : (
-              <div className="capture-empty">
-                <Camera size={30} />
-                <h3>No screenshot available</h3>
-                <p>
-                  {current.page.is_demo
-                    ? "This is synthetic demo content, not a captured website."
-                    : "This capture contains text only."}
-                </p>
-              </div>
-            )}
-            <div className="capture-supporting">
-            {([['Headings', current.page.headings], ['Paragraphs', current.page.paragraphs], ['Bullet items', current.page.bullets], ['Tables', current.page.tables]] as const).map(([name, items]) => (
-              <details key={`${current.id}-${name}`}><summary>{name} ({items?.length ?? 0} extracted)</summary>
-                <div className="capture-text">{items?.length ? items.map((text, i) => <p key={i}>{text}</p>) : <p>No items extracted.</p>}</div>
-              </details>
-            ))}
-
-              <details key={`${current.id}-text`}>
-                <summary>Extracted text</summary>
-                <p>
-                  This is the text collected from the page, separate from the
-                  screenshot.
-                </p>
-                <div className="capture-text">
-                  {current.page.text || "No text was extracted."}
-                </div>
-              </details>
-              <details key={`${current.id}-notes`}>
-                <summary>Capture notes & technical details</summary>
-                {current.page.warnings.map((w, i) => (
-                  <p key={i}>{w}</p>
-                ))}
+          )}
+          {!loading && !error && !current && (
+            <div className="capture-empty">
+              <Camera size={32} />
+              <h3>No saved captures yet</h3>
+              <p>
+                Use Tools → Scraping to capture this product. Older imports may need to
+                be captured again.
+              </p>
+            </div>
+          )}
+          {current && (
+            <>
+              <div className="capture-toolbar">
+                <label>
+                  Capture history · {captures.length} saved
+                  <select
+                    value={selected}
+                    onChange={(e) => setSelected(e.target.value)}
+                  >
+                    {captures.map((c, i) => (
+                      <option key={c.id} value={c.id}>
+                        {i === 0 ? "Latest · " : ""}
+                        {new Date(c.page.scraped_at).toLocaleString()}
+                        {c.page.is_demo ? " · Demo" : ""}
+                      </option>
+                    ))}
+                  </select>
+                </label>
                 {current.has_screenshot && (
                   <a
+                    className="button"
+                    href={captureArtifactUrl(current.id, "screenshot.png")}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <ExternalLink size={16} /> Open full-size screenshot
+                  </a>
+                )}
+                {current.has_screenshot && (
+                  <a
+                    className="button secondary"
                     href={captureArtifactUrl(current.id, "dom.json")}
                     target="_blank"
                     rel="noreferrer"
                   >
-                    View captured DOM (JSON) ↗
+                    <ExternalLink size={16} /> Open dom.json
                   </a>
                 )}
-              </details>
-            </div>
-          </>
-        )}
+              </div>
+              <p className="capture-caption">
+                Captured {new Date(current.page.scraped_at).toLocaleString()} · Saved
+                labels are unchanged when a new capture is added.
+              </p>
+              {current.has_screenshot ? (
+                <a
+                  className="capture-preview"
+                  href={captureArtifactUrl(current.id, "screenshot.png")}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label={`Open full-size screenshot of ${product}`}
+                >
+                  <img
+                    key={current.id}
+                    src={captureArtifactUrl(current.id, "screenshot.png")}
+                    alt={`Saved website screenshot of ${product}`}
+                  />
+                  <span>Screenshot preview · Click to view the full page ↗</span>
+                </a>
+              ) : (
+                <div className="capture-empty">
+                  <Camera size={30} />
+                  <h3>No screenshot available</h3>
+                  <p>
+                    {current.page.is_demo
+                      ? "This is synthetic demo content, not a captured website."
+                      : "This capture contains text only."}
+                  </p>
+                </div>
+              )}
+              <div className="capture-supporting">
+                {(
+                  [
+                    ["Headings", current.page.headings],
+                    ["Paragraphs", current.page.paragraphs],
+                    ["Bullet items", current.page.bullets],
+                    ["Tables", current.page.tables],
+                  ] as const
+                ).map(([name, items]) => (
+                  <details key={`${current.id}-${name}`}>
+                    <summary>
+                      {name} ({items?.length ?? 0} extracted)
+                    </summary>
+                    <div className="capture-text">
+                      {items?.length ? (
+                        items.map((text, i) => <p key={i}>{text}</p>)
+                      ) : (
+                        <p>No items extracted.</p>
+                      )}
+                    </div>
+                  </details>
+                ))}
+
+                <details key={`${current.id}-text`}>
+                  <summary>Extracted text</summary>
+                  <p>
+                    This is the text collected from the page, separate from the
+                    screenshot.
+                  </p>
+                  <div className="capture-text">
+                    {current.page.text || "No text was extracted."}
+                  </div>
+                </details>
+                <details key={`${current.id}-notes`}>
+                  <summary>Capture notes & technical details</summary>
+                  {current.page.warnings.map((w, i) => (
+                    <p key={i}>{w}</p>
+                  ))}
+                </details>
+              </div>
+            </>
+          )}
+        </div>
       </section>
     </dialog>,
     document.body,

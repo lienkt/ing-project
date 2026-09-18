@@ -6,7 +6,7 @@ from app.database.session import Base
 
 from app.schemas.automation import campaign_information, stored_page
 from app.scraping.dispatcher import scraping_support
-from app.auto_labeling.dispatcher import auto_label_support
+from app.scraping.dispatcher import auto_label_support
 from app.models.collection import SourceImport, FeatureProposal
 from app.models.features import CampaignFeature, FEATURE_FIELDS, missing_fields
 

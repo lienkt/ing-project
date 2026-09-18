@@ -2,7 +2,7 @@
 
 Use existing FeatureInput fields/enums. Omit unknown fields and the derived
 average_paragraph_length. Never write labels, set Completed, or replace analyst
-notes here. The existing review service handles suggestions and explicit saves.
+notes here. The collection service saves the automatic draft during scraping.
 """
 
 from app.schemas.automation import CampaignInformation, ScrapedPage, FeatureSuggestions
@@ -33,13 +33,6 @@ def label_demo_page(
     )
 
 
-def label_ing_current_account_lion_en(
-    campaign: CampaignInformation, scraped_data: ScrapedPage
-) -> FeatureSuggestions:
-    """TODO: teammate implements feature extraction. Keep unregistered until ready."""
-    raise NotImplementedError("ING Lion Account labeling is not implemented")
-
-
 def collected_feature_values(page: ScrapedPage) -> FeatureInput:
     """Measured values only; counts describe the captured text, not hidden content."""
     from app.scraping.functions import count_words
@@ -65,7 +58,11 @@ def label_ing_youth_account_en(
 ) -> FeatureSuggestions:
     """Rule-based text suggestions for the registered ING case; requires review."""
     from app.scraping.functions import count_words
-    from app.scraping.scrapping_pipeline import calculate_text_density, calculate_text_style
+    from app.scraping.scrapping_pipeline import (
+        calculate_text_density,
+        calculate_text_style,
+        calculate_information_complexity,
+    )
 
     values = collected_feature_values(scraped_data).model_dump(exclude_unset=True)
     words = values["word_count"]
@@ -73,7 +70,13 @@ def label_ing_youth_account_en(
     paragraphs = values["paragraph_count"]
     paragraph_average = (
         sum(count_words(p) for p in scraped_data.paragraphs) / paragraphs
-        if paragraphs else 0
+        if paragraphs
+        else 0
+    )
+    from app.scraping.config import DEFAULT_FINANCIAL_TERMS_EN
+
+    values["information_complexity"] = calculate_information_complexity(
+        scraped_data.text, words, headings, DEFAULT_FINANCIAL_TERMS_EN
     )
     values["text_style"] = calculate_text_style(words, paragraph_average, headings)
     if scraped_data.bullet_list_count is not None:
@@ -81,7 +84,8 @@ def label_ing_youth_account_en(
             words, headings, paragraphs, scraped_data.bullet_list_count
         )
     return FeatureSuggestions(
-        values=FeatureInput(**values), is_demo=False,
+        values=FeatureInput(**values),
+        is_demo=False,
         warnings=[
             "Rule-based suggestions, not AI analysis. Review text style and density before saving.",
             "Counts cover extracted content only. Hidden FAQ may be missing; images, CTA, tone and visual labels remain unset.",

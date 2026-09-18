@@ -17,7 +17,7 @@ from app.models.features import CampaignFeature
 from app.models.collection import SourceImport, FeatureProposal
 from app.schemas.automation import SourceDefinition
 from app.scraping.functions import scrape_demo_page
-from app.auto_labeling.functions import label_demo_page
+from app.scraping.labels import label_demo_page
 from app.schemas.campaign import CampaignCreate
 from app.schemas.features import FeatureInput
 

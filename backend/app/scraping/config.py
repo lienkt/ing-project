@@ -10,6 +10,7 @@ from collections.abc import Iterable
 from dataclasses import dataclass, field
 
 from app.schemas.automation import build_case_key
+from app.scraping.labels import label_demo_page, label_ing_youth_account_en
 from app.scraping.functions import scrape_demo_page, scrape_ing_youth_account_en
 
 # Explicit cases only. Unregistered combinations require manual collection.
@@ -150,3 +151,14 @@ class SiteConfig:
         if self.language not in vocabularies:
             raise ValueError("Configure financial_terms before scoring this language")
         return vocabularies[self.language]
+
+
+# Independent of scraping support: KBC collection works, KBC auto labeling does not.
+AUTO_LABEL_SUPPORT = {
+    build_case_key(
+        "ING", "Current Account", "ING Youth Account", "EN"
+    ): label_ing_youth_account_en,
+    build_case_key(
+        "ING", "Current Account", "ING example current account", "EN"
+    ): label_demo_page,
+}

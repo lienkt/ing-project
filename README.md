@@ -144,9 +144,9 @@ To switch back, set `DATA_MODE=demo` and restart the backend. Existing records i
 | Frontend cannot reach the API        | Keep the backend running on port 8000; check `VITE_API_URL`                              |
 | Wrong data appears                   | Check `DATA_MODE`, restart the backend, and refresh the browser                          |
 
-## Try source import and Auto Label
+## Try scraping and labeling
 
-In demo mode, open **Tools → Scraping**, check which sources are **Auto supported**, select sources, and click **Scrape Selected**. The ING example supports Auto Label after import; KBC requires manual labeling, and Revolut requires manual collection. Unsupported cases are reported individually. Review any generated suggestions before saving or completing labeling. Demo results are placeholders, not collected evidence.
+Open **Tools → Scraping**, select supported products, and click **Scrape & Label Selected**. Scraping saves supported fields immediately as an In Progress draft. Open the campaign to review and finish labeling. Unknown fields remain unset. Demo results are placeholders, not collected evidence.
 
 For an existing installation, apply `DATA_MODE=demo alembic upgrade head` from `backend/` before starting the updated app. See [collection workflow](docs/collection-workflow.md) for details and developer handoff.
 

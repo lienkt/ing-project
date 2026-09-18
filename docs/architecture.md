@@ -19,7 +19,6 @@ React pages → typed API clients → FastAPI routes → services → SQLAlchemy
 | `backend/app/schemas/`            | Request and response validation                               |
 | `backend/app/services/`           | Business rules and persistence operations                     |
 | `backend/app/scraping/`           | Explicit scraping support config and functions                |
-| `backend/app/auto_labeling/`      | Explicit labeling support config and functions                |
 | `backend/app/models/`             | SQLAlchemy table mappings and relationships                   |
 | `backend/app/core/config.py`      | Environment and real/demo connection selection                |
 | `backend/app/database/session.py` | Engine and per-request sessions                               |

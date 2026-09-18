@@ -47,10 +47,6 @@ export const scrapeSources = (source_ids: string[]) =>
   request<{ results: ImportResult[] }>("/scraping/run", "POST", {
     source_ids,
   });
-export const autoLabel = (id: number) =>
-  request<
-    Proposal | { status: "manual_required"; supported: boolean; message: string }
-  >(`/campaigns/${id}/auto-label`, "POST");
 export const getSuggestions = (id: string) =>
   request<Proposal | null>(`/campaigns/${id}/suggestions`);
 export const reviewSuggestions = (id: string, token: string, data: FeatureInput) => {
