@@ -55,6 +55,14 @@ DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/campaign_db
 DEMO_DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/campaign_demo_db
 ```
 
+For real webpage scraping, install Chromium after installing the backend dependencies:
+
+```bash
+python -m playwright install chromium
+```
+
+Demo scraping does not launch a browser.
+
 ### 4. Load demo data and start the backend
 
 Still in `backend/`, with `.venv` activated:

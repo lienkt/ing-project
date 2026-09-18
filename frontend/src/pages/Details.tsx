@@ -1,6 +1,7 @@
+import { CaptureViewer } from "../components/CaptureViewer";
 import { FormEvent, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { ArrowLeft, ArrowRight, Save, Trash2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Camera, Save, Trash2 } from "lucide-react";
 import {
   Details,
   deleteCampaign,
@@ -37,6 +38,7 @@ const choices: Partial<Record<keyof Details, string[]>> = {
 };
 export default function DetailsPage() {
   const navigate = useNavigate();
+  const [showCaptures, setShowCaptures] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const { id, campaign, setCampaign, error } = useCampaign();
   const location = useLocation();
@@ -109,6 +111,13 @@ export default function DetailsPage() {
           <p>Capture what the campaign says, and how it says it.</p>
         </div>
         <div className="campaign-header-actions">
+          <button
+            type="button"
+            className="secondary capture-table-button"
+            onClick={() => setShowCaptures(true)}
+          >
+            <Camera size={18} /> View captures
+          </button>
           <Status value={campaign.status} />
           <button
             type="button"
@@ -123,6 +132,17 @@ export default function DetailsPage() {
           </button>
         </div>
       </div>
+      {showCaptures && (
+        <CaptureViewer
+          campaignId={campaign.id}
+          product={
+            campaign.collection?.product_name ||
+            campaign.details?.campaign_name ||
+            campaign.bank_name
+          }
+          onClose={() => setShowCaptures(false)}
+        />
+      )}
       <Steps current={2} id={id} />
       <CampaignContext campaign={campaign} />
       <section className="card form-card feature-progress">

@@ -2,17 +2,18 @@
 
 from app.core.config import settings
 from app.schemas.automation import (
-    build_case_key,
-    SourceDefinition,
-    ScrapedPage,
     ManualRequired,
+    ScrapedPage,
+    SourceDefinition,
+    build_case_key,
 )
-from app.scraping.functions import scrape_demo_page
 from app.scraping import config
+from app.scraping.functions import scrape_demo_page
 
 
-def scraping_support(campaign):
-    function = config.SCRAPING_SUPPORT.get(
+def _scraping_function(campaign):
+    """Use the same exact case lookup for availability and execution."""
+    return config.SCRAPING_SUPPORT.get(
         build_case_key(
             campaign.bank,
             campaign.product_category,
@@ -20,6 +21,10 @@ def scraping_support(campaign):
             campaign.language,
         )
     )
+
+
+def scraping_support(campaign):
+    function = _scraping_function(campaign)
     demo = function is scrape_demo_page
     available = function is not None and (not demo or settings.data_mode == "demo")
     return {
@@ -35,14 +40,7 @@ def scraping_support(campaign):
 
 
 def scrape_campaign(campaign: SourceDefinition) -> ScrapedPage | ManualRequired:
-    function = config.SCRAPING_SUPPORT.get(
-        build_case_key(
-            campaign.bank,
-            campaign.product_category,
-            campaign.product_name,
-            campaign.language,
-        )
-    )
+    function = _scraping_function(campaign)
     if function is None:
         return ManualRequired(
             message="Automatic scraping is not available. Manual scraping required."

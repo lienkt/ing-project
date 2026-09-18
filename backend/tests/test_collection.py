@@ -138,7 +138,7 @@ def test_catalog_is_not_dataset_and_support_is_independent(client):
                 "/api/scraping/sources?bank=ing&product_category=current_account"
             ).json()["sources"]
         )
-        == 1
+        == 2
     )
     assert client.get("/api/campaigns").json() == []
     kbc_id = import_one(client, "KBC")
@@ -152,7 +152,11 @@ def test_catalog_is_not_dataset_and_support_is_independent(client):
 
 
 def test_mixed_batch_success_failure_unsupported_unknown(client, monkeypatch):
-    sources = [s.model_copy(update={"is_example": False}) for s in load_sources()]
+    sources = [
+        s.model_copy(update={"is_example": False})
+        for s in load_sources()
+        if s.is_example
+    ]
     monkeypatch.setattr(source_catalog, "load_sources", lambda: sources)
 
     def fail(case):
@@ -347,7 +351,11 @@ def test_replaced_proposal_token_rejected(client):
 
 
 def test_invalid_function_output_isolated(client, monkeypatch):
-    sources = [s.model_copy(update={"is_example": False}) for s in load_sources()]
+    sources = [
+        s.model_copy(update={"is_example": False})
+        for s in load_sources()
+        if s.is_example
+    ]
     monkeypatch.setattr(source_catalog, "load_sources", lambda: sources)
     source = sources[0]
 
@@ -381,7 +389,11 @@ def test_demo_functions_block_real_database(client, monkeypatch):
     monkeypatch.setattr(settings, "data_mode", "real")
     result = client.post(
         "/api/scraping/run",
-        json={"source_ids": [load_sources()[1].source_id, load_sources()[2].source_id]},
+        json={
+            "source_ids": [
+                s.source_id for s in load_sources() if s.bank in {"KBC", "Revolut"}
+            ]
+        },
     ).json()["results"]
     assert [r["status"] for r in result] == ["failed", "manual_required"]
     assert (
@@ -417,3 +429,66 @@ def test_migration_matches_models(client):
     from alembic.config import Config
 
     command.check(Config("alembic.ini"))
+
+
+def test_recapture_preserves_campaign_and_records_history(client):
+    campaign_id = import_one(client)
+    source = next(s for s in load_sources() if s.bank == "ING")
+    client.put(
+        f"/api/campaigns/{campaign_id}/features",
+        json={"word_count": 999, "labeling_notes": "Keep reviewed labels"},
+    )
+    before = client.get(f"/api/campaigns/{campaign_id}/features").json()["features"]
+    history_url = f"/api/scraping/campaigns/{campaign_id}/captures"
+    first = client.get(history_url).json()
+    assert len(first) == 1
+    response = client.post(
+        "/api/scraping/run", json={"source_ids": [source.source_id], "recapture": True}
+    )
+    result = response.json()["results"][0]
+    assert result["status"] == "success"
+    assert result["campaign_id"] == campaign_id
+    history = client.get(history_url).json()
+    assert len(history) == 2
+    assert len({row["id"] for row in history}) == 2
+    assert next(row for row in history if row["id"] == first[0]["id"]) == first[0]
+    assert (
+        client.get(f"/api/campaigns/{campaign_id}/features").json()["features"]
+        == before
+    )
+    assert (
+        client.get(
+            f"/api/scraping/captures/{first[0]['id']}/screenshot.png"
+        ).status_code
+        == 404
+    )
+
+
+def test_failed_recapture_keeps_previous_evidence(client, monkeypatch):
+    campaign_id = import_one(client)
+    source = next(s for s in load_sources() if s.bank == "ING")
+    history_url = f"/api/scraping/campaigns/{campaign_id}/captures"
+    before = client.get(history_url).json()
+
+    def fail(source):
+        raise ValueError("Capture unavailable")
+
+    monkeypatch.setattr("app.services.collection.scrape_campaign", fail)
+    result = client.post(
+        "/api/scraping/run", json={"source_ids": [source.source_id], "recapture": True}
+    ).json()["results"][0]
+    assert result["status"] == "failed"
+    assert client.get(history_url).json() == before
+
+
+def test_collected_content_available_in_campaign_detail(client):
+    campaign_id = import_one(client)
+    response = client.get(f"/api/scraping/campaigns/{campaign_id}/content")
+    assert response.status_code == 200
+    page = response.json()
+    assert page["text"] and page["paragraphs"]
+    assert page["source"]["bank"] == "ING"
+    assert client.get(f"/api/campaigns/{campaign_id}/features").json()["features"] is None
+    manual = create(client)
+    assert client.get(f"/api/scraping/campaigns/{manual['id']}/content").json() is None
+    assert client.get("/api/scraping/campaigns/999999/content").status_code == 404
