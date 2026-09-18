@@ -315,30 +315,6 @@ export default function Dashboard() {
                                 : "Manual only"}
                           </small>
                         </div>
-                        {c.labeling_status !== "Completed" &&
-                          (c.has_suggestions ? (
-                            <div className="collection-actions">
-                              <Link to={`/campaigns/${c.id}/label?review=1`}>
-                                Review suggestions
-                              </Link>
-                            </div>
-                          ) : (
-                            <div className="collection-actions">
-                              {c.automation.auto_labeling.available && (
-                                <button
-                                  type="button"
-                                  className="secondary"
-                                  disabled={labeling !== null}
-                                  onClick={() => void suggest(c)}
-                                >
-                                  {labeling === c.id ? "Generating…" : "Auto Label"}
-                                </button>
-                              )}
-                              <Link to={`/campaigns/${c.id}/label`}>
-                                Label Manually
-                              </Link>
-                            </div>
-                          ))}
                       </td>
                       <td>
                         <div className="row-actions">

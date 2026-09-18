@@ -165,7 +165,7 @@ export default function DetailsPage() {
             ? "Edit Labeling"
             : campaign.labeling_status === "In Progress"
               ? "Continue Labeling"
-              : "Start Manual Labeling"}
+              : "Start Labeling"}
         </Link>
       </section>
       <Notice message={success} success />

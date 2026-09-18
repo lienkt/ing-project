@@ -108,13 +108,6 @@ export function LabelingStatusHelp() {
                 </dt>
                 <dd>No labels saved yet.</dd>
               </div>
-              <div className="status-help-item status-help-auto">
-                <dt>
-                  <Sparkles size={18} aria-hidden="true" />
-                  Auto Suggested
-                </dt>
-                <dd>Suggestions are ready for your review. Not saved as labels yet.</dd>
-              </div>
               <div className="status-help-item status-help-draft">
                 <dt>
                   <PencilLine size={18} aria-hidden="true" />
