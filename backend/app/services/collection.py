@@ -9,10 +9,10 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from app.core.config import settings
 from app.models.campaign import Campaign
-from app.models.collection import SourceImport, FeatureProposal
+from app.models.collection import SourceImport, FeatureProposal, PageCapture
 from app.schemas.automation import ManualRequired, campaign_information, stored_page
 from app.scraping.dispatcher import scrape_campaign, scraping_support
-from app.auto_labeling.dispatcher import auto_label_campaign
+from app.scraping.dispatcher import auto_label_campaign
 from app.schemas.features import FeatureRead
 from app.services.campaigns import get_campaign, validate_project
 from app.services.features import locked_campaign, save_features
@@ -37,7 +37,7 @@ def allow_engine(is_demo):
         )
 
 
-def scrape_batch(db, sources, source_ids):
+def scrape_batch(db, sources, source_ids, recapture=False):
     results = []
     for source_id in dict.fromkeys(source_ids):
         source = find_source(sources, source_id)
@@ -61,7 +61,7 @@ def scrape_batch(db, sources, source_ids):
         record = db.get(SourceImport, source_id) or db.scalar(
             select(SourceImport).where(SourceImport.source_url == identity)
         )
-        if record and record.campaign_id:
+        if record and record.campaign_id and not recapture:
             results.append(
                 dict(
                     source_id=source_id,
@@ -80,7 +80,7 @@ def scrape_batch(db, sources, source_ids):
             ),
             None,
         )
-        if existing:
+        if existing and not recapture:
             results.append(
                 dict(
                     source_id=source_id,
@@ -99,7 +99,7 @@ def scrape_batch(db, sources, source_ids):
             if not page.success:
                 raise ValueError(page.error or "Scraper reported failure")
             validate_project(db, source.product_category)
-            campaign = Campaign(
+            campaign = existing or Campaign(
                 bank_name=source.bank,
                 project=source.product_category,
                 campaign_url=str(source.url),
@@ -113,9 +113,50 @@ def scrape_batch(db, sources, source_ids):
             record.status = "Scraped"
             record.engine = "demo" if page.is_demo else "configured"
             record.is_demo = page.is_demo
+            # Preserve legacy evidence on the first explicit recapture.
+            if record.page and not db.scalar(
+                select(PageCapture.id)
+                .where(PageCapture.campaign_id == campaign.id)
+                .limit(1)
+            ):
+                db.add(
+                    PageCapture(
+                        id=str(uuid4()), campaign_id=campaign.id, page=record.page
+                    )
+                )
+            capture_id = str(uuid4())
+            page.metadata["capture_id"] = capture_id
             record.page = page.model_dump(mode="json")
+            db.add(
+                PageCapture(id=capture_id, campaign_id=campaign.id, page=record.page)
+            )
+            # Proposals based on the previous evidence must be regenerated.
+            proposal = db.get(FeatureProposal, campaign.id)
+            if proposal:
+                db.delete(proposal)
             record.error = None
             record.attempted_at = datetime.now(timezone.utc)
+            # Extract labels in the same transaction as the captured page.
+            from app.scraping.labels import collected_feature_values
+            from app.models.features import CampaignFeature
+
+            suggestions = auto_label_campaign(source, page)
+            values = collected_feature_values(page).model_dump(exclude_unset=True)
+            if not isinstance(suggestions, ManualRequired):
+                allow_engine(suggestions.is_demo)
+                values.update(suggestions.values.model_dump(exclude_unset=True))
+            if campaign.features is None:
+                campaign.features = CampaignFeature(
+                    **values,
+                    source="automatic",
+                    labeling_status="In Progress",
+                )
+            elif (
+                campaign.features.source == "automatic"
+                and campaign.features.labeling_status != "Completed"
+            ):
+                for key, value in values.items():
+                    setattr(campaign.features, key, value)
             campaign_id = campaign.id
             db.commit()
             results.append(

@@ -7,7 +7,6 @@ Start with the [project README](../README.md) for complete local installation, d
 ```text
 backend/app/
 ├── scraping/           # config.py + dispatcher.py + functions.py; bank scripts
-├── auto_labeling/      # config.py + dispatcher.py + functions.py
 └── schemas/automation.py  # Shared types and case normalization
 ```
 

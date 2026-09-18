@@ -71,4 +71,54 @@ def sources(db: DB, bank: str | None = None, product_category: str | None = None
 
 @router.post("/run", response_model=BatchResponse)
 def run(data: ScrapeInput, db: DB):
-    return collection.scrape_batch(db, catalog(), data.source_ids)
+    return collection.scrape_batch(
+        db, catalog(), data.source_ids, recapture=data.recapture
+    )
+
+
+@router.get("/campaigns/{campaign_id}/captures")
+def captures(campaign_id: int, db: DB):
+    from app.models.collection import PageCapture
+
+    collection.get_campaign(db, campaign_id)
+    rows = db.scalars(
+        select(PageCapture)
+        .where(PageCapture.campaign_id == campaign_id)
+        .order_by(PageCapture.created_at.desc())
+    )
+    return [
+        {
+            "id": row.id,
+            "created_at": row.created_at,
+            "page": row.page,
+            "has_screenshot": bool(row.page.get("metadata", {}).get("artifact_id")),
+        }
+        for row in rows
+    ]
+
+
+@router.get("/captures/{capture_id}/{artifact}")
+def capture_artifact(capture_id: str, artifact: str, db: DB):
+    from fastapi.responses import FileResponse
+    from app.models.collection import PageCapture
+    from app.scraping.capture import artifact_path
+
+    row = db.get(PageCapture, capture_id)
+    if not row or artifact not in {"screenshot.png", "dom.json"}:
+        raise HTTPException(404, "Capture artifact not found")
+    artifact_id = row.page.get("metadata", {}).get("artifact_id")
+    if not artifact_id:
+        raise HTTPException(404, "This capture has no browser artifacts")
+    path = artifact_path(artifact_id, artifact)
+    if not path.is_file():
+        raise HTTPException(404, "Capture file is missing")
+    return FileResponse(
+        path, media_type="image/png" if artifact.endswith("png") else "application/json"
+    )
+
+
+@router.get("/campaigns/{campaign_id}/content")
+def scraped_content(campaign_id: int, db: DB):
+    """Latest collected content, including imports predating capture history."""
+    campaign = collection.get_campaign(db, campaign_id)
+    return campaign.source_import.page if campaign.source_import else None

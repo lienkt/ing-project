@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { Link, useParams, useSearchParams } from "react-router-dom";
+import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
+import { Link, Navigate, useParams, useSearchParams } from "react-router-dom";
+import { Check } from "lucide-react";
 import { label } from "../api/campaigns";
 import {
   completeFeatures,
@@ -18,18 +19,36 @@ import {
   FeatureStatus,
   RatingScale,
 } from "../components/FeatureControls";
-import { Loading, Notice, Steps } from "../components/shared";
+import { Loading, Notice } from "../components/shared";
 
 import { getSuggestions, Proposal, reviewSuggestions } from "../api/collection";
 
 export default function LabelPage() {
   const { id = "" } = useParams();
   const [params] = useSearchParams();
-  const review = params.get("review") === "1";
-  return <LabelEditor key={`${id}:${review}`} id={id} review={review} />;
+  const query = params.toString();
+  return <Navigate replace to={`/campaigns/${id}${query ? `?${query}` : ""}`} />;
 }
 
-function LabelEditor({ id, review }: { id: string; review: boolean }) {
+export function LabelEditor({
+  id,
+  review,
+  children,
+  additionalDirty = false,
+  additionalRecorded = 0,
+  additionalTotal = 0,
+  saveAdditional,
+  onSavingChange,
+}: {
+  id: string;
+  review: boolean;
+  children?: ReactNode;
+  additionalDirty?: boolean;
+  additionalRecorded?: number;
+  additionalTotal?: number;
+  saveAdditional?: () => Promise<void>;
+  onSavingChange?: (saving: boolean) => void;
+}) {
   const [proposal, setProposal] = useState<Proposal | null>(null);
   const [reviewPending, setReviewPending] = useState(review);
   const [activeSection, setActiveSection] = useState(0);
@@ -148,8 +167,10 @@ function LabelEditor({ id, review }: { id: string; review: boolean }) {
       )
         return;
       setSaving(true);
+      onSavingChange?.(true);
       setError("");
       try {
+        await saveAdditional?.();
         let result = response;
         if (reviewPending && proposal) {
           result = await reviewSuggestions(id, proposal.token, data);
@@ -174,25 +195,38 @@ function LabelEditor({ id, review }: { id: string; review: boolean }) {
         setError(`Error saving: ${(e as Error).message}`);
       } finally {
         setSaving(false);
+        onSavingChange?.(false);
       }
     },
-    [data, dirty, id, response, saving, storageKey, reviewPending, proposal],
+    [
+      data,
+      dirty,
+      id,
+      response,
+      saving,
+      storageKey,
+      reviewPending,
+      proposal,
+      saveAdditional,
+      onSavingChange,
+    ],
   );
 
   useEffect(() => {
-    if (reviewPending || !dirty || saving || error || !response) return;
+    if (reviewPending || (!dirty && !additionalDirty) || saving || error || !response)
+      return;
     const timer = window.setTimeout(() => {
       void save();
     }, 1200);
     return () => window.clearTimeout(timer);
-  }, [dirty, saving, error, response, save, reviewPending]);
+  }, [dirty, additionalDirty, saving, error, response, save, reviewPending]);
 
   if (loadError)
     return (
       <>
         <Notice message={loadError} />
         <button onClick={() => setRetry((v) => v + 1)}>Try again</button>{" "}
-        <Link to={`/campaigns/${id}/label`}>Manual labeling</Link> ·{" "}
+        <Link to={`/campaigns/${id}`}>Manual labeling</Link> ·{" "}
         <Link to="/">All campaigns</Link>
       </>
     );
@@ -200,17 +234,20 @@ function LabelEditor({ id, review }: { id: string; review: boolean }) {
   const campaign = response.campaign;
   const filled = featureFields.filter((f) => isFilled(data[f.key])).length;
   const progress = Math.round((100 * filled) / featureFields.length);
-  const sections = [...new Set(featureFields.map((f) => f.section))];
+  const featureSections = [...new Set(featureFields.map((f) => f.section))];
+  const sections = children
+    ? [...featureSections, "Additional campaign observations"]
+    : featureSections;
   return (
     <>
-      <Link className="back" to={`/campaigns/${id}`}>
-        ← Campaign details
-      </Link>
-      <Steps current={2} id={id} />
       <div className="page-heading">
         <div>
-          <h1>Campaign Feature Framework</h1>
-          <p>{reviewPending ? "Review automatic suggestions" : "Manual Labeling"}</p>
+          <h2>Campaign labels</h2>
+          <p>
+            {reviewPending
+              ? "Review automatic suggestions"
+              : "Review & complete labels"}
+          </p>
         </div>
         <FeatureStatus value={dirty ? "In Progress" : response.labeling_status} />
       </div>
@@ -266,6 +303,12 @@ function LabelEditor({ id, review }: { id: string; review: boolean }) {
           </p>
         </details>
       </section>
+      {response.features?.source === "automatic" && (
+        <div className="notice" role="note">
+          Supported fields were filled during scraping. Review them and complete the
+          remaining fields.
+        </div>
+      )}
       {campaign.collection?.is_demo && (
         <div className="notice" role="note">
           Demo imported content — not collected website evidence.
@@ -312,10 +355,8 @@ function LabelEditor({ id, review }: { id: string; review: boolean }) {
             </>
           ) : (
             <p>
-              <Link to={`/campaigns/${id}/label?review=1`}>
-                Review pending suggestions
-              </Link>
-              . Manual editing does not apply them.
+              <Link to={`/campaigns/${id}?review=1`}>Review pending suggestions</Link>.
+              Manual editing does not apply them.
             </p>
           )}
         </section>
@@ -332,7 +373,11 @@ function LabelEditor({ id, review }: { id: string; review: boolean }) {
           <nav className="label-section-nav" aria-label="Feature sections">
             {sections.map((section, index) => {
               const fields = featureFields.filter((field) => field.section === section);
-              const done = fields.filter((field) => isFilled(data[field.key])).length;
+              const additional = index === featureSections.length;
+              const total = additional ? additionalTotal : fields.length;
+              const done = additional
+                ? additionalRecorded
+                : fields.filter((field) => isFilled(data[field.key])).length;
               return (
                 <button
                   key={section}
@@ -342,11 +387,22 @@ function LabelEditor({ id, review }: { id: string; review: boolean }) {
                   aria-controls="active-label-section"
                   onClick={() => goToSection(index)}
                 >
-                  <span>{done === fields.length ? "✓" : index + 1}</span>
-                  <span>
-                    {section}
+                  <span className="label-section-number">{index + 1}</span>
+                  <span className="label-section-description">
+                    <span className="label-section-title">
+                      <span>{section}</span>
+                      {total > 0 && done === total && (
+                        <span
+                          className="label-section-check"
+                          role="img"
+                          aria-label="All fields recorded"
+                        >
+                          <Check size={11} strokeWidth={2.5} aria-hidden="true" />
+                        </span>
+                      )}
+                    </span>
                     <small>
-                      {done}/{fields.length} recorded
+                      {done}/{total} recorded
                     </small>
                   </span>
                 </button>
@@ -357,7 +413,11 @@ function LabelEditor({ id, review }: { id: string; review: boolean }) {
             {sections.map((section, i) => {
               if (i !== activeSection) return null;
               const fields = featureFields.filter((f) => f.section === section);
-              const done = fields.filter((f) => isFilled(data[f.key])).length;
+              const additional = i === featureSections.length;
+              const total = additional ? additionalTotal : fields.length;
+              const done = additional
+                ? additionalRecorded
+                : fields.filter((f) => isFilled(data[f.key])).length;
               return (
                 <section
                   id="active-label-section"
@@ -373,9 +433,10 @@ function LabelEditor({ id, review }: { id: string; review: boolean }) {
                       {section}
                     </h2>
                     <p>
-                      {done}/{fields.length} fields recorded
+                      {done}/{total} fields recorded{additional ? " · Optional" : ""}
                     </p>
                   </header>
+                  {additional && children}
                   <div className="form-grid">
                     {fields.map((field) => {
                       const value = data[field.key];
@@ -504,29 +565,30 @@ function LabelEditor({ id, review }: { id: string; review: boolean }) {
                 />
               </label>
             </details>
-            <div className="section-pagination">
-              <button
-                type="button"
-                className="secondary"
-                disabled={activeSection === 0}
-                onClick={() => goToSection(activeSection - 1)}
-              >
-                ← Previous
-              </button>
-              <span>
-                {activeSection + 1} / {sections.length}
-              </span>
-              <button
-                type="button"
-                className="secondary"
-                disabled={activeSection === sections.length - 1}
-                onClick={() => goToSection(activeSection + 1)}
-              >
-                Next →
-              </button>
-            </div>
           </fieldset>
         </div>
+        <nav className="section-pagination" aria-label="Label section pagination">
+          <button
+            type="button"
+            className="secondary"
+            disabled={saving || activeSection === 0}
+            onClick={() => goToSection(activeSection - 1)}
+          >
+            ← Previous
+          </button>
+          <span>
+            {activeSection + 1} / {sections.length}
+          </span>
+          <button
+            type="button"
+            className="secondary"
+            disabled={saving || activeSection === sections.length - 1}
+            onClick={() => goToSection(activeSection + 1)}
+          >
+            Next →
+          </button>
+        </nav>
+
         <div className="card form-card labeling-actions">
           <span role="status">
             {saving
@@ -535,7 +597,7 @@ function LabelEditor({ id, review }: { id: string; review: boolean }) {
                 ? "Save failed"
                 : reviewPending
                   ? "Suggestions awaiting review"
-                  : dirty
+                  : dirty || additionalDirty
                     ? "Changes pending…"
                     : "Saved ✓"}
           </span>
@@ -554,12 +616,6 @@ function LabelEditor({ id, review }: { id: string; review: boolean }) {
           >
             Complete Labeling
           </button>
-          <Link
-            to={`/compare?product_category=${encodeURIComponent(campaign.project)}`}
-          >
-            Compare this category
-          </Link>
-          <Link to="/">Dataset</Link>
         </div>
       </form>
     </>

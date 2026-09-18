@@ -83,6 +83,10 @@ class ScrapedPage(Schema):
     source: SourceDefinition
     title: str
     text: str
+    headline: str | None = None
+    bullets: list[str] = Field(default_factory=list)
+    tables: list[str] = Field(default_factory=list)
+    bullet_list_count: int | None = Field(default=None, ge=0)
     headings: list[str] = Field(default_factory=list)
     paragraphs: list[str] = Field(default_factory=list)
     images: list[str] = Field(default_factory=list)

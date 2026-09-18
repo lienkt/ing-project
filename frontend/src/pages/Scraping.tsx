@@ -1,3 +1,4 @@
+import { CaptureViewer } from "../components/CaptureViewer";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Catalog, getSources, ImportResult, scrapeSources } from "../api/collection";
@@ -5,6 +6,8 @@ import { label } from "../api/campaigns";
 import { Loading, Notice } from "../components/shared";
 
 export default function Scraping() {
+  const [captureId, setCaptureId] = useState<number | null>(null);
+  const [captureProduct, setCaptureProduct] = useState("");
   const [catalog, setCatalog] = useState<Catalog | null>(null);
   const [error, setError] = useState("");
   const [bank, setBank] = useState("");
@@ -58,6 +61,14 @@ export default function Scraping() {
           <p>Select pages to add to Dataset.</p>
         </div>
       </div>
+      {captureId !== null && (
+        <CaptureViewer
+          key={captureId}
+          campaignId={captureId}
+          product={captureProduct}
+          onClose={() => setCaptureId(null)}
+        />
+      )}
       <Notice message={error} />
       {error && (
         <button className="secondary" onClick={() => setRetry((v) => v + 1)}>
@@ -117,7 +128,9 @@ export default function Scraping() {
                 Clear
               </button>
               <button disabled={!selected.length} onClick={() => void run()}>
-                {running ? "Scraping…" : `Scrape Selected (${selected.length})`}
+                {running
+                  ? "Scraping & labeling…"
+                  : `Scrape & Label Selected (${selected.length})`}
               </button>
             </div>
             <div className="table-scroll">
@@ -201,6 +214,15 @@ export default function Scraping() {
                             <Link to={`/campaigns/${source.campaign_id}`}>
                               View campaign →
                             </Link>
+                            <button
+                              className="secondary"
+                              onClick={() => {
+                                setCaptureId(source.campaign_id!);
+                                setCaptureProduct(source.product_name);
+                              }}
+                            >
+                              View captures
+                            </button>
                           </small>
                         )}
                       </td>
@@ -226,7 +248,7 @@ export default function Scraping() {
                 </strong>
                 :{" "}
                 {result.status === "success"
-                  ? "Added to Dataset"
+                  ? "Capture saved in Dataset"
                   : result.status === "existing"
                     ? "Already in Dataset — skipped"
                     : result.status === "manual_required"

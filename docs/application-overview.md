@@ -74,7 +74,7 @@ The sidebar contains **Dataset**, **Compare**, **Tools → Scraping**, and **Set
 | `/banks/new`              | Manage bank options                                            |
 | `/projects/new`           | Manage category options                                        |
 
-Open a campaign by clicking its bank name in Dataset, then enter labeling. Dataset's Actions column contains Delete. Unfinished rows offer Auto Label only when backend support and scraped input allow it; otherwise use Label Manually. Existing proposals can be opened with Review suggestions. Completed rows show neither. Manual labeling is available inside the campaign. Campaign options expose secondary editing and evaluation tasks. Insights is a section within comparison, not a separate analysis page.
+Open a campaign by clicking its bank name in Dataset, where the labeling form is displayed directly. Dataset's Actions column contains Delete. Scraping prefills supported fields in an In Progress draft. Review and complete them inside the campaign. Manual labeling is available inside the campaign. Additional campaign observations are collapsed below the labeling form. Insights is a section within comparison, not a separate analysis page.
 
 ## Data and review status
 

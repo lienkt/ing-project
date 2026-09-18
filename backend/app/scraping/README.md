@@ -1,46 +1,46 @@
-# Scraping: Add a Supported Case
+# Scraping
 
-Open [config.py](config.py). `SCRAPING_SUPPORT` is the complete list of supported cases. Missing combination = manual scraping required. No default scraper runs.
+## App flow
 
-## Two steps
+`Scrape & Label Selected → registered scraper → labels.py → saved feature draft`
 
-1. Implement and test `scrape_ing_current_account_lion_en(campaign)` in [functions.py](functions.py), or another clearly named function in that file.
-2. Import it in `config.py` and add:
+The existing collection service saves the returned `ScrapedPage` snapshot, creates the campaign, and prefills supported labels in one transaction. No scraper writes to the database. One failed source does not stop the batch. Existing campaigns are not overwritten.
 
-   ```python
-   SCRAPING_SUPPORT = {
-       # Keep other finished entries here.
-       build_case_key(
-           "ING", "Current Account", "ING Lion Account", "EN"
-       ): scrape_ing_current_account_lion_en,
-   }
-   ```
+- `config.py`: exact bank/category/product/language → function mapping, browser settings, site configuration, filters and scoring vocabulary.
+- `dispatcher.py`: checks registration and demo provenance, calls the function, validates its output.
+- `labels.py`: measured feature values and registered rule-based label extractors.
+- `functions.py`: synchronous app adapter, browser lifecycle, page loading, cleaning, extraction, 120-second collection timeout and snapshot conversion.
+- `scrapping_pipeline.py`: standalone experimental text scoring; imports the shared scraper from `functions.py`. The app reuses its text scoring functions.
+- `main_scrapping.py`: optional standalone URL-file runner; the app does not call it. From `backend/`, run `python -m app.scraping.main_scrapping --file path/to/urls.txt`. It exports JSON rather than importing campaigns.
 
-Do not register the current TODO function until it works. Restart the backend after editing config. No API, UI, database, or router changes are needed.
+## Registered sources
 
-## Function contract
+The ING Youth Account English URL supplied in the original script is now in `backend/data/sources/ing.json`, mapped to `scrape_ing_youth_account_en`. Select it under Tools → Scraping after restarting the backend. This is real collection, including when using the demo database. Browser installation is documented in the [root README](../../../README.md).
 
-- Input: `SourceDefinition` from [automation.py](../schemas/automation.py). It includes bank, category, product, language, URL, source ID, and optional `campaign_id` (None before import).
-- Output: `ScrapedPage` from the same file. Keep `source` unchanged; return collected text/lists, timestamp, `is_demo=False`, and success/error information.
-- No database writes. The import service stores the snapshot and creates the campaign.
-- Raise an exception or return `success=False` for collection failure. The batch continues.
+The synthetic ING/KBC example sources remain separate and require demo mode. Unregistered cases remain manual-only.
 
-Keys ignore case, repeated whitespace, category underscores versus spaces, and EN/English, NL/Dutch, FR/French spelling. They never guess products.
+To add a source, add its metadata to `backend/data/sources/*.json` and its matching `build_case_key(...)` entry to `SCRAPING_SUPPORT`. Create a dedicated entry point named `scrape_<bank>_<product>_<language>` for each real case. Validate the exact case before opening the browser, construct its own `SiteConfig`, and pass its own async extractor to `_collect_page`. The extractor owns site-specific navigation, cookie handling and selectors; it may reuse extraction helpers where verified. Do not map another product or language to the ING Youth Account function. Keep unfinished cases out of the registry. Validate extracted content for each website before relying on it.
 
-## Current support
+The ING case targets `ing-feat-flexible-page` and waits for its product-header heading. Saved ING DOM confirms that the layout `<main>` only contains a slot, so using it as the extraction root misses the product content. The selector fix was checked by replaying saved open shadow roots locally. Live completeness, cookie handling and collapsed FAQ still require review.
 
-Only the exact ING and KBC **example current account / EN** cases are registered, using `scrape_demo_page`. These are synthetic and require the demo database. Revolut is manual-only. Real source entries must have verified URLs and `is_example=false`.
+## Output and limits
 
-Your existing `scrape_text_features_ing.py` and `scrape_text_features_bel.py` remain independent experiments. Nothing imports or executes them automatically.
+Snapshots retain headline, combined text, headings, paragraphs, bullets, tables, list count, timestamp and final URL. New fields have defaults so older snapshots still load. Storage uses the existing JSON column; no migration is needed.
 
-## Tests
+HTTP errors and empty text fail collection. Scrolling is bounded. The supplied extraction rules still exclude tables from combined text, count all list containers, and remove broad header/footer/overlay selectors. Cookie barriers or error pages returning HTTP 200 may require site-specific handling. Images, buttons and links are not collected; their empty snapshot lists are not measured zero counts.
 
-From `backend/`, with `.venv` active:
+`labels.py` fills measured counts and source metadata during scraping. The registered ING English extractor also calculates text style, density, and information complexity. The application keeps its existing derived paragraph average. Unsupported fields remain unset; demo scores remain demo-only. All extraction registration is in `config.py`.
 
-```bash
-env -u TEST_DATABASE_URL python -m pytest tests/test_collection.py -q
-```
+The independent `scrape_text_features_ing.py` and `scrape_text_features_bel.py` experiments remain unused by the app.
 
-Add fixture-based tests for your function before registering it. See [workflow](../../../docs/collection-workflow.md).
+## Capture history (prototype)
 
-`config.py` owns the case list; `dispatcher.py` checks support and calls the matching function; `functions.py` holds the algorithms.
+Apply `alembic upgrade head` from `backend/` using the intended DATA_MODE before restarting the backend. Revision 0006 adds `page_captures`; it does not rewrite saved labels.
+
+Tools → Scraping now offers **Capture again for existing products** and **View captures**. A successful collection adds an immutable evidence record. Recapture reuses the existing campaign, refreshes untouched automatic drafts, preserves manually edited and completed labels, and invalidates pending suggestions based on the old evidence. Failed recapture leaves previous evidence intact. Legacy evidence is preserved when first recaptured. Demo captures remain synthetic and have no screenshot.
+
+Real collection saves `screenshot.png` (full page, before cleanup) and `dom.json` (document HTML plus open shadow roots) under `backend/data/captures/<data_mode>/<artifact_id>/`. Back up this directory together with the database. Files are ignored by Git. Use the capture API links to view artifacts; HTML is returned as JSON rather than executed. Capture history is available at `/api/scraping/campaigns/{campaign_id}/captures`.
+
+This is the first evidence-storage prototype, not a completed universal extractor or AI labeler. Cookie handling, product-ready checks, accordion expansion and closed shadow roots still require appropriate adapters. Capture uses the current rendered state, so cookie banners may remain and collapsed content is not shown in screenshots. Saved labels may describe an older capture; recapture does not imply they were reviewed again. AI integration, bulk background jobs, scheduled change detection, file retention/orphan cleanup and manual artifact upload remain future work. Files from a capture whose later extraction or database write fails can remain on disk; they are not listed as successful captures. Deleting a campaign removes its database history but does not yet delete its files.
+
+ING cleanup regression: the cookie dialog adds `overlays-scroll-lock` to `<body>`. The broad overlay selector previously removed the entire body. Global cleanup now protects the document/body, and the ING adapter skips global cleanup altogether in favor of scoped product reads. The registered scraper was verified on the live page after this fix; this does not establish completeness of collapsed FAQ or remove the cookie banner from screenshots.

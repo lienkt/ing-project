@@ -22,6 +22,7 @@ class CatalogResponse(Schema):
 
 
 class ScrapeInput(Schema):
+    recapture: bool = False
     source_ids: list[str] = Field(min_length=1, max_length=50)
 
 

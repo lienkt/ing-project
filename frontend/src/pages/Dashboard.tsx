@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import {
   ArrowRight,
   ArrowUpRight,
@@ -16,26 +16,7 @@ import { getComparison, ComparisonPage } from "../api/compare";
 import { Loading, Notice } from "../components/shared";
 import { LabelingStatusHelp } from "../components/LabelingStatusHelp";
 import { FeatureStatus } from "../components/FeatureControls";
-import { autoLabel } from "../api/collection";
 export default function Dashboard() {
-  const navigate = useNavigate();
-  const [labeling, setLabeling] = useState<number | null>(null);
-  async function suggest(campaign: Campaign) {
-    setLabeling(campaign.id);
-    setActionError("");
-    try {
-      const result = await autoLabel(campaign.id);
-      if ("status" in result) {
-        setActionError(result.message);
-        return;
-      }
-      navigate(`/campaigns/${campaign.id}/label?review=1`);
-    } catch (e) {
-      setActionError((e as Error).message);
-    } finally {
-      setLabeling(null);
-    }
-  }
   const location = useLocation();
   useEffect(() => {
     if (location.hash !== "#label") return;
@@ -137,8 +118,7 @@ export default function Dashboard() {
         >
           <h2 id="label-entry-title">Choose a campaign to label</h2>
           <p>
-            Open a campaign by clicking its bank name, then choose its Campaign Feature
-            Framework.
+            Open a campaign by clicking its bank name to review and complete its labels.
           </p>
         </section>
       )}
@@ -305,40 +285,13 @@ export default function Dashboard() {
                       <td>
                         <FeatureStatus value={c.labeling_status} />
                         <div>
-                          <small
-                            title={c.automation.auto_labeling.message || undefined}
-                          >
-                            {c.automation.auto_labeling.available
-                              ? `Auto supported${c.automation.auto_labeling.is_demo ? " · Demo" : ""}`
-                              : c.automation.auto_labeling.supported
-                                ? c.automation.auto_labeling.message
-                                : "Manual only"}
+                          <small>
+                            {metadata[c.id]?.features?.source === "automatic" ||
+                            metadata[c.id]?.features?.source === "manual_override"
+                              ? "Auto-assisted"
+                              : null}
                           </small>
                         </div>
-                        {c.labeling_status !== "Completed" &&
-                          (c.has_suggestions ? (
-                            <div className="collection-actions">
-                              <Link to={`/campaigns/${c.id}/label?review=1`}>
-                                Review suggestions
-                              </Link>
-                            </div>
-                          ) : (
-                            <div className="collection-actions">
-                              {c.automation.auto_labeling.available && (
-                                <button
-                                  type="button"
-                                  className="secondary"
-                                  disabled={labeling !== null}
-                                  onClick={() => void suggest(c)}
-                                >
-                                  {labeling === c.id ? "Generating…" : "Auto Label"}
-                                </button>
-                              )}
-                              <Link to={`/campaigns/${c.id}/label`}>
-                                Label Manually
-                              </Link>
-                            </div>
-                          ))}
                       </td>
                       <td>
                         <div className="row-actions">
@@ -399,10 +352,6 @@ export default function Dashboard() {
           </div>
         )}
       </section>
-      <div className="dashboard-note">
-        <span className="online-dot" /> A space for human review. Automatic suggestions
-        require explicit acceptance.
-      </div>
     </>
   );
 }

@@ -44,11 +44,9 @@ export type Proposal = {
 };
 export const getSources = () => request<Catalog>("/scraping/sources");
 export const scrapeSources = (source_ids: string[]) =>
-  request<{ results: ImportResult[] }>("/scraping/run", "POST", { source_ids });
-export const autoLabel = (id: number) =>
-  request<
-    Proposal | { status: "manual_required"; supported: boolean; message: string }
-  >(`/campaigns/${id}/auto-label`, "POST");
+  request<{ results: ImportResult[] }>("/scraping/run", "POST", {
+    source_ids,
+  });
 export const getSuggestions = (id: string) =>
   request<Proposal | null>(`/campaigns/${id}/suggestions`);
 export const reviewSuggestions = (id: string, token: string, data: FeatureInput) => {
@@ -58,3 +56,30 @@ export const reviewSuggestions = (id: string, token: string, data: FeatureInput)
     values,
   });
 };
+
+export type Capture = {
+  id: string;
+  created_at: string;
+  has_screenshot: boolean;
+  page: ScrapedContent;
+};
+export const getCaptures = (id: number) =>
+  request<Capture[]>(`/scraping/campaigns/${id}/captures`);
+export const captureArtifactUrl = (id: string, artifact: string) =>
+  `${(import.meta.env.VITE_API_URL || "http://localhost:8000").replace(/\/$/, "")}/api/scraping/captures/${id}/${artifact}`;
+
+export type ScrapedContent = {
+  title: string;
+  headline?: string | null;
+  text: string;
+  headings?: string[];
+  paragraphs?: string[];
+  bullets?: string[];
+  tables?: string[];
+  scraped_at: string;
+  is_demo: boolean;
+  warnings: string[];
+  source: { product_name: string; language: string; url: string };
+};
+export const getScrapedContent = (id: number) =>
+  request<ScrapedContent | null>(`/scraping/campaigns/${id}/content`);

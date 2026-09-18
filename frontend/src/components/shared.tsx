@@ -75,9 +75,8 @@ export function CampaignContext({ campaign }: { campaign: Campaign }) {
 export function Steps({ current, id }: { current: number; id?: string }) {
   const links = [
     { name: "Dataset", to: "/" },
-    { name: "Label", to: id ? `/campaigns/${id}/label` : null },
+    { name: "Label", to: id ? `/campaigns/${id}` : null },
     { name: "Compare", to: "/compare" },
-    { name: "Insights", to: "/compare#insights" },
   ];
   return (
     <nav className="steps" aria-label="Analytical workflow">
@@ -90,16 +89,6 @@ export function Steps({ current, id }: { current: number; id?: string }) {
           )}
         </div>
       ))}
-      {id && (
-        <details className="secondary-page-actions">
-          <summary>Campaign options</summary>
-          <div>
-            <Link to={`/campaigns/${id}/edit`}>Edit basic info</Link>
-            <Link to={`/campaigns/${id}`}>Details</Link>
-            <Link to={`/campaigns/${id}/evaluate`}>Optional evaluation</Link>
-          </div>
-        </details>
-      )}
     </nav>
   );
 }

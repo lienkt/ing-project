@@ -97,3 +97,5 @@ Campaign responses include `automation.scraping` and `automation.auto_labeling`.
 Unsupported cases are normal 200 responses, not engine failures. Batch results distinguish `manual_required` from `failed`. Unknown campaigns return 404; stale review saves return 409; invalid requests or label-function results return 422. Malformed catalog files return 500 with validation details.
 
 Review values use the existing partial FeatureInput contract. Omitted final fields are preserved; null clears them. Completion still uses the existing endpoint. See [workflow](collection-workflow.md) for matching, demo safety, and review behavior.
+
+Scraping `/api/scraping/run` now also saves supported feature values as an In Progress draft in the same transaction. `/auto-label` is retained for legacy clients; it is no longer a required workflow step.
