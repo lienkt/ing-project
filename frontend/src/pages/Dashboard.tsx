@@ -286,9 +286,10 @@ export default function Dashboard() {
                         <FeatureStatus value={c.labeling_status} />
                         <div>
                           <small>
-                            {c.collection
-                              ? "Prefilled during scraping · Review labels"
-                              : "Manual labeling"}
+                            {metadata[c.id]?.features?.source === "automatic" ||
+                            metadata[c.id]?.features?.source === "manual_override"
+                              ? "Auto-assisted"
+                              : null}
                           </small>
                         </div>
                       </td>
