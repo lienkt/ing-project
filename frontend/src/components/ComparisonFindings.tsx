@@ -1,3 +1,6 @@
+import { Link } from "react-router-dom";
+import { QuickGuide } from "./QuickGuide";
+import { FieldHelp } from "./FieldHelp";
 import { useState } from "react";
 import { ComparisonPage, pageTitle, scaleFields } from "../api/compare";
 import { label } from "../api/campaigns";
@@ -33,7 +36,13 @@ export function ComparisonFindings({ pages }: { pages: ComparisonPage[] }) {
       className="compare-section findings-section"
       aria-labelledby="findings-title"
     >
-      <h2 id="findings-title">Key observations</h2>
+      <h2 id="findings-title" className="comparison-help-heading">
+        Key observations
+        <FieldHelp
+          label="Key observations"
+          help="Scores describe page content, not marketing effectiveness."
+        />
+      </h2>
       {observations.length === 0 ? (
         <p className="compare-empty-chart">
           No findings yet. At least two selected pages need a value for the same
@@ -46,19 +55,31 @@ export function ComparisonFindings({ pages }: { pages: ComparisonPage[] }) {
             .slice(0, showAll ? observations.length : 3)
             .map(({ field, values, minimum, maximum }) => (
               <li key={field.key}>
-                <h3>{label(field.key)}</h3>
-                <p>
-                  <strong>Observation:</strong>{" "}
-                  {minimum === maximum
-                    ? `Among the selected pages with a recorded value, all ${values.length} pages share a score of ${minimum} (${field.descriptions[minimum - 1]}).`
-                    : `In the selected sample, recorded scores range from ${minimum} (${field.descriptions[minimum - 1]}) to ${maximum} (${field.descriptions[maximum - 1]}).`}
-                </p>
+                <h3 className="comparison-help-heading">
+                  {label(field.key)}
+                  <QuickGuide
+                    label={`Explain ${label(field.key)} observation`}
+                    title={label(field.key)}
+                  >
+                    <p className="field-help-description">{field.help}</p>
+                    <p className="field-help-description">
+                      <strong>Observation: </strong>
+                      {minimum === maximum
+                        ? `Among the selected pages with a recorded value, all ${values.length} pages share a score of ${minimum} (${field.descriptions[minimum - 1]}).`
+                        : `In the selected sample, recorded scores range from ${minimum} (${field.descriptions[minimum - 1]}) to ${maximum} (${field.descriptions[maximum - 1]}).`}
+                    </p>
+                    <p className="status-help-note">
+                      Coverage: {values.length}/{pages.length} selected pages.{" "}
+                      {pages.length - values.length} missing.
+                    </p>
+                  </QuickGuide>
+                </h3>
                 <div className="finding-values">
                   {values.map(({ page, value }) => (
                     <div key={page.campaign_id}>
-                      <a href={page.page_url} target="_blank" rel="noopener noreferrer">
+                      <Link to={`/campaigns/${page.campaign_id}`}>
                         {pageTitle(page)}
-                      </a>
+                      </Link>
                       <strong>
                         {value}
                         <small> / 5</small>
@@ -66,10 +87,6 @@ export function ComparisonFindings({ pages }: { pages: ComparisonPage[] }) {
                     </div>
                   ))}
                 </div>
-                <p className="muted">
-                  Coverage: {values.length}/{pages.length} selected pages.{" "}
-                  {pages.length - values.length} missing.
-                </p>
               </li>
             ))}
         </ul>
@@ -86,10 +103,6 @@ export function ComparisonFindings({ pages }: { pages: ComparisonPage[] }) {
             : `Show all ${observations.length} observations`}
         </button>
       )}
-      <details className="sample-notes">
-        <summary>How to interpret these observations</summary>
-        <p>Scores describe page content, not marketing effectiveness.</p>
-      </details>
     </section>
   );
 }

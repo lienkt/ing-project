@@ -58,11 +58,12 @@ export default function Dashboard() {
   const [bank, setBank] = useState("");
   const [project, setProject] = useState("");
   const [search, setSearch] = useState("");
+  const [labelingStatus, setLabelingStatus] = useState("");
   const [retry, setRetry] = useState(0);
   const [page, setPage] = useState(1);
   useEffect(() => {
     setPage(1);
-  }, [bank, project, search]);
+  }, [bank, project, search, labelingStatus]);
   useEffect(() => {
     let active = true;
     setLoading(true);
@@ -106,6 +107,7 @@ export default function Dashboard() {
     (c) =>
       (!bank || c.bank_name === bank) &&
       (!project || c.project === project) &&
+      (!labelingStatus || c.labeling_status === labelingStatus) &&
       `${c.bank_name} ${c.details?.campaign_name || ""} ${c.campaign_url}`
         .toLowerCase()
         .includes(search.toLowerCase()),
@@ -243,6 +245,18 @@ export default function Dashboard() {
             {[...new Set(campaigns.map((c) => c.project))].map((p) => (
               <option key={p} value={p}>
                 {label(p)}
+              </option>
+            ))}
+          </select>
+          <select
+            aria-label="Filter by labeling status"
+            value={labelingStatus}
+            onChange={(e) => setLabelingStatus(e.target.value)}
+          >
+            <option value="">All statuses</option>
+            {["Not Started", "In Progress", "Completed"].map((status) => (
+              <option key={status} value={status}>
+                {status}
               </option>
             ))}
           </select>
@@ -397,6 +411,7 @@ export default function Dashboard() {
                   setBank("");
                   setProject("");
                   setSearch("");
+                  setLabelingStatus("");
                 }}
               >
                 Clear filters

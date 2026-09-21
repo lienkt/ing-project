@@ -1,4 +1,6 @@
 import { useId, useState } from "react";
+import { FieldHelp } from "./FieldHelp";
+import { ScaleHelp } from "./ScaleHelp";
 import { LabelingStatus } from "../api/features";
 
 export function FeatureStatus({ value }: { value: LabelingStatus }) {
@@ -29,8 +31,15 @@ export function RatingScale({
   const shown = preview ?? value;
   return (
     <fieldset className="feature-control" aria-describedby={`${id}-meaning`}>
-      <legend>{label}</legend>
-      {help && <p className="scale-meaning">{help}</p>}
+      <legend>
+        {label}{" "}
+        <ScaleHelp
+          label={label}
+          descriptions={descriptions}
+          value={value}
+          help={help}
+        />
+      </legend>
       <div className="scale-endpoints">
         <span>{descriptions[0]}</span>
         <span>{descriptions[4]}</span>
@@ -61,14 +70,6 @@ export function RatingScale({
           ? "Not set — choose a value"
           : `${preview !== null && preview !== value ? "Preview" : "Selected"}: ${shown} — ${descriptions[shown - 1]}`}
       </p>
-      <details className="scale-guide">
-        <summary>Scale guide</summary>
-        <ol>
-          {descriptions.map((d) => (
-            <li key={d}>{d}</li>
-          ))}
-        </ol>
-      </details>
       <button
         type="button"
         className="secondary clear-scale"
@@ -95,8 +96,9 @@ export function BooleanChoice({
   const id = useId();
   return (
     <fieldset className="feature-control">
-      <legend>{label}</legend>
-      {help && <p className="scale-meaning">{help}</p>}
+      <legend>
+        {label} {help && <FieldHelp label={label} help={help} />}
+      </legend>
       <div className="boolean-options">
         {([true, false, null] as const).map((v) => (
           <label key={String(v)} className={value === v ? "selected" : ""}>

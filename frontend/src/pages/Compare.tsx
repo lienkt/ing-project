@@ -20,6 +20,7 @@ export default function Compare() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [retry, setRetry] = useState(0);
+  const [labelingStatus, setLabelingStatus] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -47,7 +48,12 @@ export default function Compare() {
     };
   }, [category, retry]);
 
-  const selected = pages.filter((page) => selectedIds.includes(page.campaign_id));
+  const filteredPages = pages.filter(
+    (page) => !labelingStatus || page.labeling_status === labelingStatus,
+  );
+  const selected = filteredPages.filter((page) =>
+    selectedIds.includes(page.campaign_id),
+  );
   useEffect(() => {
     if (hash === "#insights") {
       const frame = requestAnimationFrame(() => {
@@ -63,7 +69,7 @@ export default function Compare() {
   );
   const mixedLanguages =
     new Set(selected.map((page) => page.language).filter(Boolean)).size > 1;
-  const bankNames = [...new Set(pages.map((page) => page.bank_name))];
+  const bankNames = [...new Set(filteredPages.map((page) => page.bank_name))];
   function toggle(id: number) {
     setSelectedIds((previous) =>
       previous.includes(id)
@@ -133,6 +139,32 @@ export default function Compare() {
             ))}
           </select>
         </label>
+        <label className="compare-category">
+          Labeling status
+          <select
+            value={labelingStatus}
+            onChange={(e) => {
+              const status = e.target.value;
+              setLabelingStatus(status);
+              setSelectedIds((previous) =>
+                previous.filter((id) =>
+                  pages.some(
+                    (page) =>
+                      page.campaign_id === id &&
+                      (!status || page.labeling_status === status),
+                  ),
+                ),
+              );
+            }}
+          >
+            <option value="">All statuses</option>
+            {["Not Started", "In Progress", "Completed"].map((status) => (
+              <option key={status} value={status}>
+                {status}
+              </option>
+            ))}
+          </select>
+        </label>
         <Notice message={error} />
         {error && (
           <button
@@ -157,6 +189,17 @@ export default function Compare() {
                 Add campaign
               </Link>
             </div>
+          ) : filteredPages.length === 0 ? (
+            <div className="empty">
+              <h3>No pages match this labeling status</h3>
+              <button
+                type="button"
+                className="secondary"
+                onClick={() => setLabelingStatus("")}
+              >
+                Show all statuses
+              </button>
+            </div>
           ) : (
             <>
               <p>Select a bank, or expand its pages to choose individually.</p>
@@ -164,7 +207,9 @@ export default function Compare() {
                 <button
                   className="secondary"
                   type="button"
-                  onClick={() => setSelectedIds(pages.map((page) => page.campaign_id))}
+                  onClick={() =>
+                    setSelectedIds(filteredPages.map((page) => page.campaign_id))
+                  }
                 >
                   Select all pages
                 </button>
@@ -178,7 +223,9 @@ export default function Compare() {
                 <span role="status">{selected.length} pages selected</span>
               </div>
               {bankNames.map((bank) => {
-                const bankPages = pages.filter((page) => page.bank_name === bank);
+                const bankPages = filteredPages.filter(
+                  (page) => page.bank_name === bank,
+                );
                 const allSelected = bankPages.every((page) =>
                   selectedIds.includes(page.campaign_id),
                 );
@@ -214,16 +261,19 @@ export default function Compare() {
                       </summary>
                       {bankPages.map((page) => (
                         <div className="compare-candidate" key={page.campaign_id}>
-                          <label>
+                          <div className="compare-candidate-info">
                             <input
+                              aria-label={`Select ${page.product_name || "product"} · Page ${page.campaign_id}`}
                               type="checkbox"
                               checked={selectedIds.includes(page.campaign_id)}
                               onChange={() => toggle(page.campaign_id)}
                             />
-                            <span>
+                            <span className="compare-candidate-details">
                               <strong>
-                                {page.product_name || "Product not recorded"} · Page #
-                                {page.campaign_id}
+                                <Link to={`/campaigns/${page.campaign_id}`}>
+                                  {page.product_name || "Product not recorded"}
+                                </Link>{" "}
+                                · Page #{page.campaign_id}
                               </strong>
                               <small>
                                 {label(page.product_category)} ·{" "}
@@ -234,21 +284,8 @@ export default function Compare() {
                                 Reviewed: {page.capture_date || "Not recorded"}
                               </small>
                             </span>
-                          </label>
-                          <FeatureStatus value={page.labeling_status} />
-                          <div className="compare-page-links">
-                            <a
-                              href={page.page_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              Open source ↗
-                            </a>
-                            <Link to={`/campaigns/${page.campaign_id}/label`}>
-                              Label features
-                            </Link>
                           </div>
-                          <p className="compare-url">{page.page_url}</p>
+                          <FeatureStatus value={page.labeling_status} />
                         </div>
                       ))}
                     </details>
@@ -259,7 +296,7 @@ export default function Compare() {
           ))
         )}
       </section>
-      {!loading && !error && category && pages.length > 0 && (
+      {!loading && !error && category && filteredPages.length > 0 && (
         <>
           <div className="sample-summary" aria-label="Selected sample">
             <strong>

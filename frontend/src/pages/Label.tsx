@@ -1,3 +1,4 @@
+import { FieldLabel } from "../components/FieldHelp";
 import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { Link, Navigate, useParams, useSearchParams } from "react-router-dom";
 import { Check } from "lucide-react";
@@ -440,6 +441,7 @@ export function LabelEditor({
                   <div className="form-grid">
                     {fields.map((field) => {
                       const value = data[field.key];
+                      const inputId = `campaign-${id}-${field.key}`;
                       const suggested =
                         reviewPending && proposal?.values[field.key] !== undefined;
                       const proposedValue = proposal?.values[field.key];
@@ -452,9 +454,14 @@ export function LabelEditor({
                         : field.help;
                       if (field.kind === "derived")
                         return (
-                          <label key={field.key}>
-                            {label(field.key)}
+                          <div className="feature-input-field" key={field.key}>
+                            <FieldLabel
+                              id={inputId}
+                              label={label(field.key)}
+                              help={`${field.help}. Calculated automatically; zero paragraphs leaves this unset.`}
+                            />
                             <input
+                              id={inputId}
                               readOnly
                               value={
                                 typeof value === "number"
@@ -463,11 +470,7 @@ export function LabelEditor({
                               }
                               placeholder="Requires word count and paragraph count > 0"
                             />
-                            <small>
-                              {field.help}. Calculated automatically; zero paragraphs
-                              leaves this unset.
-                            </small>
-                          </label>
+                          </div>
                         );
                       if (field.kind === "scale")
                         return (
@@ -491,10 +494,15 @@ export function LabelEditor({
                           />
                         );
                       return (
-                        <label key={field.key}>
-                          {label(field.key)}
+                        <div className="feature-input-field" key={field.key}>
+                          <FieldLabel
+                            id={inputId}
+                            label={label(field.key)}
+                            help={help}
+                          />
                           {field.kind === "enum" ? (
                             <select
+                              id={inputId}
                               value={typeof value === "string" ? value : ""}
                               onChange={(e) =>
                                 change(field.key, e.target.value || null)
@@ -507,6 +515,7 @@ export function LabelEditor({
                             </select>
                           ) : field.kind === "textarea" ? (
                             <textarea
+                              id={inputId}
                               maxLength={10000}
                               rows={3}
                               value={typeof value === "string" ? value : ""}
@@ -516,6 +525,7 @@ export function LabelEditor({
                             />
                           ) : (
                             <input
+                              id={inputId}
                               type={
                                 field.kind === "count"
                                   ? "number"
@@ -544,8 +554,7 @@ export function LabelEditor({
                               }
                             />
                           )}
-                          <small>{help}</small>
-                        </label>
+                        </div>
                       );
                     })}
                   </div>
