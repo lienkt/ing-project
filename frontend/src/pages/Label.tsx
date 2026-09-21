@@ -260,7 +260,9 @@ export function LabelEditor({
           </div>
           <div>
             <dt>Product</dt>
-            <dd>{data.product_name || "Not recorded"}</dd>
+            <dd>
+              {data.product_name || campaign.collection?.product_name || "Not recorded"}
+            </dd>
           </div>
           <div>
             <dt>Product Category</dt>
@@ -268,7 +270,7 @@ export function LabelEditor({
           </div>
           <div>
             <dt>Language</dt>
-            <dd>{data.language || "Not recorded"}</dd>
+            <dd>{data.language || campaign.collection?.language || "Not recorded"}</dd>
           </div>
         </dl>
         <a

@@ -37,7 +37,7 @@ def allow_engine(is_demo):
         )
 
 
-def scrape_batch(db, sources, source_ids, recapture=False):
+def scrape_batch(db, sources, source_ids, recapture=False, mode="auto"):
     results = []
     for source_id in dict.fromkeys(source_ids):
         source = find_source(sources, source_id)
@@ -47,7 +47,9 @@ def scrape_batch(db, sources, source_ids, recapture=False):
             )
             continue
         support = scraping_support(source)
-        if not support["supported"]:
+        if not support["supported"] and (
+            mode == "scrape_and_label" or source.is_example
+        ):
             results.append(
                 dict(
                     source_id=source_id,
@@ -91,7 +93,29 @@ def scrape_batch(db, sources, source_ids, recapture=False):
             )
             continue
         try:
-            page = scrape_campaign(source)
+            from app.scraping.functions import capture_generic_page
+            from app.scraping import config
+            from app.schemas.automation import build_case_key
+
+            labeling_supported = (
+                build_case_key(
+                    source.bank,
+                    source.product_category,
+                    source.product_name,
+                    source.language,
+                )
+                in config.AUTO_LABEL_SUPPORT
+            )
+            if mode == "scrape_and_label" and not labeling_supported:
+                raise ValueError(
+                    "No automatic label extractor is registered for this source"
+                )
+            capture_only = mode == "capture_only" or not support["supported"]
+            page = (
+                scrape_campaign(source)
+                if support["supported"]
+                else capture_generic_page(source)
+            )
             if isinstance(page, ManualRequired):
                 results.append(dict(source_id=source_id, **page.model_dump()))
                 continue
@@ -111,7 +135,17 @@ def scrape_batch(db, sources, source_ids, recapture=False):
                 db.add(record)
             record.campaign_id = campaign.id
             record.status = "Scraped"
-            record.engine = "demo" if page.is_demo else "configured"
+            record.engine = (
+                "demo"
+                if page.is_demo
+                else "configured"
+                if support["supported"]
+                else "generic"
+            )
+            page.metadata["capture_mode"] = (
+                "capture_only" if capture_only else "scrape_and_label"
+            )
+            page.metadata["engine"] = record.engine
             record.is_demo = page.is_demo
             # Preserve legacy evidence on the first explicit recapture.
             if record.page and not db.scalar(
@@ -136,27 +170,28 @@ def scrape_batch(db, sources, source_ids, recapture=False):
                 db.delete(proposal)
             record.error = None
             record.attempted_at = datetime.now(timezone.utc)
-            # Extract labels in the same transaction as the captured page.
-            from app.scraping.labels import collected_feature_values
-            from app.models.features import CampaignFeature
+            if not capture_only:
+                # Extract labels in the same transaction as the captured page.
+                from app.scraping.labels import collected_feature_values
+                from app.models.features import CampaignFeature
 
-            suggestions = auto_label_campaign(source, page)
-            values = collected_feature_values(page).model_dump(exclude_unset=True)
-            if not isinstance(suggestions, ManualRequired):
-                allow_engine(suggestions.is_demo)
-                values.update(suggestions.values.model_dump(exclude_unset=True))
-            if campaign.features is None:
-                campaign.features = CampaignFeature(
-                    **values,
-                    source="automatic",
-                    labeling_status="In Progress",
-                )
-            elif (
-                campaign.features.source == "automatic"
-                and campaign.features.labeling_status != "Completed"
-            ):
-                for key, value in values.items():
-                    setattr(campaign.features, key, value)
+                suggestions = auto_label_campaign(source, page)
+                values = collected_feature_values(page).model_dump(exclude_unset=True)
+                if not isinstance(suggestions, ManualRequired):
+                    allow_engine(suggestions.is_demo)
+                    values.update(suggestions.values.model_dump(exclude_unset=True))
+                if campaign.features is None:
+                    campaign.features = CampaignFeature(
+                        **values,
+                        source="automatic",
+                        labeling_status="In Progress",
+                    )
+                elif (
+                    campaign.features.source == "automatic"
+                    and campaign.features.labeling_status != "Completed"
+                ):
+                    for key, value in values.items():
+                        setattr(campaign.features, key, value)
             campaign_id = campaign.id
             db.commit()
             results.append(

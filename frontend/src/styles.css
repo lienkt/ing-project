@@ -2973,3 +2973,54 @@ summary:focus-visible {
   font-size: 14px;
   font-weight: 400;
 }
+
+.source-row-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.scraping-results-dialog {
+  width: min(640px, calc(100vw - 32px));
+}
+.scraping-results-list {
+  list-style: none;
+  padding: 0;
+  margin: 20px 0;
+  display: grid;
+  gap: 12px;
+}
+.scraping-results-list li {
+  padding: 14px;
+  border: 1px solid #dce5df;
+  border-radius: 8px;
+}
+.scraping-results-list p {
+  margin: 6px 0 0;
+  overflow-wrap: anywhere;
+}
+.scraping-results-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.source-table th:nth-child(5),
+.source-table td:nth-child(5) {
+  width: 140px;
+  padding-inline: 10px;
+}
+.source-table td:nth-child(5) .badge {
+  max-width: 120px;
+  white-space: normal;
+  line-height: 1.4;
+}
+
+.add-source-dialog {
+  width: min(760px, calc(100vw - 32px));
+}
+
+.add-source-dialog .capture-body {
+  padding-top: 24px;
+}

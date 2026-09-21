@@ -135,6 +135,7 @@ class SiteConfig:
     paragraph_exclude: Iterable[str] = field(default_factory=tuple)
     bullet_exclude: Iterable[str] = field(default_factory=tuple)
     clean_page: bool = True
+    public_only: bool = False
     main_selector: str | None = None
     ready_selector: str | None = None
     wait_ms: int = 3000

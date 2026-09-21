@@ -17,7 +17,7 @@ The existing collection service saves the returned `ScrapedPage` snapshot, creat
 
 The ING Youth Account English URL supplied in the original script is now in `backend/data/sources/ing.json`, mapped to `scrape_ing_youth_account_en`. Select it under Tools → Scraping after restarting the backend. This is real collection, including when using the demo database. Browser installation is documented in the [root README](../../../README.md).
 
-The synthetic ING/KBC example sources remain separate and require demo mode. Unregistered cases remain manual-only.
+The synthetic ING/KBC example sources remain separate and require demo mode. Unregistered real sources can use generic evidence capture without automatic labels.
 
 To add a source, add its metadata to `backend/data/sources/*.json` and its matching `build_case_key(...)` entry to `SCRAPING_SUPPORT`. Create a dedicated entry point named `scrape_<bank>_<product>_<language>` for each real case. Validate the exact case before opening the browser, construct its own `SiteConfig`, and pass its own async extractor to `_collect_page`. The extractor owns site-specific navigation, cookie handling and selectors; it may reuse extraction helpers where verified. Do not map another product or language to the ING Youth Account function. Keep unfinished cases out of the registry. Validate extracted content for each website before relying on it.
 
@@ -44,3 +44,18 @@ Real collection saves `screenshot.png` (full page, before cleanup) and `dom.json
 This is the first evidence-storage prototype, not a completed universal extractor or AI labeler. Cookie handling, product-ready checks, accordion expansion and closed shadow roots still require appropriate adapters. Capture uses the current rendered state, so cookie banners may remain and collapsed content is not shown in screenshots. Saved labels may describe an older capture; recapture does not imply they were reviewed again. AI integration, bulk background jobs, scheduled change detection, file retention/orphan cleanup and manual artifact upload remain future work. Files from a capture whose later extraction or database write fails can remain on disk; they are not listed as successful captures. Deleting a campaign removes its database history but does not yet delete its files.
 
 ING cleanup regression: the cookie dialog adds `overlays-scroll-lock` to `<body>`. The broad overlay selector previously removed the entire body. Global cleanup now protects the document/body, and the ING adapter skips global cleanup altogether in favor of scoped product reads. The registered scraper was verified on the live page after this fix; this does not establish completeness of collapsed FAQ or remove the cookie banner from screenshots.
+
+## User sources and capture-only mode
+
+Migration 0007 stores user-added source definitions in `user_sources`, merged
+with the configured JSON catalog. POST `/api/scraping/sources` accepts the five
+fields shown in the Add source form. POST `/api/scraping/run` accepts `mode`:
+`auto` (legacy/default dispatch), `capture_only`, or `scrape_and_label`, plus
+`recapture`. Explicit scrape-and-label requires registered support; generic
+capture never writes CampaignFeature. Registry dispatch remains exact.
+
+`capture_generic_page` reuses `_collect_page` and `scrape_site`, with public URL
+checks, request filtering and non-destructive extraction. Generic metadata uses
+`collector=playwright-generic-v1`, `engine=generic`, and `capture_mode=capture_only`.
+Evidence-only success warns if no readable text is found. Use specialized handlers
+for sites needing custom selectors or interactions.
