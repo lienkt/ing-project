@@ -1,3 +1,6 @@
+import { Link } from "react-router-dom";
+import { FieldHelp } from "./FieldHelp";
+import { ScaleHelp } from "./ScaleHelp";
 import { useState } from "react";
 import { ComparisonPage, pageTitle, scaleFields } from "../api/compare";
 import { label } from "../api/campaigns";
@@ -13,21 +16,35 @@ export function ComparisonChart({ pages }: { pages: ComparisonPage[] }) {
       className="card form-card compare-section"
       aria-labelledby="comparison-chart-title"
     >
-      <h2 id="comparison-chart-title">Explore a scale</h2>
-      <p>
-        One semantic dimension at a time. Higher values describe a position on the
-        scale, not better performance.
-      </p>
-      <label className="compare-category">
-        Feature
-        <select value={field.key} onChange={(event) => setKey(event.target.value)}>
+      <h2 id="comparison-chart-title" className="comparison-help-heading">
+        Explore a scale
+        <FieldHelp
+          label="Explore a scale"
+          help="One semantic dimension at a time. Higher values describe a position on the scale, not better performance."
+        />
+      </h2>
+      <div className="compare-category">
+        <div className="scale-feature-heading">
+          <label htmlFor="comparison-scale-feature">Feature</label>
+          <ScaleHelp
+            key={field.key}
+            label={label(field.key)}
+            descriptions={field.descriptions}
+            help={field.help}
+          />
+        </div>
+        <select
+          id="comparison-scale-feature"
+          value={field.key}
+          onChange={(event) => setKey(event.target.value)}
+        >
           {scaleFields.map((item) => (
             <option key={item.key} value={item.key}>
               {label(item.key)}
             </option>
           ))}
         </select>
-      </label>
+      </div>
       <p>
         {available.length}/{pages.length} selected pages have a value for{" "}
         {label(field.key)}.
@@ -44,7 +61,7 @@ export function ComparisonChart({ pages }: { pages: ComparisonPage[] }) {
             const value = page.features?.[field.key];
             return (
               <div className="comparison-bar-row" key={page.campaign_id}>
-                <span>{pageTitle(page)}</span>
+                <Link to={`/campaigns/${page.campaign_id}`}>{pageTitle(page)}</Link>
                 {typeof value === "number" ? (
                   <>
                     <div className="comparison-bar-track" aria-hidden="true">
@@ -64,14 +81,6 @@ export function ComparisonChart({ pages }: { pages: ComparisonPage[] }) {
           })}
         </figure>
       )}
-      <details className="scale-guide">
-        <summary>Read the scale definitions</summary>
-        <ol>
-          {field.descriptions.map((description) => (
-            <li key={description}>{description}</li>
-          ))}
-        </ol>
-      </details>
     </section>
   );
 }

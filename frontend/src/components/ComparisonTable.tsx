@@ -1,3 +1,6 @@
+import { FeatureStatus } from "./FeatureControls";
+import { FieldHelp } from "./FieldHelp";
+import { ScaleHelp } from "./ScaleHelp";
 import { Link } from "react-router-dom";
 import { analyticalFields, ComparisonPage, pageTitle } from "../api/compare";
 import { label } from "../api/campaigns";
@@ -9,10 +12,7 @@ function Cell({ page, field }: { page: ComparisonPage; field: Definition }) {
   if (!isFilled(value)) return <span aria-label="Not labeled">—</span>;
   if (field.kind === "scale" && typeof value === "number") {
     return (
-      <>
-        <strong>{value}</strong>
-        <small>{field.descriptions[value - 1]}</small>
-      </>
+      <strong aria-label={`${value}: ${field.descriptions[value - 1]}`}>{value}</strong>
     );
   }
   if (typeof value === "boolean") return <>{value ? "Yes" : "No"}</>;
@@ -25,11 +25,13 @@ export function ComparisonTable({ pages }: { pages: ComparisonPage[] }) {
   const sections = [...new Set(analyticalFields.map((field) => field.section))];
   return (
     <section className="compare-section" aria-labelledby="comparison-table-title">
-      <h2 id="comparison-table-title">Detailed comparison</h2>
-      <p>
-        Stored values, grouped by the existing framework. — means not labeled or not
-        applicable; 0 and No are recorded observations.
-      </p>
+      <h2 id="comparison-table-title" className="comparison-help-heading">
+        Detailed comparison
+        <FieldHelp
+          label="Detailed comparison"
+          help="Stored values, grouped by the existing framework. — means not labeled or not applicable; 0 and No are recorded observations."
+        />
+      </h2>
       {sections.map((section) => (
         <details className="card compare-table-section" key={section}>
           <summary>{section}</summary>
@@ -48,15 +50,13 @@ export function ComparisonTable({ pages }: { pages: ComparisonPage[] }) {
                   <th scope="col">Feature</th>
                   {pages.map((page) => (
                     <th scope="col" key={page.campaign_id}>
-                      <Link to={`/campaigns/${page.campaign_id}/label`}>
+                      <Link to={`/campaigns/${page.campaign_id}`}>
                         {pageTitle(page)}
                       </Link>
-                      <small>
-                        {page.language || "Language unset"} · {page.labeling_status}
-                      </small>
-                      <a href={page.page_url} target="_blank" rel="noopener noreferrer">
-                        Source ↗
-                      </a>
+                      <div className="comparison-page-status">
+                        <span>{page.language || "Language unset"}</span>
+                        <FeatureStatus value={page.labeling_status} />
+                      </div>
                     </th>
                   ))}
                 </tr>
@@ -67,8 +67,18 @@ export function ComparisonTable({ pages }: { pages: ComparisonPage[] }) {
                   .map((field) => (
                     <tr key={field.key}>
                       <th scope="row">
-                        {label(field.key)}
-                        <small>{field.help}</small>
+                        <span className="comparison-help-heading">
+                          {label(field.key)}
+                          {field.kind === "scale" ? (
+                            <ScaleHelp
+                              label={label(field.key)}
+                              help={field.help}
+                              descriptions={field.descriptions}
+                            />
+                          ) : (
+                            <FieldHelp label={label(field.key)} help={field.help} />
+                          )}
+                        </span>
                       </th>
                       {pages.map((page) => (
                         <td key={page.campaign_id}>
