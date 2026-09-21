@@ -14,7 +14,11 @@ def compare_campaigns(
     # Always constrain category, even when IDs from other categories are supplied.
     query = (
         select(Campaign)
-        .options(raiseload("*"), selectinload(Campaign.features))
+        .options(
+            raiseload("*"),
+            selectinload(Campaign.features),
+            selectinload(Campaign.source_import),
+        )
         .where(Campaign.project == product_category)
         .order_by(func.lower(Campaign.bank_name), Campaign.id)
     )
@@ -29,15 +33,22 @@ def compare_campaigns(
     pages = []
     for campaign in db.scalars(query):
         feature = campaign.features
+        source = (
+            (campaign.source_import.page or {}).get("source", {})
+            if campaign.source_import
+            else {}
+        )
         pages.append(
             ComparisonPage(
                 campaign_id=campaign.id,
                 bank_name=campaign.bank_name,
                 bank_type=feature.bank_type if feature else None,
-                product_name=feature.product_name if feature else None,
+                product_name=(feature.product_name if feature else None)
+                or source.get("product_name"),
                 product_category=campaign.project,
                 page_url=campaign.campaign_url,
-                language=feature.language if feature else None,
+                language=(feature.language if feature else None)
+                or source.get("language"),
                 capture_date=feature.capture_date if feature else None,
                 labeling_status=campaign.labeling_status,
                 features=FeatureRead.model_validate(feature) if feature else None,

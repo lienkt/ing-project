@@ -54,7 +54,7 @@ class ManualRequired(Schema):
 class SourceDefinition(CampaignInformation):
     source_id: str = Field(min_length=1, max_length=120, pattern=r"^[a-z0-9_-]+$")
     bank: str = Field(min_length=1, max_length=120)
-    bank_type: Literal["Traditional", "Challenger", "Neobank"]
+    bank_type: Literal["Traditional", "Challenger", "Neobank"] | None = None
     country: str = "Belgium"
     product_name: str = Field(min_length=1, max_length=300)
     product_category: str = Field(min_length=1, max_length=40, pattern=r"^[a-z0-9_]+$")

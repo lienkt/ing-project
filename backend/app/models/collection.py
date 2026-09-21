@@ -52,3 +52,19 @@ class PageCapture(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
+
+
+class UserSource(Base):
+    """User-added source metadata, retained independently of capture attempts."""
+
+    __tablename__ = "user_sources"
+    source_id: Mapped[str] = mapped_column(String(120), primary_key=True)
+    source_url: Mapped[str] = mapped_column(String(2048), unique=True)
+    definition: Mapped[dict] = mapped_column(JSON)
+
+
+class DeletedSource(Base):
+    """Remove configured sources from the active list without deleting evidence."""
+
+    __tablename__ = "deleted_sources"
+    source_id: Mapped[str] = mapped_column(String(120), primary_key=True)

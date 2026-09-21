@@ -151,7 +151,7 @@ export function CaptureViewer({
               </div>
               <p className="capture-caption">
                 Captured {new Date(current.page.scraped_at).toLocaleString()} · Saved
-                labels are unchanged when a new capture is added.
+                manual and completed labels are preserved during recapture.
               </p>
               {current.has_screenshot ? (
                 <a

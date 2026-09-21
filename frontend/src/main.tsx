@@ -121,7 +121,7 @@ function Layout() {
         </header>
         <main
           className={
-            pathname === "/" || pathname === "/compare"
+            pathname === "/" || pathname === "/compare" || pathname === "/scraping"
               ? "wide-page"
               : pathname.endsWith("/label")
                 ? "label-page"

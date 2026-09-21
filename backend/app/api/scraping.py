@@ -2,7 +2,12 @@ from fastapi import APIRouter, HTTPException
 from sqlalchemy import select
 from app.api.campaigns import DB
 from app.core.config import settings
-from app.models.collection import SourceImport
+from app.models.collection import SourceImport, UserSource, DeletedSource
+from app.schemas.automation import SourceDefinition, build_case_key
+from app.scraping import config as scraping_config
+from app.schemas.collection import SourceCreate
+from sqlalchemy.exc import IntegrityError
+from uuid import uuid4
 from app.models.campaign import Campaign
 from app.schemas.collection import (
     CatalogResponse,
@@ -16,16 +21,24 @@ from app.services import source_catalog, collection
 router = APIRouter(prefix="/api/scraping", tags=["scraping"])
 
 
-def catalog():
+def catalog(db):
     try:
-        return source_catalog.load_sources()
+        deleted = set(db.scalars(select(DeletedSource.source_id)))
+        configured = [
+            source for source in source_catalog.load_sources()
+            if source.source_id not in deleted
+        ]
+        return configured + [
+            SourceDefinition.model_validate(row.definition)
+            for row in db.scalars(select(UserSource))
+        ]
     except source_catalog.CatalogError as exc:
         raise HTTPException(500, str(exc)) from exc
 
 
 @router.get("/sources", response_model=CatalogResponse)
 def sources(db: DB, bank: str | None = None, product_category: str | None = None):
-    all_sources = catalog()
+    all_sources = catalog(db)
     records = list(db.scalars(select(SourceImport)))
     campaigns = {
         collection.normalized_url(c.campaign_url): c.id
@@ -51,6 +64,18 @@ def sources(db: DB, bank: str | None = None, product_category: str | None = None
             SourceView(
                 **source.model_dump(exclude={"campaign_id"}),
                 scraping=scraping_support(source),
+                auto_labeling_supported=build_case_key(
+                    source.bank,
+                    source.product_category,
+                    source.product_name,
+                    source.language,
+                )
+                in scraping_config.AUTO_LABEL_SUPPORT,
+                capture_available=(
+                    scraping_support(source)["available"]
+                    if scraping_support(source)["supported"]
+                    else not source.is_example
+                ),
                 import_status="Already in Dataset"
                 if existing_id and not (record and record.campaign_id)
                 else record.status
@@ -69,10 +94,69 @@ def sources(db: DB, bank: str | None = None, product_category: str | None = None
     )
 
 
+@router.post("/sources", response_model=SourceDefinition, status_code=201)
+def create_source(data: SourceCreate, db: DB):
+    collection.validate_project(db, data.product_category)
+    from app.models.catalog import Bank
+    from app.scraping.public_urls import validate_public_url
+
+    try:
+        validate_public_url(str(data.url))
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+    bank = next(
+        (
+            b
+            for b in db.scalars(select(Bank))
+            if b.name.casefold() == data.bank.strip().casefold()
+        ),
+        None,
+    )
+    if bank is None:
+        raise HTTPException(422, "Choose an existing bank from Settings")
+    identity = collection.normalized_url(data.url)
+    if any(collection.normalized_url(s.url) == identity for s in catalog(db)):
+        raise HTTPException(409, "This URL is already in the source list")
+    if not data.product_name.strip():
+        raise HTTPException(422, "Product name cannot be blank")
+    source = SourceDefinition(
+        **data.model_dump(exclude={"bank", "product_name"}),
+        bank=bank.name,
+        product_name=data.product_name.strip(),
+        source_id="custom-" + uuid4().hex,
+        page_type="Product Page",
+    )
+    db.add(
+        UserSource(
+            source_id=source.source_id,
+            source_url=identity,
+            definition=source.model_dump(mode="json"),
+        )
+    )
+    try:
+        db.commit()
+    except IntegrityError as exc:
+        db.rollback()
+        raise HTTPException(409, "This URL is already in the source list") from exc
+    return source
+
+
+@router.delete("/sources/{source_id}", status_code=204)
+def delete_source(source_id: str, db: DB):
+    if not any(source.source_id == source_id for source in catalog(db)):
+        raise HTTPException(404, "Source not found")
+    custom = db.get(UserSource, source_id)
+    if custom:
+        db.delete(custom)
+    else:
+        db.add(DeletedSource(source_id=source_id))
+    db.commit()
+
+
 @router.post("/run", response_model=BatchResponse)
 def run(data: ScrapeInput, db: DB):
     return collection.scrape_batch(
-        db, catalog(), data.source_ids, recapture=data.recapture
+        db, catalog(db), data.source_ids, recapture=data.recapture, mode=data.mode
     )
 
 

@@ -90,9 +90,39 @@ async def _extract_ing_youth_account_en(config: SiteConfig, browser) -> dict:
     return await scrape_site(config, browser)
 
 
+def capture_generic_page(campaign: SourceDefinition) -> ScrapedPage:
+    """General evidence capture; never generates feature labels."""
+    from app.scraping.config import SiteConfig, LANGUAGE_LOCALES
+    from app.scraping.public_urls import validate_public_url
+
+    if campaign.is_example:
+        raise ValueError("Example sources cannot be captured as real webpages")
+    validate_public_url(str(campaign.url))
+    language, locale = LANGUAGE_LOCALES.get(campaign.language, ("en", "en-BE"))
+    config = SiteConfig(
+        bank=campaign.bank,
+        product=campaign.product_name,
+        url=str(campaign.url),
+        language=language,
+        locale=locale,
+        clean_page=False,
+        public_only=True,
+    )
+    page = asyncio.run(_collect_page(campaign, config, scrape_site, allow_empty=True))
+    page.metadata["collector"] = "playwright-generic-v1"
+    page.warnings.append(
+        "Generic capture only: no automatic labels. Navigation, cookie banners, or collapsed content may affect extraction."
+    )
+    if not page.text.strip():
+        page.warnings.append(
+            "No readable text extracted; review the saved screenshot and DOM."
+        )
+    return page
+
+
 # Shared infrastructure: never register this helper directly in SCRAPING_SUPPORT.
 async def _collect_page(
-    campaign: SourceDefinition, config: SiteConfig, extractor
+    campaign: SourceDefinition, config: SiteConfig, extractor, allow_empty=False
 ) -> ScrapedPage:
     """Manage browser resources and convert a case extractor's content to a snapshot."""
     from playwright.async_api import async_playwright
@@ -107,7 +137,7 @@ async def _collect_page(
             )
         finally:
             await browser.close()
-    if not content["all_text"].strip():
+    if not allow_empty and not content["all_text"].strip():
         raise ValueError("No usable product text was extracted")
     return ScrapedPage(
         source=campaign,
@@ -339,6 +369,18 @@ async def scrape_site(config: SiteConfig, browser) -> dict:
         ),
     )
     try:
+        if config.public_only:
+            from app.scraping.public_urls import validate_public_url
+
+            async def public_requests(route):
+                try:
+                    await asyncio.to_thread(validate_public_url, route.request.url)
+                except ValueError:
+                    await route.abort()
+                else:
+                    await route.continue_()
+
+            await context.route("**/*", public_requests)
         page = await context.new_page()
         await load_page(page, config.url, wait_ms=config.wait_ms)
         if config.ready_selector:

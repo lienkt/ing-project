@@ -1,36 +1,41 @@
-# Scraping and labeling
+# Scraping, capture, and labeling
 
-Select a product under Tools → Scraping and click **Scrape & Label Selected**.
-One request captures its page, extracts supported fields, and saves an **In Progress**
-labeling draft. Open the campaign details page to review, correct, and complete
-its labels in the same page. The form includes progress, Save Draft, and Complete
-Labeling. Additional campaign observations is the final labeling section, with its own
-recorded-field count and Previous/Next navigation. It shares Save Draft and
-Complete Labeling with the other sections.
-The Campaign options menu has been removed; existing `/campaigns/:id/label`
-links redirect to the combined details page.
+Apply `alembic upgrade head` from `backend/` for the configured database before
+using this version. Migration 0007 adds persistent user sources; existing
+campaigns, labels, and capture history are unchanged.
 
-All collection and extraction code lives in `backend/app/scraping/`:
+On Tools → Scraping, **Add source** saves bank, product name, category, language,
+and public HTTP(S) URL. Bank and category use the existing Settings catalogs.
+Sources are retained in the active database; configured JSON sources still appear.
+Unknown bank type remains unset.
 
-- `config.py` registers exact supported scraping and feature-extraction cases.
-- `dispatcher.py` validates source identity, availability, and demo provenance.
-- `functions.py` captures page content; `labels.py` extracts draft feature values.
-- `scrapping_pipeline.py` supplies shared text scoring calculations.
+Each source uses the existing exact bank/category/product/language registry:
 
-Every successful import fills measured text counts and source metadata. The ING
-Youth Account English case also fills text style, density, and information
-complexity using the existing rules. Unknown visual, CTA, and tone fields stay
-unset. Synthetic demo scores are only used for registered demo cases.
+- **Specialized scraper available**: use **Scrape & Auto-label** when a label
+  extractor is registered, or **Capture only** to skip all label creation.
+- **Generic capture only**: use **Capture page**. One shared Playwright handler
+  captures screenshot, DOM with open shadow roots, text, headings, paragraphs,
+  bullet items and tables. No feature labels or proposals are generated.
+- **Capture selected** captures evidence only for selected new sources.
+- Existing products can be captured again through the row actions, adding history.
 
-The page, capture history, and draft are committed together. A failed extraction
-rolls back the import. Duplicate imports are skipped unless recapture is requested.
-Recapture refreshes untouched automatic drafts and preserves manually edited or
-completed labels. Old pending proposals are invalidated. Unsupported scraping
-cases still require manual collection.
+A new capture-only campaign remains Not Started. Its submitted product name and
+language remain visible without fabricating a feature record. Manually edited
+and completed labels are preserved. Specialized auto-label recapture may refresh
+an untouched automatic draft. Previous pending proposals are invalidated when
+new evidence is captured. Failed recapture preserves existing database evidence.
 
-Completion remains a human action. Compare reads saved feature drafts, so the
-prefilled values are visible immediately and should be reviewed before use.
+All capture and labeling code lives in `backend/app/scraping/`. `config.py` retains
+SCRAPING_SUPPORT and AUTO_LABEL_SUPPORT. `functions.py` shares browser lifecycle
+and extraction between specialized and generic capture. `labels.py` and the
+scoring formulas are unchanged. Generic capture does not call them.
 
-The legacy `/auto-label` and suggestion-review endpoints remain compatible with
-existing clients and pending proposals, but the frontend needs no separate
-label-generation action. No database migration is required for this change.
+Generic extraction is best-effort: cookie banners, navigation, collapsed content,
+and site-specific layouts can affect results. Empty extracted text can still
+produce a generic evidence capture with a warning. Synthetic examples stay subject
+to demo restrictions and are never treated as real generic captures.
+
+Open View captures to inspect history, screenshots and dom.json, then manually
+review labels on the campaign details page. Compare reads saved feature values;
+missing values stay missing. The legacy auto-label/review endpoints remain for
+compatibility.

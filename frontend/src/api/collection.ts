@@ -3,9 +3,11 @@ import { FeatureInput, FeatureResponse } from "./features";
 
 export type Source = {
   scraping: AutomationSupport;
+  auto_labeling_supported: boolean;
+  capture_available: boolean;
   source_id: string;
   bank: string;
-  bank_type: string;
+  bank_type: string | null;
   country: string;
   product_name: string;
   product_category: string;
@@ -43,9 +45,27 @@ export type Proposal = {
   created_at: string;
 };
 export const getSources = () => request<Catalog>("/scraping/sources");
-export const scrapeSources = (source_ids: string[]) =>
+export const deleteSource = (id: string) =>
+  request<void>(`/scraping/sources/${encodeURIComponent(id)}`, "DELETE");
+export type CaptureMode = "auto" | "capture_only" | "scrape_and_label";
+export type NewSource = {
+  bank: string;
+  product_name: string;
+  product_category: string;
+  language: string;
+  url: string;
+};
+export const addSource = (data: NewSource) =>
+  request<NewSource & { source_id: string }>("/scraping/sources", "POST", data);
+export const scrapeSources = (
+  source_ids: string[],
+  mode: CaptureMode = "auto",
+  recapture = false,
+) =>
   request<{ results: ImportResult[] }>("/scraping/run", "POST", {
     source_ids,
+    mode,
+    recapture,
   });
 export const getSuggestions = (id: string) =>
   request<Proposal | null>(`/campaigns/${id}/suggestions`);

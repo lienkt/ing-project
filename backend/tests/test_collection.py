@@ -166,7 +166,10 @@ def test_mixed_batch_success_failure_unsupported_unknown(client, monkeypatch):
     scraping.SCRAPING_SUPPORT[key(kbc)] = fail
     result = client.post(
         "/api/scraping/run",
-        json={"source_ids": [s.source_id for s in sources] + ["unknown"]},
+        json={
+            "source_ids": [s.source_id for s in sources] + ["unknown"],
+            "mode": "scrape_and_label",
+        },
     ).json()["results"]
     assert [r["status"] for r in result] == [
         "success",
