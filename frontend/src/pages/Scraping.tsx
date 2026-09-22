@@ -364,7 +364,7 @@ export default function Scraping() {
                 onClick={() =>
                   setSelected(
                     visible
-                      .filter((s) => !s.campaign_id && s.capture_available)
+                      .filter((s) => !s.has_capture && s.capture_available)
                       .map((s) => s.source_id),
                   )
                 }
@@ -376,9 +376,9 @@ export default function Scraping() {
               </button>
               <button
                 disabled={!selected.length}
-                onClick={() => void run(selected, "capture_only")}
+                onClick={() => void run(selected, "auto")}
               >
-                {running ? "Capturing…" : `Capture selected (${selected.length})`}
+                {running ? "Capturing…" : `Scrape selected (${selected.length})`}
               </button>
             </div>
             <div className="table-scroll">
@@ -403,7 +403,7 @@ export default function Scraping() {
                           type="checkbox"
                           aria-label={`Select ${source.bank} ${source.product_name}`}
                           checked={selected.includes(source.source_id)}
-                          disabled={!!source.campaign_id || !source.capture_available}
+                          disabled={source.has_capture || !source.capture_available}
                           onChange={(e) =>
                             setSelected((ids) =>
                               e.target.checked
@@ -425,7 +425,7 @@ export default function Scraping() {
                           title={source.scraping.message || undefined}
                         >
                           {source.scraping.supported
-                            ? `Specialized scraper available${source.scraping.is_demo ? " · Demo" : ""}`
+                            ? "Specialized scraper available"
                             : "Generic capture only"}
                         </span>
                         {source.scraping.supported && !source.scraping.available && (
@@ -473,47 +473,37 @@ export default function Scraping() {
                       </td>
                       <td>
                         <div className="source-row-actions">
-                          {source.scraping.supported &&
-                            source.auto_labeling_supported && (
-                              <button
-                                type="button"
-                                title={
-                                  source.campaign_id
-                                    ? "Saves a new capture in history"
-                                    : undefined
-                                }
-                                disabled={!source.scraping.available}
-                                onClick={() =>
-                                  void run(
-                                    [source.source_id],
-                                    "scrape_and_label",
-                                    !!source.campaign_id,
-                                  )
-                                }
-                              >
-                                Scrape & Auto-label
-                              </button>
-                            )}
                           <button
                             type="button"
-                            className="secondary"
+                            className={
+                              source.has_capture || !source.auto_labeling_supported
+                                ? "secondary"
+                                : undefined
+                            }
                             title={
-                              source.campaign_id
-                                ? "Saves a new capture in history"
+                              source.has_capture
+                                ? "Saves a new capture in history; labels stay unchanged"
                                 : undefined
                             }
                             disabled={!source.capture_available}
                             onClick={() =>
                               void run(
                                 [source.source_id],
-                                "capture_only",
-                                !!source.campaign_id,
+                                !source.has_capture &&
+                                  source.scraping.supported &&
+                                  source.auto_labeling_supported
+                                  ? "scrape_and_label"
+                                  : "capture_only",
+                                source.has_capture,
                               )
                             }
                           >
-                            {source.scraping.supported
+                            {source.has_capture
                               ? "Capture only"
-                              : "Capture page"}
+                              : source.scraping.supported &&
+                                  source.auto_labeling_supported
+                                ? "Scrape & Auto-label"
+                                : "Capture page"}
                           </button>
                           <button
                             type="button"

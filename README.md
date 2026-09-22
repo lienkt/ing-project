@@ -1,167 +1,79 @@
 # Banking campaigns comparator
 
-Save bank webpages, label their communication, and compare similar products.
+Capture bank product pages, label their communication, and compare similar products.
+All application records use one database, configured by `DATABASE_URL`.
 
-## First-time installation
+## Local setup
 
-Follow these steps in order. This starts the app with demo data. Commands use macOS/Linux terminals.
+Requires Docker Desktop, Python 3.11+, and Node.js 22.12+ (22.x).
 
-### 1. Install the required tools
-
-Install these tools if missing:
-
-- **Docker Desktop:** install it, open it, and wait until Docker is running. PostgreSQL runs inside Docker; no separate PostgreSQL installation is needed.
-- **Python 3.11 or newer**.
-- **Node.js 22.12 or newer in the 22.x series**, including npm.
-
-Check them in a terminal:
-
-```bash
-docker --version
-docker compose version
-python3 --version
-node --version
-npm --version
-```
-
-### 2. Start the database
-
-Open a terminal in the project root: the folder containing this README and `docker-compose.yml`.
+Start PostgreSQL from the project root:
 
 ```bash
 docker compose up -d --wait db
-docker compose ps
 ```
 
-Wait until `db` is healthy before continuing. This downloads PostgreSQL 17 and starts it on port 5432. Its data survives container restarts.
-
-### 3. Install the backend
-
-In the same terminal:
+Install the backend:
 
 ```bash
 cd backend
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-cp .env.example .env
 ```
 
-Copy `.env` only if it does not already exist. Open `backend/.env` and set these values; keep the other settings:
-
-```dotenv
-DATA_MODE=demo
-DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/campaign_db
-DEMO_DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/campaign_demo_db
-```
-
-For real webpage scraping, install Chromium after installing the backend dependencies:
+For a new installation, copy `.env.example` to `.env`. For an existing installation,
+keep `.env` and ensure `DATABASE_URL` points to the database containing your records.
+Do not replace it with an empty database.
 
 ```bash
 python -m playwright install chromium
-```
-
-Demo scraping does not launch a browser.
-
-### 4. Load demo data and start the backend
-
-Still in `backend/`, with `.venv` activated:
-
-```bash
-python -m scripts.setup_demo
+alembic upgrade head
+python -m scripts.seed_catalog
 uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-The setup command creates the demo database, creates its tables, and adds sample campaigns. Leave this terminal running. Check the API at **http://localhost:8000/docs**.
-
-### 5. Install and start the frontend
-
-Open a **second terminal in the project root**:
+In another terminal:
 
 ```bash
 cd frontend
 npm ci
-cp .env.example .env
+# New installations only: copy .env.example to .env.
 npm run dev
 ```
 
-Copy `.env` only if it does not already exist. Its `VITE_API_URL` should be `http://localhost:8000`. Leave this terminal running.
+Open http://localhost:5173. API documentation: http://localhost:8000/docs.
 
-### 6. Open the app
+## Workflow
 
-Open **http://localhost:5173**. The header should show **Demo database · Synthetic data**.
+1. **Scraping:** add a source, capture its page, or run supported scraping and labeling.
+2. **Dataset:** open a product to inspect capture history and labels.
+3. **Labeling:** review automatic drafts, add observations, then complete labeling.
+4. **Compare:** select pages in the same product category.
 
-- **Dataset:** click a bank name to open a campaign and its labeling.
-- **Compare:** choose **Current Account**, then select at least two labeled pages. Observations appear above the chart.
-- **Settings:** add campaigns, banks, or product categories.
+Capture only never creates automatic labels. Recapture preserves manual and completed
+labels. Screenshots and DOM files live in `backend/data/captures/`; back up this folder
+alongside the database.
 
-Demo labels are synthetic; they are for exploring the app.
+## Updating and testing
 
-## Run the app next time
+The migration history has been consolidated into `initial_schema` for a fresh
+start. Use an empty database; existing databases on the retired migration chain
+must be backed up and replaced with a new database before using this baseline.
+See the [database guide](docs/database-guide.md). No reset is performed automatically.
 
-Do not repeat installation or demo setup. Open Docker Desktop, then use two terminals.
-
-**Terminal 1 — from the project root:**
+For subsequent updates on this baseline, run `alembic upgrade head` from `backend/`
+and restart the backend.
 
 ```bash
-docker compose up -d --wait db
 cd backend
-source .venv/bin/activate
-uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+.venv/bin/python -m pytest -q
 ```
-
-**Terminal 2 — from the project root:**
 
 ```bash
 cd frontend
-npm run dev
+npm run build
 ```
 
-Open http://localhost:5173. Stop each app with `Ctrl+C`. To stop PostgreSQL, run `docker compose stop db` from the project root. Do not use `docker compose down -v`: it deletes stored databases.
-
-## Use real data instead
-
-Stop the backend. From `backend/`, with `.venv` activated:
-
-```bash
-DATA_MODE=real alembic upgrade head
-DATA_MODE=real python -m scripts.seed_catalog
-```
-
-Set `DATA_MODE=real` in `backend/.env`, then restart the backend using the command above. The real database is separate from demo data. Use Settings → Add campaign to enter research pages.
-
-To switch back, set `DATA_MODE=demo` and restart the backend. Existing records in both databases are preserved.
-
-## If setup fails
-
-| Problem                              | Action                                                                                   |
-| ------------------------------------ | ---------------------------------------------------------------------------------------- |
-| `command not found`                  | Install the missing tool, then reopen the terminal                                       |
-| Cannot connect to Docker             | Open Docker Desktop and wait for it to start                                             |
-| Port 5432 is occupied                | Stop the conflicting local PostgreSQL service, or follow the existing-server guide below |
-| Backend cannot connect to PostgreSQL | Check `docker compose ps` and the URLs in `backend/.env`                                 |
-| Missing Python module                | Activate `backend/.venv` and install `requirements.txt`                                  |
-| Frontend cannot reach the API        | Keep the backend running on port 8000; check `VITE_API_URL`                              |
-| Wrong data appears                   | Check `DATA_MODE`, restart the backend, and refresh the browser                          |
-
-## Try scraping and labeling
-
-Open **Tools → Scraping**, select supported products, and click **Scrape & Label Selected**. Scraping saves supported fields immediately as an In Progress draft. Open the campaign to review and finish labeling. Unknown fields remain unset. Demo results are placeholders, not collected evidence.
-
-For an existing installation, apply `DATA_MODE=demo alembic upgrade head` from `backend/` before starting the updated app. See [collection workflow](docs/collection-workflow.md) for details and developer handoff.
-
-## Development tools (optional)
-
-From the project root, install the Python formatter:
-
-```bash
-backend/.venv/bin/python -m pip install -r backend/requirements-dev.txt
-```
-
-Prettier is included in the frontend dependencies installed above. In VS Code, install the workspace's recommended **Prettier** and **Ruff** extensions to format on save. See [formatting commands](docs/development.md#formatting).
-
-## Further documentation
-
-- [Database operations](docs/database-guide.md): existing/shared PostgreSQL, migrations, backup, restore, and team data.
-- [Development checks](docs/development.md): tests and frontend build.
-- [Documentation index](docs/README.md): architecture, labeling reference, API, and comparison.
+See [scraping flow](backend/app/scraping/README.md),
+[database guide](docs/database-guide.md), and [API reference](docs/api-reference.md).

@@ -3,7 +3,6 @@
 import json
 import pytest
 from pydantic import ValidationError
-from app.core.config import settings
 from app.schemas.automation import (
     ScrapedPage,
     SourceDefinition,
@@ -11,24 +10,103 @@ from app.schemas.automation import (
     ManualRequired,
     build_case_key,
 )
-from app.scraping import config as scraping
+from app.scraping import scraping_config as scraping
 from app.scraping.dispatcher import scrape_campaign
-from app.scraping import config as labeling
+from app.scraping import scraping_config as labeling
 from app.scraping.dispatcher import auto_label_campaign
-from app.scraping.functions import scrape_demo_page
-from app.scraping.labels import label_demo_page
 from app.services import source_catalog
 from app.services.source_catalog import load_sources, CatalogError
 from test_campaigns import client, create
 
 
-@pytest.fixture(autouse=True)
-def demo_mode(monkeypatch):
-    monkeypatch.setattr(settings, "data_mode", "demo")
-    monkeypatch.setattr(scraping, "SCRAPING_SUPPORT", dict(scraping.SCRAPING_SUPPORT))
-    monkeypatch.setattr(
-        labeling, "AUTO_LABEL_SUPPORT", dict(labeling.AUTO_LABEL_SUPPORT)
+from datetime import datetime, UTC
+from app.schemas.automation import CampaignInformation
+from app.schemas.features import FeatureInput
+
+
+def fixture_page(campaign: SourceDefinition) -> ScrapedPage:
+    """TEST FIXTURE: synthetic content, no website access. Config limits supported cases."""
+    paragraphs = [
+        f"Fixture content for {campaign.bank}. This is not collected website evidence.",
+        "Explore example account features and everyday banking benefits.",
+    ]
+    return ScrapedPage(
+        source=campaign,
+        title=f"Fixture {campaign.product_name}",
+        text="\n".join(paragraphs),
+        paragraphs=paragraphs,
+        headings=[campaign.product_name, "Example benefits"],
+        buttons=["Open account", "Learn more"],
+        sections=["Overview", "Benefits"],
+        scraped_at=datetime.now(UTC),
+        warnings=["TEST FIXTURE: synthetic content; no webpage was fetched."],
     )
+
+
+# Real cases: one public entry point per bank / category / product / language.
+def fixture_labels(
+    campaign: CampaignInformation, scraped_data: ScrapedPage
+) -> FeatureSuggestions:
+    """TEST FIXTURE. Counts plus fixed example scores; no real analysis."""
+    return FeatureSuggestions(
+        warnings=["TEST FIXTURE: review every suggestion."],
+        values=FeatureInput(
+            word_count=len(scraped_data.text.split()),
+            heading_count=len(scraped_data.headings),
+            paragraph_count=len(scraped_data.paragraphs),
+            image_count=len(scraped_data.images),
+            cta_count=len(scraped_data.buttons),
+            tone_formality=3,
+            tone_friendliness=4,
+            visual_intensity=2,
+            product_name=campaign.product_name,
+            language=scraped_data.source.language,
+            bank_type=scraped_data.source.bank_type,
+            capture_date=scraped_data.scraped_at.date(),
+        ),
+    )
+
+
+@pytest.fixture(autouse=True)
+def source_fixtures(monkeypatch):
+    real_loader = load_sources
+    fixture_sources = [
+        SourceDefinition(
+            source_id=f"{bank.lower()}-example-current-account-en",
+            bank=bank,
+            bank_type="Traditional",
+            product_name=f"{bank} example current account",
+            product_category="current_account",
+            language="English",
+            page_type="Product Page",
+            url=f"https://example.com/source-catalog/{bank.lower()}/current-account",
+        )
+        for bank in ("ING", "KBC", "Revolut")
+    ]
+    fixture_sources += [
+        s for s in real_loader() if s.source_id == "ing-youth-account-en"
+    ]
+
+    def fixture_loader(directory=None):
+        return real_loader(directory) if directory is not None else fixture_sources
+
+    monkeypatch.setattr(source_catalog, "load_sources", fixture_loader)
+    monkeypatch.setattr(__import__(__name__), "load_sources", fixture_loader)
+    registry = {key: dict(value) for key, value in scraping.AUTO_SUPPORT.items()}
+    # Fixture handlers are test fixtures, not production support entries.
+    registry[
+        build_case_key("ING", "current_account", "ING example current account", "EN")
+    ] = {
+        "scrape": fixture_page,
+        "label": fixture_labels,
+    }
+    registry[
+        build_case_key("KBC", "current_account", "KBC example current account", "EN")
+    ] = {
+        "scrape": fixture_page,
+        "label": None,
+    }
+    monkeypatch.setattr(scraping, "AUTO_SUPPORT", registry)
 
 
 def key(source):
@@ -48,13 +126,13 @@ def import_one(client, bank="ING"):
 
 def test_contracts():
     source = load_sources()[0]
-    page = ScrapedPage.model_validate(scrape_demo_page(source).model_dump())
-    assert page.source == source and page.is_demo and page.success
+    page = ScrapedPage.model_validate(fixture_page(source).model_dump())
+    assert page.source == source and page.success
     result = FeatureSuggestions.model_validate(
-        label_demo_page(source, page).model_dump(exclude_unset=True)
+        fixture_labels(source, page).model_dump(exclude_unset=True)
     )
     assert result.values.word_count > 0 and result.values.image_count == 0
-    assert label_demo_page(source, page) == label_demo_page(source, page)
+    assert fixture_labels(source, page) == fixture_labels(source, page)
     for values in (
         {"tone_formality": 6},
         {"word_count": -1},
@@ -65,7 +143,7 @@ def test_contracts():
         {},
     ):
         with pytest.raises(ValidationError):
-            FeatureSuggestions(values=values, is_demo=True)
+            FeatureSuggestions(values=values)
 
 
 def test_normalization_is_exact():
@@ -98,14 +176,14 @@ def test_catalog_validation(tmp_path):
 
 
 def test_registered_functions_called_and_unregistered_not_called(monkeypatch):
-    source = load_sources()[0].model_copy(update={"is_example": False})
+    source = load_sources()[0]
     calls = []
 
     def scrape(case):
         calls.append(case)
-        return scrape_demo_page(case).model_copy(update={"is_demo": False})
+        return fixture_page(case)
 
-    scraping.SCRAPING_SUPPORT[key(source)] = scrape
+    scraping.AUTO_SUPPORT.setdefault(key(source), {})["scrape"] = scrape
     page = scrape_campaign(source)
     assert calls == [source] and page.success
     unsupported = source.model_copy(update={"product_name": "Unknown product"})
@@ -114,9 +192,9 @@ def test_registered_functions_called_and_unregistered_not_called(monkeypatch):
 
     def label(case, data):
         calls.append((case, data))
-        return FeatureSuggestions(values={"word_count": 42}, is_demo=False)
+        return FeatureSuggestions(values={"word_count": 42})
 
-    labeling.AUTO_LABEL_SUPPORT[key(source)] = label
+    labeling.AUTO_SUPPORT.setdefault(key(source), {})["label"] = label
     result = auto_label_campaign(source, page)
     assert result.values.word_count == 42 and calls[-1] == (source, page)
     before = len(calls)
@@ -127,7 +205,11 @@ def test_registered_functions_called_and_unregistered_not_called(monkeypatch):
 def test_catalog_is_not_dataset_and_support_is_independent(client):
     assert client.get("/api/campaigns").json() == []
     sources = client.get("/api/scraping/sources").json()["sources"]
-    assert {s["bank"]: s["scraping"]["supported"] for s in sources} == {
+    assert {
+        s["bank"]: s["scraping"]["supported"]
+        for s in sources
+        if "example" in s["source_id"]
+    } == {
         "ING": True,
         "KBC": True,
         "Revolut": False,
@@ -152,18 +234,14 @@ def test_catalog_is_not_dataset_and_support_is_independent(client):
 
 
 def test_mixed_batch_success_failure_unsupported_unknown(client, monkeypatch):
-    sources = [
-        s.model_copy(update={"is_example": False})
-        for s in load_sources()
-        if s.is_example
-    ]
+    sources = [s for s in load_sources() if "example" in s.source_id]
     monkeypatch.setattr(source_catalog, "load_sources", lambda: sources)
 
     def fail(case):
         raise ValueError("Example source failure")
 
     kbc = next(s for s in sources if s.bank == "KBC")
-    scraping.SCRAPING_SUPPORT[key(kbc)] = fail
+    scraping.AUTO_SUPPORT.setdefault(key(kbc), {})["scrape"] = fail
     result = client.post(
         "/api/scraping/run",
         json={
@@ -184,7 +262,7 @@ def test_mixed_batch_success_failure_unsupported_unknown(client, monkeypatch):
     assert (
         next(s for s in catalog if s["bank"] == "Revolut")["import_status"] == "Ready"
     )
-    scraping.SCRAPING_SUPPORT[key(kbc)] = scrape_demo_page
+    scraping.AUTO_SUPPORT.setdefault(key(kbc), {})["scrape"] = fixture_page
     assert (
         client.post("/api/scraping/run", json={"source_ids": [kbc.source_id]}).json()[
             "results"
@@ -227,12 +305,11 @@ def test_existing_manual_url_is_not_overwritten(client):
     result = client.post(
         "/api/scraping/run", json={"source_ids": [source.source_id]}
     ).json()["results"][0]
-    assert result["status"] == "existing" and result["campaign_id"] == original["id"]
-    assert client.get(f"/api/campaigns/{original['id']}").json()["collection"] is None
-    assert (
-        client.post(f"/api/campaigns/{original['id']}/auto-label").json()["status"]
-        == "manual_required"
-    )
+    assert result["status"] == "success" and result["campaign_id"] == original["id"]
+    saved = client.get(f"/api/campaigns/{original['id']}").json()
+    assert saved["campaign_url"] == original["campaign_url"]
+    assert saved["collection"] is not None
+    assert len(client.get("/api/campaigns").json()) == 1
 
 
 def test_missing_scraped_data_even_when_case_registered(client):
@@ -261,7 +338,7 @@ def test_import_suggest_review_complete_compare(client):
     base = f"/api/campaigns/{import_one(client)}"
     assert client.get(base).json()["automation"]["auto_labeling"]["available"]
     proposal = client.post(base + "/auto-label").json()
-    assert proposal["is_demo"] and not proposal["reviewed"]
+    assert not proposal["reviewed"]
     assert client.get(base).json()["has_suggestions"]
     assert client.get(base + "/features").json()["features"]["source"] == "automatic"
     assert (
@@ -354,62 +431,30 @@ def test_replaced_proposal_token_rejected(client):
 
 
 def test_invalid_function_output_isolated(client, monkeypatch):
-    sources = [
-        s.model_copy(update={"is_example": False})
-        for s in load_sources()
-        if s.is_example
-    ]
+    sources = [s for s in load_sources() if "example" in s.source_id]
     monkeypatch.setattr(source_catalog, "load_sources", lambda: sources)
     source = sources[0]
 
     def invalid(case):
-        return scrape_demo_page(case).model_copy(
-            update={"is_demo": False, "headings": "invalid"}
-        )
+        return fixture_page(case).model_copy(update={"headings": "invalid"})
 
-    scraping.SCRAPING_SUPPORT[key(source)] = invalid
+    scraping.AUTO_SUPPORT.setdefault(key(source), {})["scrape"] = invalid
     result = client.post(
         "/api/scraping/run", json={"source_ids": [source.source_id]}
     ).json()
     assert result["results"][0]["status"] == "failed"
     assert client.get("/api/campaigns").json() == []
-    scraping.SCRAPING_SUPPORT[key(source)] = scrape_demo_page
+    scraping.AUTO_SUPPORT.setdefault(key(source), {})["scrape"] = fixture_page
     campaign_id = import_one(client)
 
     def invalid_label(case, page):
-        result = label_demo_page(case, page)
+        result = fixture_labels(case, page)
         result.values.tone_formality = 99
         return result
 
-    labeling.AUTO_LABEL_SUPPORT[key(source)] = invalid_label
+    labeling.AUTO_SUPPORT.setdefault(key(source), {})["label"] = invalid_label
     assert client.post(f"/api/campaigns/{campaign_id}/auto-label").status_code == 422
     assert client.get(f"/api/campaigns/{campaign_id}/suggestions").json() is None
-
-
-def test_demo_functions_block_real_database(client, monkeypatch):
-    campaign_id = import_one(client)
-    proposal = client.post(f"/api/campaigns/{campaign_id}/auto-label").json()
-    monkeypatch.setattr(settings, "data_mode", "real")
-    result = client.post(
-        "/api/scraping/run",
-        json={
-            "source_ids": [
-                s.source_id for s in load_sources() if s.bank in {"KBC", "Revolut"}
-            ]
-        },
-    ).json()["results"]
-    assert [r["status"] for r in result] == ["failed", "manual_required"]
-    assert (
-        client.post(f"/api/campaigns/{campaign_id}/auto-label").json()["status"]
-        == "manual_required"
-    )
-    assert (
-        client.post(
-            f"/api/campaigns/{campaign_id}/suggestions/review",
-            json={"token": proposal["token"], "values": proposal["values"]},
-        ).status_code
-        == 409
-    )
 
 
 def test_changed_url_blocks_extraction(client):
@@ -513,7 +558,7 @@ def test_scrape_label_failure_rolls_back_campaign(client, monkeypatch):
     assert client.get("/api/campaigns").json() == []
 
 
-def test_scrape_demo_labels_available_without_second_action(client):
+def test_scrape_automatic_labels_available_without_second_action(client):
     campaign_id = import_one(client)
     data = client.get(f"/api/campaigns/{campaign_id}/features").json()
     assert data["labeling_status"] == "In Progress"

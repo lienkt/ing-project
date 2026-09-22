@@ -7,7 +7,6 @@ Run the backend and open http://localhost:8000/docs for the complete interactive
 ## System
 
 - `GET /health`: process liveness, not database readiness.
-- `GET /api/environment`: selected `data_mode` only; no connection credentials.
 
 ## Campaigns
 
@@ -92,10 +91,10 @@ See [feature framework](feature-framework.md) and [comparison methodology](compa
 | GET    | `/api/campaigns/{id}/suggestions`        | Latest proposal or null                                                                                                           |
 | POST   | `/api/campaigns/{id}/suggestions/review` | `{ "token": "returned-token", "values": { "word_count": 42 } }`; explicit reviewed save as In Progress                            |
 
-Campaign responses include `automation.scraping` and `automation.auto_labeling`. Each support object contains `supported` (registered case), `available` (can run now), `is_demo`, and `message`. A registered label function without valid scraped input returns `manual_required` with `supported: true`; it is not called.
+Campaign responses include `automation.scraping` and `automation.auto_labeling`. Each support object contains `supported` (registered case), `available` (can run now), and `message`. A registered label function without valid scraped input returns `manual_required` with `supported: true`; it is not called.
 
 Unsupported cases are normal 200 responses, not engine failures. Batch results distinguish `manual_required` from `failed`. Unknown campaigns return 404; stale review saves return 409; invalid requests or label-function results return 422. Malformed catalog files return 500 with validation details.
 
-Review values use the existing partial FeatureInput contract. Omitted final fields are preserved; null clears them. Completion still uses the existing endpoint. See [workflow](collection-workflow.md) for matching, demo safety, and review behavior.
+Review values use the existing partial FeatureInput contract. Omitted final fields are preserved; null clears them. Completion still uses the existing endpoint. See [workflow](collection-workflow.md) for matching and review behavior.
 
 Scraping `/api/scraping/run` now also saves supported feature values as an In Progress draft in the same transaction. `/auto-label` is retained for legacy clients; it is no longer a required workflow step.

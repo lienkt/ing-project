@@ -27,6 +27,6 @@ There are no automatic applicability rules. Explain inapplicable fields in notes
 
 Each campaign has one current feature record, separate from communication details and optional evaluation. Saves have no stale-edit conflict detection; coordinate editing within the team.
 
-Labeling supports manual entry and [automatic suggestion review](collection-workflow.md). Auto-label availability comes from explicit case config; the currently registered labeling function is demo-only. Provenance is record-level, not a per-field history; explicitly saving a reviewed proposal uses `manual_override`. During proposal review, autosave is disabled until an explicit review save.
+Labeling supports manual entry and [automatic suggestion review](collection-workflow.md). Auto-label availability comes from explicit case config; registered handlers generate reviewable drafts. Provenance is record-level, not a per-field history; explicitly saving a reviewed proposal uses `manual_override`. During proposal review, autosave is disabled until an explicit review save.
 
 See [field reference](labeling-field-reference.md) for values and [API reference](api-reference.md#feature-labeling) for request contracts.

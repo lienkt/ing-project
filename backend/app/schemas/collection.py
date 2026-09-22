@@ -10,6 +10,7 @@ class SourceView(SourceDefinition):
     scraping: dict[str, bool | str | None]
     auto_labeling_supported: bool = False
     capture_available: bool = True
+    has_capture: bool = False
     import_status: str = "Ready"
     campaign_id: int | None = None
     error: str | None = None
@@ -20,7 +21,6 @@ class CatalogResponse(Schema):
     sources: list[SourceView]
     banks: list[str]
     categories: list[str]
-    data_mode: str
 
 
 class SourceCreate(Schema):
@@ -54,7 +54,6 @@ class ProposalRead(Schema):
     campaign_id: int
     token: str
     engine: str
-    is_demo: bool
     values: dict[str, str | int | bool | None]
     warnings: list[str]
     reviewed: bool

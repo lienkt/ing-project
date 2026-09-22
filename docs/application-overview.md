@@ -86,9 +86,9 @@ Campaign context supplies the bank, category, and source URL. Feature labeling a
 
 Dataset's In progress summary counts campaigns whose labeling is not completed, including those not started. Completion does not guarantee 100% field coverage.
 
-## Research and demo data
+## Research data
 
-Real and demo modes use separate PostgreSQL databases. The header identifies the active mode. Demo bank names are normal names, but values are synthetic and source URLs are placeholders. Use them to explore the workflow, not as research evidence.
+All records use the database selected by `DATABASE_URL`.
 
 See [feature definitions and progress](feature-framework.md), [comparison rules](comparison.md), and [database operations](database-guide.md).
 

@@ -20,11 +20,11 @@ React pages → typed API clients → FastAPI routes → services → SQLAlchemy
 | `backend/app/services/`           | Business rules and persistence operations                     |
 | `backend/app/scraping/`           | Explicit scraping support config and functions                |
 | `backend/app/models/`             | SQLAlchemy table mappings and relationships                   |
-| `backend/app/core/config.py`      | Environment and real/demo connection selection                |
+| `backend/app/core/config.py`      | Environment and database connection settings                |
 | `backend/app/database/session.py` | Engine and per-request sessions                               |
 | `backend/alembic/versions/`       | Ordered database schema migrations                            |
-| `backend/data/`                   | Catalog defaults and synthetic demo fixtures                  |
-| `backend/scripts/`                | Catalog seeding and demo setup                                |
+| `backend/data/`                   | Catalog defaults and source definitions                  |
+| `backend/scripts/`                | Catalog seeding                                |
 
 ## Where to change campaign fields
 

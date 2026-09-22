@@ -2358,17 +2358,6 @@ summary:focus-visible {
   }
 }
 
-.data-mode {
-  font-size: 14px;
-  padding: 4px 10px;
-  border-radius: 6px;
-  background: #edf3ef;
-  color: #315b50;
-}
-.data-mode.demo {
-  background: #fff3dc;
-  color: #754b1c;
-}
 @media (max-width: 760px) {
   .topbar {
     height: auto;

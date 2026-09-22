@@ -57,7 +57,6 @@ class CollectionRead(Schema):
     source_id: str
     status: str
     scraped_at: datetime | None
-    is_demo: bool
     engine: str
     product_name: str | None
     language: str | None

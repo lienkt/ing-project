@@ -1,10 +1,8 @@
 from fastapi import APIRouter, HTTPException
 from sqlalchemy import select
 from app.api.campaigns import DB
-from app.core.config import settings
 from app.models.collection import SourceImport, UserSource, DeletedSource
-from app.schemas.automation import SourceDefinition, build_case_key
-from app.scraping import config as scraping_config
+from app.schemas.automation import SourceDefinition
 from app.schemas.collection import SourceCreate
 from sqlalchemy.exc import IntegrityError
 from uuid import uuid4
@@ -15,25 +13,46 @@ from app.schemas.collection import (
     ScrapeInput,
     BatchResponse,
 )
-from app.scraping.dispatcher import scraping_support
+from app.scraping.dispatcher import scraping_support, has_auto_labels
 from app.services import source_catalog, collection
 
 router = APIRouter(prefix="/api/scraping", tags=["scraping"])
 
 
 def catalog(db):
+    """Import configured sources once; the database owns the displayed list."""
     try:
-        deleted = set(db.scalars(select(DeletedSource.source_id)))
-        configured = [
-            source for source in source_catalog.load_sources()
-            if source.source_id not in deleted
-        ]
-        return configured + [
-            SourceDefinition.model_validate(row.definition)
-            for row in db.scalars(select(UserSource))
-        ]
+        configured = source_catalog.load_sources()
     except source_catalog.CatalogError as exc:
         raise HTTPException(500, str(exc)) from exc
+    deleted = set(db.scalars(select(DeletedSource.source_id)))
+    rows = list(db.scalars(select(UserSource)))
+    ids = {row.source_id for row in rows}
+    urls = {row.source_url for row in rows}
+    for source in configured:
+        identity = collection.normalized_url(source.url)
+        if source.source_id in deleted or source.source_id in ids or identity in urls:
+            continue
+        try:
+            with db.begin_nested():
+                row = UserSource(
+                    source_id=source.source_id,
+                    source_url=identity,
+                    definition=source.model_dump(mode="json"),
+                )
+                db.add(row)
+                db.flush()
+        except IntegrityError:
+            # Another request may have imported this same configured source.
+            continue
+        ids.add(source.source_id)
+        urls.add(identity)
+    db.commit()
+    return [
+        SourceDefinition.model_validate(row.definition)
+        for row in db.scalars(select(UserSource))
+        if row.source_id not in deleted
+    ]
 
 
 @router.get("/sources", response_model=CatalogResponse)
@@ -64,17 +83,11 @@ def sources(db: DB, bank: str | None = None, product_category: str | None = None
             SourceView(
                 **source.model_dump(exclude={"campaign_id"}),
                 scraping=scraping_support(source),
-                auto_labeling_supported=build_case_key(
-                    source.bank,
-                    source.product_category,
-                    source.product_name,
-                    source.language,
-                )
-                in scraping_config.AUTO_LABEL_SUPPORT,
+                auto_labeling_supported=has_auto_labels(source),
                 capture_available=(
                     scraping_support(source)["available"]
                     if scraping_support(source)["supported"]
-                    else not source.is_example
+                    else True
                 ),
                 import_status="Already in Dataset"
                 if existing_id and not (record and record.campaign_id)
@@ -82,6 +95,7 @@ def sources(db: DB, bank: str | None = None, product_category: str | None = None
                 if record
                 else "Ready",
                 campaign_id=existing_id,
+                has_capture=collection.has_saved_capture(db, existing_id, record),
                 error=record.error if record else None,
                 attempted_at=record.attempted_at if record else None,
             )
@@ -90,7 +104,6 @@ def sources(db: DB, bank: str | None = None, product_category: str | None = None
         sources=views,
         banks=source_catalog.banks(all_sources),
         categories=sorted({s.product_category for s in all_sources}),
-        data_mode=settings.data_mode,
     )
 
 
@@ -148,8 +161,9 @@ def delete_source(source_id: str, db: DB):
     custom = db.get(UserSource, source_id)
     if custom:
         db.delete(custom)
-    else:
-        db.add(DeletedSource(source_id=source_id))
+    if source_id in {s.source_id for s in source_catalog.load_sources()}:
+        if db.get(DeletedSource, source_id) is None:
+            db.add(DeletedSource(source_id=source_id))
     db.commit()
 
 

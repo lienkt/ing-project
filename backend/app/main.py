@@ -27,8 +27,3 @@ app.include_router(catalog_router)
 @app.get("/health")
 def health():
     return {"status": "ok"}
-
-
-@app.get("/api/environment")
-def environment():
-    return {"data_mode": settings.data_mode}

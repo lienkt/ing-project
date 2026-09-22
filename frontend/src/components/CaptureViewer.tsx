@@ -123,7 +123,6 @@ export function CaptureViewer({
                       <option key={c.id} value={c.id}>
                         {i === 0 ? "Latest · " : ""}
                         {new Date(c.page.scraped_at).toLocaleString()}
-                        {c.page.is_demo ? " · Demo" : ""}
                       </option>
                     ))}
                   </select>
@@ -172,11 +171,7 @@ export function CaptureViewer({
                 <div className="capture-empty">
                   <Camera size={30} />
                   <h3>No screenshot available</h3>
-                  <p>
-                    {current.page.is_demo
-                      ? "This is synthetic demo content, not a captured website."
-                      : "This capture contains text only."}
-                  </p>
+                  <p>This capture contains text only.</p>
                 </div>
               )}
               <div className="capture-supporting">

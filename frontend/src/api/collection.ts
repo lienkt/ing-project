@@ -5,6 +5,7 @@ export type Source = {
   scraping: AutomationSupport;
   auto_labeling_supported: boolean;
   capture_available: boolean;
+  has_capture: boolean;
   source_id: string;
   bank: string;
   bank_type: string | null;
@@ -14,7 +15,7 @@ export type Source = {
   language: string;
   page_type: string;
   url: string;
-  is_example: boolean;
+
   import_status: string;
   campaign_id: number | null;
   error: string | null;
@@ -24,7 +25,6 @@ export type Catalog = {
   sources: Source[];
   banks: string[];
   categories: string[];
-  data_mode: string;
 };
 export type ImportResult = {
   source_id: string;
@@ -38,7 +38,7 @@ export type Proposal = {
   campaign_id: number;
   token: string;
   engine: string;
-  is_demo: boolean;
+
   values: Partial<FeatureInput>;
   warnings: string[];
   reviewed: boolean;
@@ -97,7 +97,7 @@ export type ScrapedContent = {
   bullets?: string[];
   tables?: string[];
   scraped_at: string;
-  is_demo: boolean;
+
   warnings: string[];
   source: { product_name: string; language: string; url: string };
 };

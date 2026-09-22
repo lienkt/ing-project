@@ -7,7 +7,6 @@ from uuid import uuid4
 from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
-from app.core.config import settings
 from app.models.campaign import Campaign
 from app.models.collection import SourceImport, FeatureProposal, PageCapture
 from app.schemas.automation import ManualRequired, campaign_information, stored_page
@@ -29,12 +28,19 @@ def normalized_url(url):
     )
 
 
-def allow_engine(is_demo):
-    if is_demo and settings.data_mode != "demo":
-        raise HTTPException(
-            409,
-            "Demo automation requires DATA_MODE=demo. Switch databases before running this tool.",
+def has_saved_capture(db, campaign_id, record=None):
+    if not campaign_id:
+        return False
+    if record and record.page and record.page.get("success", True):
+        return True
+    return (
+        db.scalar(
+            select(PageCapture.id)
+            .where(PageCapture.campaign_id == campaign_id)
+            .limit(1)
         )
+        is not None
+    )
 
 
 def scrape_batch(db, sources, source_ids, recapture=False, mode="auto"):
@@ -47,32 +53,10 @@ def scrape_batch(db, sources, source_ids, recapture=False, mode="auto"):
             )
             continue
         support = scraping_support(source)
-        if not support["supported"] and (
-            mode == "scrape_and_label" or source.is_example
-        ):
-            results.append(
-                dict(
-                    source_id=source_id,
-                    status="manual_required",
-                    supported=False,
-                    message="Automatic scraping is not available. Manual scraping required.",
-                )
-            )
-            continue
         identity = normalized_url(source.url)
         record = db.get(SourceImport, source_id) or db.scalar(
             select(SourceImport).where(SourceImport.source_url == identity)
         )
-        if record and record.campaign_id and not recapture:
-            results.append(
-                dict(
-                    source_id=source_id,
-                    status="existing",
-                    supported=True,
-                    campaign_id=record.campaign_id,
-                )
-            )
-            continue
         # Also protect manually entered campaigns, without attaching fabricated scraped data.
         existing = next(
             (
@@ -82,7 +66,10 @@ def scrape_batch(db, sources, source_ids, recapture=False, mode="auto"):
             ),
             None,
         )
-        if existing and not recapture:
+        already_captured = has_saved_capture(
+            db, existing.id if existing else None, record
+        )
+        if already_captured and not recapture:
             results.append(
                 dict(
                     source_id=source_id,
@@ -92,25 +79,39 @@ def scrape_batch(db, sources, source_ids, recapture=False, mode="auto"):
                 )
             )
             continue
-        try:
-            from app.scraping.functions import capture_generic_page
-            from app.scraping import config
-            from app.schemas.automation import build_case_key
-
-            labeling_supported = (
-                build_case_key(
-                    source.bank,
-                    source.product_category,
-                    source.product_name,
-                    source.language,
+        if (
+            not already_captured
+            and not support["supported"]
+            and mode == "scrape_and_label"
+        ):
+            results.append(
+                dict(
+                    source_id=source_id,
+                    status="manual_required",
+                    supported=False,
+                    message="Automatic labeling is not supported; use Capture page.",
                 )
-                in config.AUTO_LABEL_SUPPORT
             )
-            if mode == "scrape_and_label" and not labeling_supported:
+            continue
+        try:
+            from app.scraping.page_scrapers import capture_generic_page
+            from app.scraping.dispatcher import has_auto_labels
+
+            labeling_supported = has_auto_labels(source)
+            if (
+                not already_captured
+                and mode == "scrape_and_label"
+                and not labeling_supported
+            ):
                 raise ValueError(
                     "No automatic label extractor is registered for this source"
                 )
-            capture_only = mode == "capture_only" or not support["supported"]
+            capture_only = (
+                already_captured
+                or mode == "capture_only"
+                or not support["supported"]
+                or not labeling_supported
+            )
             page = (
                 scrape_campaign(source)
                 if support["supported"]
@@ -119,7 +120,6 @@ def scrape_batch(db, sources, source_ids, recapture=False, mode="auto"):
             if isinstance(page, ManualRequired):
                 results.append(dict(source_id=source_id, **page.model_dump()))
                 continue
-            allow_engine(page.is_demo)
             if not page.success:
                 raise ValueError(page.error or "Scraper reported failure")
             validate_project(db, source.product_category)
@@ -135,18 +135,11 @@ def scrape_batch(db, sources, source_ids, recapture=False, mode="auto"):
                 db.add(record)
             record.campaign_id = campaign.id
             record.status = "Scraped"
-            record.engine = (
-                "demo"
-                if page.is_demo
-                else "configured"
-                if support["supported"]
-                else "generic"
-            )
+            record.engine = "configured" if support["supported"] else "generic"
             page.metadata["capture_mode"] = (
                 "capture_only" if capture_only else "scrape_and_label"
             )
             page.metadata["engine"] = record.engine
-            record.is_demo = page.is_demo
             # Preserve legacy evidence on the first explicit recapture.
             if record.page and not db.scalar(
                 select(PageCapture.id)
@@ -172,13 +165,12 @@ def scrape_batch(db, sources, source_ids, recapture=False, mode="auto"):
             record.attempted_at = datetime.now(timezone.utc)
             if not capture_only:
                 # Extract labels in the same transaction as the captured page.
-                from app.scraping.labels import collected_feature_values
+                from app.scraping.feature_labels import collected_feature_values
                 from app.models.features import CampaignFeature
 
                 suggestions = auto_label_campaign(source, page)
                 values = collected_feature_values(page).model_dump(exclude_unset=True)
                 if not isinstance(suggestions, ManualRequired):
-                    allow_engine(suggestions.is_demo)
                     values.update(suggestions.values.model_dump(exclude_unset=True))
                 if campaign.features is None:
                     campaign.features = CampaignFeature(
@@ -239,8 +231,7 @@ def scrape_batch(db, sources, source_ids, recapture=False, mode="auto"):
                 db.add(failed)
             if not failed.campaign_id:
                 failed.status = "Failed"
-                failed.engine = "demo" if support["is_demo"] else "configured"
-                failed.is_demo = support["is_demo"]
+                failed.engine = "configured"
                 failed.error = message
                 failed.attempted_at = datetime.now(timezone.utc)
                 try:
@@ -273,7 +264,6 @@ def generate_suggestions(db, campaign_id):
         suggestions = auto_label_campaign(campaign_information(campaign), page)
         if isinstance(suggestions, ManualRequired):
             return suggestions
-        allow_engine(suggestions.is_demo or page.is_demo)
     except HTTPException:
         raise
     except Exception as exc:
@@ -287,8 +277,7 @@ def generate_suggestions(db, campaign_id):
         proposal = FeatureProposal(campaign_id=campaign_id)
         campaign.proposal = proposal
     proposal.token = str(uuid4())
-    proposal.engine = "demo" if suggestions.is_demo else "configured"
-    proposal.is_demo = suggestions.is_demo or page.is_demo
+    proposal.engine = "configured"
     proposal.values = suggestions.values.model_dump(mode="json", exclude_unset=True)
     proposal.warnings = suggestions.warnings
     proposal.baseline = baseline(campaign)
@@ -311,7 +300,6 @@ def review_suggestions(db, campaign_id, data):
             409,
             "Suggestions changed or were already reviewed. Reload the labeling page.",
         )
-    allow_engine(proposal.is_demo)
     if proposal.baseline != baseline(campaign):
         raise HTTPException(
             409,

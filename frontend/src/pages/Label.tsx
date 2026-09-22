@@ -312,16 +312,9 @@ export function LabelEditor({
           remaining fields.
         </div>
       )}
-      {campaign.collection?.is_demo && (
-        <div className="notice" role="note">
-          Demo imported content — not collected website evidence.
-        </div>
-      )}
       {proposal && !proposal.reviewed && (
         <section className="notice" aria-label="Automatic suggestions">
-          <strong>
-            {proposal.is_demo ? "Demo automatic suggestions" : "Automatic suggestions"}
-          </strong>
+          <strong>Automatic suggestions</strong>
           {reviewPending ? (
             <>
               <p>

@@ -1,0 +1,64 @@
+{
+  "sources": [
+    {
+      "source_id": "argenta-messages-savings-account-fr",
+      "bank": "Argenta",
+      "bank_type": "Traditional",
+      "product_name": "Savings account",
+      "product_category": "savings_account",
+      "language": "French",
+      "page_type": "Product Page",
+      "url": "https://www.argenta.be/fr/epargner/compte-d-epargne.html"
+    },
+    {
+      "source_id": "belfius-messages-investment-fr",
+      "bank": "Belfius",
+      "bank_type": "Traditional",
+      "product_name": "Investment",
+      "product_category": "investment",
+      "language": "French",
+      "page_type": "Product Page",
+      "url": "https://www.belfius.be/site/professional/fr/produits/epargner-investir"
+    },
+    {
+      "source_id": "beobank-messages-car-insurance-nl",
+      "bank": "Beobank",
+      "bank_type": "Traditional",
+      "product_name": "Car insurance",
+      "product_category": "insurance",
+      "language": "Dutch",
+      "page_type": "Product Page",
+      "url": "https://www.beobank.be/nl/verzekeringen/mobiliteit/autoverzekering.html"
+    },
+    {
+      "source_id": "crelan-messages-savings-account-nl",
+      "bank": "Crelan",
+      "bank_type": "Traditional",
+      "product_name": "Savings account",
+      "product_category": "savings_account",
+      "language": "Dutch",
+      "page_type": "Product Page",
+      "url": "https://www.crelan.be/nl/particulieren/sparen-en-beleggen/sparen/product/spaarrekeningen"
+    },
+    {
+      "source_id": "ing-messages-car-insurance-en",
+      "bank": "ING",
+      "bank_type": "Traditional",
+      "product_name": "Car insurance",
+      "product_category": "insurance",
+      "language": "English",
+      "page_type": "Product Page",
+      "url": "https://www.ing.be/en/individuals/insurance/insure-my-car/car-insurance"
+    },
+    {
+      "source_id": "kbc-messages-home-insurance-en",
+      "bank": "KBC",
+      "bank_type": "Traditional",
+      "product_name": "Home insurance",
+      "product_category": "insurance",
+      "language": "English",
+      "page_type": "Product Page",
+      "url": "https://www.kbc.be/retail/en/insurance/home/home-insurance.html?zone=topnav"
+    }
+  ]
+}
