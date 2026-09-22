@@ -226,5 +226,5 @@ frontend/dist/
 .env
 !.env.example
 
-# Browser evidence (local, separated by data mode)
+# Browser evidence (local)
 backend/data/captures/

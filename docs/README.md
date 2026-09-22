@@ -1,12 +1,12 @@
 # Documentation
 
-Start with the [project README](../README.md) for complete local installation, demo setup, and app startup.
+Start with the [project README](../README.md) for complete local installation and app startup.
 
 ## Automation code
 
 ```text
 backend/app/
-├── scraping/           # config.py + dispatcher.py + functions.py; bank scripts
+├── scraping/           # scraping_config.py + dispatcher.py + page_scrapers.py; bank scripts
 └── schemas/automation.py  # Shared types and case normalization
 ```
 

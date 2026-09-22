@@ -62,7 +62,6 @@ export function ScrapedContentPanel({
           <p>
             {page.source.product_name} · {page.source.language} · Collected{" "}
             {new Date(page.scraped_at).toLocaleString()}
-            {page.is_demo ? " · Synthetic demo" : ""}
           </p>
           <p className="muted">
             Collected evidence for your review. The observation fields and feature

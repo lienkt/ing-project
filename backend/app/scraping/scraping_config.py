@@ -1,36 +1,20 @@
-"""Supported scraping cases — edit this list when adding a finished scraper.
+"""Browser settings, extraction options, and automatic scraping support.
 
-1. Implement the function in functions.py or a bank-specific file.
-2. Test it.
-3. Import it here and add its exact normalized case below.
-Unregistered cases require manual scraping. Never register unfinished functions.
+Add message/tone cases to data/sources/messages.json. Dedicated handlers are
+listed in _build_auto_support(). Unlisted sources still use generic capture.
 """
 
+import json
 from collections.abc import Iterable
 from dataclasses import dataclass, field
+from pathlib import Path
 
-from app.schemas.automation import build_case_key
-from app.scraping.labels import label_demo_page, label_ing_youth_account_en
-from app.scraping.functions import scrape_demo_page, scrape_ing_youth_account_en
+from app.schemas.automation import SourceDefinition, build_case_key
+from app.scraping.page_scrapers import scrape_ing_youth_account_en
+from app.scraping.feature_labels import label_ing_youth_account_en
+from app.scraping.message_scraper import label_message_page, scrape_message_page
 
-# Explicit cases only. Unregistered combinations require manual collection.
-# Each real product/language gets its own named function, even within one bank.
-SCRAPING_SUPPORT = {
-    # ING — real product cases
-    build_case_key(
-        "ING", "Current Account", "ING Youth Account", "EN"
-    ): scrape_ing_youth_account_en,
-    # Synthetic demo cases only — shared fabricated content, no website selectors.
-    build_case_key(
-        "ING", "Current Account", "ING example current account", "EN"
-    ): scrape_demo_page,
-    build_case_key(
-        "KBC", "Current Account", "KBC example current account", "EN"
-    ): scrape_demo_page,
-}
-
-
-# Shared browser settings and optional standalone scoring vocabulary.
+# Browser defaults and cleanup selectors.
 COLLECTION_TIMEOUT_SECONDS = 120
 LANGUAGE_LOCALES = {
     "English": ("en", "en-BE"),
@@ -38,6 +22,32 @@ LANGUAGE_LOCALES = {
     "French": ("fr", "fr-BE"),
 }
 
+NOISE_SELECTORS = (
+    "script",
+    "noscript",
+    "template",
+    "svg",
+    "canvas",
+    "iframe",
+    "header",
+    "footer",
+    "nav",
+    '[class*="cookie"]',
+    '[id*="cookie"]',
+    '[class*="consent"]',
+    '[id*="consent"]',
+    '[class*="chatbot"]',
+    '[class*="chat-bot"]',
+    '[id*="chatbot"]',
+    '[id*="chat-bot"]',
+    '[class*="search-overlay"]',
+    '[class*="modal"]',
+    '[class*="overlay"]',
+)
+
+
+# Financial vocabulary for information-complexity scoring; tone rules live in
+# message_analysis_config.py.
 DEFAULT_FINANCIAL_TERMS_NL = (
     "rente",
     "rentevoet",
@@ -98,33 +108,9 @@ DEFAULT_FINANCIAL_TERMS_EN = (
 )
 
 
-NOISE_SELECTORS = (
-    "script",
-    "noscript",
-    "template",
-    "svg",
-    "canvas",
-    "iframe",
-    "header",
-    "footer",
-    "nav",
-    '[class*="cookie"]',
-    '[id*="cookie"]',
-    '[class*="consent"]',
-    '[id*="consent"]',
-    '[class*="chatbot"]',
-    '[class*="chat-bot"]',
-    '[id*="chatbot"]',
-    '[id*="chat-bot"]',
-    '[class*="search-overlay"]',
-    '[class*="modal"]',
-    '[class*="overlay"]',
-)
-
-
 @dataclass
 class SiteConfig:
-    """Everything that is allowed to differ between banks."""
+    """Browser and extraction options for one source."""
 
     bank: str
     product: str
@@ -143,6 +129,7 @@ class SiteConfig:
     locale: str = "nl-BE"
 
     def terms(self) -> Iterable[str]:
+        """Use explicit financial vocabulary, or the language default."""
         if self.financial_terms is not None:
             return self.financial_terms
         vocabularies = {
@@ -154,12 +141,30 @@ class SiteConfig:
         return vocabularies[self.language]
 
 
-# Independent of scraping support: KBC collection works, KBC auto labeling does not.
-AUTO_LABEL_SUPPORT = {
-    build_case_key(
-        "ING", "Current Account", "ING Youth Account", "EN"
-    ): label_ing_youth_account_en,
-    build_case_key(
-        "ING", "Current Account", "ING example current account", "EN"
-    ): label_demo_page,
-}
+# Automatic support: one entry contains both scraping and labeling handlers.
+MESSAGE_SOURCES_PATH = (
+    Path(__file__).resolve().parents[2] / "data/sources/messages.json"
+)
+
+
+def _build_auto_support() -> dict:
+    """Load message cases without replacing dedicated product handlers."""
+    support = {
+        build_case_key("ING", "Current Account", "ING Youth Account", "EN"): {
+            "scrape": scrape_ing_youth_account_en,
+            "label": label_ing_youth_account_en,
+        },
+    }
+    entries = json.loads(MESSAGE_SOURCES_PATH.read_text(encoding="utf-8"))["sources"]
+    for entry in entries:
+        source = SourceDefinition.model_validate(entry)
+        key = build_case_key(
+            source.bank, source.product_category, source.product_name, source.language
+        )
+        support.setdefault(
+            key, {"scrape": scrape_message_page, "label": label_message_page}
+        )
+    return support
+
+
+AUTO_SUPPORT = _build_auto_support()

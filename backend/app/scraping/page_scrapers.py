@@ -3,7 +3,7 @@
 Input includes campaign_id (None before import), bank, product_category,
 product_name, language, URL, and stable source ID. Keep page.source unchanged.
 Return success=False with error, or raise, on failure. Do not write to the DB.
-Only finished functions belong in config.py; placeholders remain unregistered.
+Register supported cases in scraping_config.py; other sources use generic capture.
 """
 
 from __future__ import annotations
@@ -17,42 +17,23 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from playwright.async_api import Locator, Page
 
-    from app.scraping.config import SiteConfig
+    from app.scraping.scraping_config import SiteConfig
 from datetime import UTC, datetime
+
+from app.scraping.message_analysis import clean_text, count_words
 
 from app.schemas.automation import ScrapedPage, SourceDefinition, build_case_key
 
 logger = logging.getLogger(__name__)
 
 
-def scrape_demo_page(campaign: SourceDefinition) -> ScrapedPage:
-    """DEMO ONLY: synthetic content, no website access. Config limits supported cases."""
-    paragraphs = [
-        f"Demo content for {campaign.bank}. This is not collected website evidence.",
-        "Explore example account features and everyday banking benefits.",
-    ]
-    return ScrapedPage(
-        source=campaign,
-        title=f"Demo {campaign.product_name}",
-        text="\n".join(paragraphs),
-        paragraphs=paragraphs,
-        headings=[campaign.product_name, "Example benefits"],
-        buttons=["Open account", "Learn more"],
-        sections=["Overview", "Benefits"],
-        scraped_at=datetime.now(UTC),
-        is_demo=True,
-        warnings=["DEMO ONLY: synthetic content; no webpage was fetched."],
-    )
-
-
-# Real cases: one public entry point per bank / category / product / language.
 def scrape_ing_youth_account_en(campaign: SourceDefinition) -> ScrapedPage:
     """ING / Current Account / ING Youth Account / EN only.
 
     Targets the product component verified in saved ING DOM evidence.
     Text completeness and collapsed FAQ still require review.
     """
-    from app.scraping.config import SiteConfig
+    from app.scraping.scraping_config import SiteConfig
 
     expected = build_case_key("ING", "Current Account", "ING Youth Account", "EN")
     actual = build_case_key(
@@ -65,8 +46,6 @@ def scrape_ing_youth_account_en(campaign: SourceDefinition) -> ScrapedPage:
         raise ValueError(
             "scrape_ing_youth_account_en only supports ING Youth Account EN"
         )
-    if campaign.is_example:
-        raise ValueError("Real scraping requires a real source URL")
     config = SiteConfig(
         bank=campaign.bank,
         product=campaign.product_name,
@@ -92,11 +71,9 @@ async def _extract_ing_youth_account_en(config: SiteConfig, browser) -> dict:
 
 def capture_generic_page(campaign: SourceDefinition) -> ScrapedPage:
     """General evidence capture; never generates feature labels."""
-    from app.scraping.config import SiteConfig, LANGUAGE_LOCALES
+    from app.scraping.scraping_config import SiteConfig, LANGUAGE_LOCALES
     from app.scraping.public_urls import validate_public_url
 
-    if campaign.is_example:
-        raise ValueError("Example sources cannot be captured as real webpages")
     validate_public_url(str(campaign.url))
     language, locale = LANGUAGE_LOCALES.get(campaign.language, ("en", "en-BE"))
     config = SiteConfig(
@@ -120,14 +97,14 @@ def capture_generic_page(campaign: SourceDefinition) -> ScrapedPage:
     return page
 
 
-# Shared infrastructure: never register this helper directly in SCRAPING_SUPPORT.
+# Shared infrastructure: never register this helper directly in AUTO_SUPPORT.
 async def _collect_page(
     campaign: SourceDefinition, config: SiteConfig, extractor, allow_empty=False
 ) -> ScrapedPage:
     """Manage browser resources and convert a case extractor's content to a snapshot."""
     from playwright.async_api import async_playwright
 
-    from app.scraping.config import COLLECTION_TIMEOUT_SECONDS
+    from app.scraping.scraping_config import COLLECTION_TIMEOUT_SECONDS
 
     async with async_playwright() as playwright:
         browser = await playwright.chromium.launch(headless=True)
@@ -159,30 +136,10 @@ async def _collect_page(
             ),
         },
         scraped_at=datetime.now(UTC),
-        is_demo=False,
         warnings=[
             "Text extraction requires review. Screenshot and DOM evidence are stored when available; image, button and link counts are not measured. Cookie banners and collapsed sections may remain in the capture."
         ],
     )
-
-
-WORD_PATTERN = re.compile(r"\b[\wÀ-ÖØ-öø-ÿ]+(?:[-'][\wÀ-ÖØ-öø-ÿ]+)*\b", re.UNICODE)
-
-
-def normalize_text(text: str) -> str:
-    """Collapse whitespace / non-breaking spaces into one clean string."""
-    if not text:
-        return ""
-    text = text.replace("\xa0", " ")
-    text = re.sub(r"\s+", " ", text)
-    return text.strip()
-
-
-def count_words(text: str) -> int:
-    """Count words, including accented characters and hyphenated/contracted words."""
-    if not text:
-        return 0
-    return len(WORD_PATTERN.findall(text))
 
 
 def matches_any(text: str, patterns: Iterable[str]) -> bool:
@@ -198,7 +155,7 @@ def deduplicate_lines(lines: Iterable[str]) -> list[str]:
     seen = set()
     unique: list[str] = []
     for line in lines:
-        cleaned = normalize_text(line)
+        cleaned = clean_text(line)
         if cleaned and cleaned not in seen:
             seen.add(cleaned)
             unique.append(cleaned)
@@ -252,7 +209,7 @@ async def load_page(
 
 async def remove_noise(page: Page) -> None:
     """Strip global chrome (nav/header/footer/cookie/chat/modal) from the DOM."""
-    from app.scraping.config import NOISE_SELECTORS
+    from app.scraping.scraping_config import NOISE_SELECTORS
 
     selector_list = ",".join(NOISE_SELECTORS)
     await page.evaluate(
@@ -290,7 +247,7 @@ async def extract_visible_texts(locator: Locator) -> list[str]:
         try:
             if not await element.is_visible():
                 continue
-            text = normalize_text(await element.inner_text())
+            text = clean_text(await element.inner_text())
             if text:
                 texts.append(text)
         except Error:
@@ -305,7 +262,7 @@ async def extract_headline(main: Locator) -> str:
     h1 = main.locator("h1").first
     try:
         if await h1.count() > 0 and await h1.is_visible():
-            return normalize_text(await h1.inner_text())
+            return clean_text(await h1.inner_text())
     except Error:
         logger.debug("Optional page extraction step failed", exc_info=True)
     return ""

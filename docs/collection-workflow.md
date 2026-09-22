@@ -25,15 +25,14 @@ and completed labels are preserved. Specialized auto-label recapture may refresh
 an untouched automatic draft. Previous pending proposals are invalidated when
 new evidence is captured. Failed recapture preserves existing database evidence.
 
-All capture and labeling code lives in `backend/app/scraping/`. `config.py` retains
-SCRAPING_SUPPORT and AUTO_LABEL_SUPPORT. `functions.py` shares browser lifecycle
-and extraction between specialized and generic capture. `labels.py` and the
+All capture and labeling code lives in `backend/app/scraping/`. `scraping_config.py` retains
+SCRAPING_SUPPORT and AUTO_LABEL_SUPPORT. `page_scrapers.py` shares browser lifecycle
+and extraction between specialized and generic capture. `feature_labels.py` and the
 scoring formulas are unchanged. Generic capture does not call them.
 
 Generic extraction is best-effort: cookie banners, navigation, collapsed content,
 and site-specific layouts can affect results. Empty extracted text can still
-produce a generic evidence capture with a warning. Synthetic examples stay subject
-to demo restrictions and are never treated as real generic captures.
+produce a generic evidence capture with a warning.
 
 Open View captures to inspect history, screenshots and dom.json, then manually
 review labels on the campaign details page. Compare reads saved feature values;

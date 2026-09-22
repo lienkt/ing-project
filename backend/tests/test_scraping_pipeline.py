@@ -2,7 +2,7 @@
 
 import asyncio
 import pytest
-from app.scraping import functions, scrapping_pipeline as pipeline
+from app.scraping import page_scrapers as functions, text_scoring as pipeline
 from app.scraping.dispatcher import scrape_campaign
 from app.schemas.automation import ScrapedPage
 from app.services.source_catalog import load_sources
@@ -52,7 +52,7 @@ def test_real_case_import_prefills_draft_and_supports_labeling(client, monkeypat
     monkeypatch.setattr("playwright.async_api.async_playwright", Playwright)
     monkeypatch.setattr(functions, "scrape_site", collect)
     page = scrape_campaign(real_source())
-    assert browser.closed and not page.is_demo
+    assert browser.closed
     assert ScrapedPage.model_validate_json(page.model_dump_json()).tables == ["Rate 0%"]
     result = client.post(
         "/api/scraping/run", json={"source_ids": [real_source().source_id]}
@@ -81,12 +81,6 @@ def test_real_case_import_prefills_draft_and_supports_labeling(client, monkeypat
     )
 
 
-def test_real_scraper_rejects_examples():
-    with pytest.raises(ValueError, match="real source"):
-        functions.scrape_ing_youth_account_en(
-            real_source().model_copy(update={"is_example": True})
-        )
-
 
 def test_http_error_is_not_content():
     class Response:
@@ -100,15 +94,19 @@ def test_http_error_is_not_content():
         asyncio.run(functions.load_page(Page(), "https://www.ing.be"))
 
 
-def test_standalone_runner_reuses_app_scraper():
-    from app.scraping.config import SiteConfig
+def test_shared_text_helpers():
+    from app.scraping import message_analysis as function_messages
 
-    assert pipeline.scrape_site is functions.scrape_site
-    assert pipeline.SiteConfig is SiteConfig
+    assert functions.count_words is function_messages.count_words
+    assert functions.clean_text is function_messages.clean_text
+    text = "  Épargne\xa0 sans-frais\n aujourd'hui  "
+    assert functions.clean_text(text) == "Épargne sans-frais aujourd'hui"
+    assert functions.count_words(text) == 3
+    assert functions.count_words("") == 0
 
 
 def test_french_scoring_requires_explicit_vocabulary():
-    from app.scraping.config import SiteConfig
+    from app.scraping.scraping_config import SiteConfig
 
     config = SiteConfig(
         bank="ING", product="Account", url="https://www.ing.be", language="fr"
@@ -141,7 +139,7 @@ def test_unregistered_product_does_not_fall_back_to_generic_scraper():
 
 
 def test_scoped_capture_does_not_destroy_component_tree(monkeypatch):
-    from app.scraping.config import SiteConfig
+    from app.scraping.scraping_config import SiteConfig
 
     class Locator:
         @property

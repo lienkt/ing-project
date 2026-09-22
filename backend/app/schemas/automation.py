@@ -61,7 +61,6 @@ class SourceDefinition(CampaignInformation):
     language: Literal["Dutch", "French", "English", "Other"]
     page_type: str = Field(min_length=1, max_length=100)
     url: HttpUrl = Field(max_length=2048)
-    is_example: bool = False
 
     @field_validator("language", mode="before")
     @classmethod
@@ -96,14 +95,12 @@ class ScrapedPage(Schema):
     metadata: dict[str, str] = Field(default_factory=dict)
     scraped_at: datetime
     success: bool = True
-    is_demo: bool
     warnings: list[str] = Field(default_factory=list)
     error: str | None = None
 
 
 class FeatureSuggestions(Schema):
     values: FeatureInput
-    is_demo: bool
     warnings: list[str] = Field(default_factory=list)
 
     @model_validator(mode="after")

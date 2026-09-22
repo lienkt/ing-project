@@ -1,84 +1,43 @@
 """Extract page content and calculate message-and-tone features."""
 
-import argparse
-import json
 import re
 import time
 from functools import lru_cache
-from pathlib import Path
 from typing import Any
 
 from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import Page, sync_playwright
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
-if __package__:
-    from .config_messages import (
-        BENEFIT_MARKERS,
-        BOILERPLATE_MARKERS,
-        CONTENT_SELECTORS,
-        COOKIE_BUTTON_TEXTS,
-        CUSTOMER_MARKERS,
-        EMOTIONAL_MARKERS,
-        FEATURE_MARKERS,
-        FORMAL_MARKERS,
-        FRIENDLY_MARKERS,
-        IDLE_TIMEOUT_MS,
-        LEAD_MAX_CHARS,
-        LIFESTYLE_MARKERS,
-        MAX_ATTEMPTS,
-        MIN_LEAD_WORDS,
-        MIN_WORDS,
-        NAV_TIMEOUT_MS,
-        PERSUASIVE_MARKERS,
-        POST_LOAD_WAIT_MS,
-        PRICE_MARKERS,
-        PRODUCT_CATEGORIES,
-        PRODUCT_MARKERS,
-        PRODUCT_UNSPECIFIED,
-        REMOVE_SELECTORS,
-        REMOVE_UNLESS_CONTENT_SELECTORS,
-        RETRY_DELAY_MS,
-        SCALE_RANGES,
-        SENTENCE_PATTERN,
-        USER_AGENT,
-        WORD_PATTERN,
-    )
-else:
-    from config_messages import (
-        BENEFIT_MARKERS,
-        BOILERPLATE_MARKERS,
-        CONTENT_SELECTORS,
-        COOKIE_BUTTON_TEXTS,
-        CUSTOMER_MARKERS,
-        EMOTIONAL_MARKERS,
-        FEATURE_MARKERS,
-        FORMAL_MARKERS,
-        FRIENDLY_MARKERS,
-        IDLE_TIMEOUT_MS,
-        LEAD_MAX_CHARS,
-        LIFESTYLE_MARKERS,
-        MAX_ATTEMPTS,
-        MIN_LEAD_WORDS,
-        MIN_WORDS,
-        NAV_TIMEOUT_MS,
-        PERSUASIVE_MARKERS,
-        POST_LOAD_WAIT_MS,
-        PRICE_MARKERS,
-        PRODUCT_CATEGORIES,
-        PRODUCT_MARKERS,
-        PRODUCT_UNSPECIFIED,
-        REMOVE_SELECTORS,
-        REMOVE_UNLESS_CONTENT_SELECTORS,
-        RETRY_DELAY_MS,
-        SCALE_RANGES,
-        SENTENCE_PATTERN,
-        USER_AGENT,
-        WORD_PATTERN,
-    )
-
-
-DEBUG_DIR = Path("debug_pages")
+from .message_analysis_config import (
+    BENEFIT_MARKERS,
+    BOILERPLATE_MARKERS,
+    CONTENT_SELECTORS,
+    COOKIE_BUTTON_TEXTS,
+    CUSTOMER_MARKERS,
+    EMOTIONAL_MARKERS,
+    FEATURE_MARKERS,
+    FORMAL_MARKERS,
+    FRIENDLY_MARKERS,
+    IDLE_TIMEOUT_MS,
+    LEAD_MAX_CHARS,
+    LIFESTYLE_MARKERS,
+    MAX_ATTEMPTS,
+    MIN_LEAD_WORDS,
+    MIN_WORDS,
+    NAV_TIMEOUT_MS,
+    PERSUASIVE_MARKERS,
+    POST_LOAD_WAIT_MS,
+    PRICE_MARKERS,
+    PRODUCT_MARKERS,
+    REMOVE_SELECTORS,
+    REMOVE_UNLESS_CONTENT_SELECTORS,
+    RETRY_DELAY_MS,
+    SCALE_RANGES,
+    SENTENCE_PATTERN,
+    USER_AGENT,
+    WORD_PATTERN,
+)
 
 SCROLL_JS = """async () => {
     await new Promise((resolve) => {
@@ -175,7 +134,9 @@ def sentence_list(text: str) -> list[str]:
 def is_boilerplate(text: str) -> bool:
     """Detect footnotes and legal text that is not a marketing message."""
     lowered = text.lower()
-    return text.startswith("*") or any(marker in lowered for marker in BOILERPLATE_MARKERS)
+    return text.startswith("*") or any(
+        marker in lowered for marker in BOILERPLATE_MARKERS
+    )
 
 
 def find_value_proposition(blocks: list[dict[str, str]]) -> str:
@@ -183,7 +144,9 @@ def find_value_proposition(blocks: list[dict[str, str]]) -> str:
     paragraph that is long enough and is not boilerplate."""
     h1_index = next((i for i, block in enumerate(blocks) if block["tag"] == "h1"), -1)
     paragraphs = [block["text"] for block in blocks if block["tag"] == "p"]
-    after_h1 = [block["text"] for block in blocks[h1_index + 1 :] if block["tag"] == "p"]
+    after_h1 = [
+        block["text"] for block in blocks[h1_index + 1 :] if block["tag"] == "p"
+    ]
     for paragraph in after_h1 + paragraphs:
         lead = shorten(" ".join(sentence_list(paragraph)[:2]), LEAD_MAX_CHARS)
         if count_words(lead) >= MIN_LEAD_WORDS and not is_boilerplate(lead):
@@ -233,7 +196,9 @@ def select_main_content(page: Page):
         locator = page.locator(selector)
         if locator.count() > 0:
             candidate = locator.first
-            words = count_words(" ".join(_settle_and_retry(page, lambda c=candidate: _block_texts(c))))
+            words = count_words(
+                " ".join(_settle_and_retry(page, lambda c=candidate: _block_texts(c)))
+            )
             if words >= MIN_WORDS:
                 return candidate, selector
     return page.locator("body").first, "body"
@@ -255,16 +220,7 @@ def dismiss_cookie_banner(page: Page) -> str:
     return ""
 
 
-def save_debug_files(url: str, screenshot: bytes, raw_html: str) -> None:
-    """Save what the browser saw, to find out why a page came back empty."""
-    DEBUG_DIR.mkdir(parents=True, exist_ok=True)
-    name = re.sub(r"\W+", "_", url)[:80]
-    (DEBUG_DIR / f"{name}.png").write_bytes(screenshot)
-    (DEBUG_DIR / f"{name}.html").write_text(raw_html, encoding="utf-8")
-    print(f"Saved debug files in {DEBUG_DIR}/ ({name}.png and .html)")
-
-
-def _render_attempt(url: str, wait_until: str, debug: bool) -> tuple[dict[str, Any], bytes, str]:
+def _render_attempt(url: str, wait_until: str, capture=None) -> dict[str, Any]:
     """One attempt at loading url and extracting content from it."""
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch(headless=True)
@@ -273,6 +229,18 @@ def _render_attempt(url: str, wait_until: str, debug: bool) -> tuple[dict[str, A
                 viewport={"width": 1440, "height": 900},
                 user_agent=USER_AGENT,
             )
+            if capture:
+                from app.scraping.public_urls import validate_public_url
+
+                def public_request(route):
+                    try:
+                        validate_public_url(route.request.url)
+                    except ValueError:
+                        route.abort()
+                    else:
+                        route.continue_()
+
+                page.route("**/*", public_request)
             page.goto(url, wait_until=wait_until, timeout=NAV_TIMEOUT_MS)
             try:
                 page.wait_for_load_state("networkidle", timeout=IDLE_TIMEOUT_MS)
@@ -284,8 +252,7 @@ def _render_attempt(url: str, wait_until: str, debug: bool) -> tuple[dict[str, A
             _settle_and_retry(page, lambda: page.evaluate(SCROLL_JS))
             page.wait_for_timeout(1_000)
             _settle_and_retry(page, lambda: page.evaluate("window.scrollTo(0, 0)"))
-            screenshot = _settle_and_retry(page, lambda: page.screenshot()) if debug else b""
-            raw_html = _settle_and_retry(page, lambda: page.content()) if debug else ""
+            artifact_id = capture(page) if capture else None
             _settle_and_retry(
                 page,
                 lambda: page.evaluate(
@@ -317,7 +284,9 @@ def _render_attempt(url: str, wait_until: str, debug: bool) -> tuple[dict[str, A
                 if block["tag"] == "p" and count_words(block["text"]) >= 2
             ]
             bullet_lists = []
-            list_texts = _settle_and_retry(page, lambda: main.locator("ul, ol").all_inner_texts())
+            list_texts = _settle_and_retry(
+                page, lambda: main.locator("ul, ol").all_inner_texts()
+            )
             for list_text in list_texts:
                 cleaned = clean_text(list_text)
                 if cleaned and count_words(cleaned) >= 2:
@@ -330,11 +299,19 @@ def _render_attempt(url: str, wait_until: str, debug: bool) -> tuple[dict[str, A
             # can race and come back thinner than what the block extraction
             # above already captured. Use whichever read is richer.
             try:
-                direct_text = clean_text(_settle_and_retry(page, lambda: main.inner_text()))
+                direct_text = clean_text(
+                    _settle_and_retry(page, lambda: main.inner_text())
+                )
             except PlaywrightError:
                 direct_text = ""
-            block_text = clean_text(" ".join([b["text"] for b in blocks] + bullet_lists))
-            text = direct_text if count_words(direct_text) >= count_words(block_text) else block_text
+            block_text = clean_text(
+                " ".join([b["text"] for b in blocks] + bullet_lists)
+            )
+            text = (
+                direct_text
+                if count_words(direct_text) >= count_words(block_text)
+                else block_text
+            )
 
             source = {
                 "page_title": clean_text(_settle_and_retry(page, lambda: page.title())),
@@ -347,12 +324,16 @@ def _render_attempt(url: str, wait_until: str, debug: bool) -> tuple[dict[str, A
                 "bullet_lists": bullet_lists,
                 "text": text,
             }
-            return source, screenshot, raw_html
+            if capture:
+                source["artifact_id"] = artifact_id
+                source["tables"] = main.locator("table").all_inner_texts()
+                source["final_url"] = page.url
+            return source
         finally:
             browser.close()
 
 
-def render_page(url: str, debug: bool = True) -> dict[str, Any]:
+def render_page(url: str, capture=None) -> dict[str, Any]:
     """Render a page and extract the content used by the analysis.
 
     Retries up to MAX_ATTEMPTS times when a navigation/timeout error hits
@@ -364,18 +345,16 @@ def render_page(url: str, debug: bool = True) -> dict[str, Any]:
     """
     last_error: Exception | None = None
     last_source: dict[str, Any] | None = None
-    last_screenshot = b""
-    last_html = ""
 
     for attempt in range(1, MAX_ATTEMPTS + 1):
         wait_until = "domcontentloaded" if attempt == 1 else "load"
         try:
-            source, screenshot, raw_html = _render_attempt(url, wait_until, debug)
+            source = _render_attempt(url, wait_until, capture=capture)
         except (PlaywrightError, PlaywrightTimeoutError) as error:
             last_error = error
             print(f"  Attempt {attempt}/{MAX_ATTEMPTS} failed: {error}")
         else:
-            last_source, last_screenshot, last_html = source, screenshot, raw_html
+            last_source = source
             if has_enough_content(source):
                 return source
             print(
@@ -386,79 +365,12 @@ def render_page(url: str, debug: bool = True) -> dict[str, Any]:
             time.sleep(RETRY_DELAY_MS / 1000)
 
     if last_source is not None:
-        if debug and not has_enough_content(last_source):
-            save_debug_files(url, last_screenshot, last_html)
         return last_source
     raise last_error or RuntimeError(f"Could not render {url}")
 
 
 def has_enough_content(source: dict[str, Any]) -> bool:
     return count_words(source["text"]) >= MIN_WORDS
-
-
-def infer_product(url: str, source: dict[str, Any]) -> str:
-    """Best-effort product-category guess for an entry that has no explicit
-    "product" in product_urls.json. Matches keywords from PRODUCT_CATEGORIES
-    against the URL and the page's title/headline/value proposition/top
-    headings, and returns the category with the most hits (ties keep the
-    first, more specific, category). Returns PRODUCT_UNSPECIFIED if nothing
-    matches. An explicit "product" field is always more reliable than this
-    guess, since it can't tell apart two very similar products.
-    """
-    haystack = " ".join(
-        [
-            re.sub(r"[/_-]+", " ", url.lower()),
-            source.get("page_title", "").lower(),
-            source.get("headline", "").lower(),
-            source.get("value_proposition", "").lower(),
-            " ".join(source.get("headings", [])[:10]).lower(),
-        ]
-    )
-    best_category = PRODUCT_UNSPECIFIED
-    best_score = 0
-    for category, keywords in PRODUCT_CATEGORIES.items():
-        score = sum(haystack.count(keyword) for keyword in keywords)
-        if score > best_score:
-            best_category, best_score = category, score
-    return best_category
-
-
-def print_items(label: str, items: list[str], show: int = 5) -> None:
-    """Print the first items of a list, with the total count."""
-    print(f"{label} ({len(items)}):")
-    if not items:
-        print("    (none)")
-    for item in items[:show]:
-        print(f"    - {shorten(item)}")
-    if len(items) > show:
-        print(f"    ... and {len(items) - show} more")
-
-
-def print_source(source: dict[str, Any], bank: str = "", url: str = "") -> None:
-    """Print what was extracted from the page, before any metric is calculated."""
-    words = count_words(source["text"])
-    print(f"\n{'-' * 70}")
-    print(f"EXTRACTED CONTENT{f' - {bank}' if bank else ''}")
-    print("-" * 70)
-    if url:
-        print(f"URL:          {url}")
-    print(f"Page title:   {source['page_title'] or '(none)'}")
-    print(f"Container:    {source['container']}")
-    print(f"Cookie click: {source['cookie_button'] or '(no banner button found)'}")
-    print(f"Headline:     {source['headline'] or '(none)'}")
-    print(f"Value prop.:  {source['value_proposition'] or '(none found)'}")
-    print(f"Words:        {words}")
-    print_items("Headings", source["headings"])
-    print_items("Paragraphs", source["paragraphs"], show=3)
-    print_items("Bullet lists", source["bullet_lists"], show=3)
-    print(f"Text preview: {shorten(source['text'], 500) or '(empty)'}")
-    if not has_enough_content(source):
-        print(
-            f"WARNING: only {words} words extracted (minimum {MIN_WORDS}). "
-            "The page may not have loaded, or the content is hidden. "
-            "Check the saved debug files."
-        )
-    print("-" * 70)
 
 
 def summarize_message(source: dict[str, Any]) -> str:
@@ -526,30 +438,3 @@ def calculate_features(source: dict[str, Any]) -> dict[str, Any]:
         "message_focus": focus if focus_scores[focus] > 0 else "None",
         "raw_scores": {name: round(value, 2) for name, value in raw.items()},
     }
-
-
-def analyze_bank(bank: str, url: str, output_path: Path) -> Path:
-    source = render_page(url)
-    print_source(source, bank, url)
-    if not has_enough_content(source):
-        raise ValueError(f"Too little content extracted from {url}; no scores calculated.")
-    result = {
-        "bank": bank,
-        "url": url,
-        "features": calculate_features(source),
-        "source": source,
-    }
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(json.dumps(result, indent=4, ensure_ascii=False), encoding="utf-8")
-    print(f"Saved JSON: {output_path}")
-    return output_path
-
-
-def run_cli(bank: str, url: str, default_output: str) -> None:
-    parser = argparse.ArgumentParser(
-        description=f"Extract message and tone features for {bank}."
-    )
-    parser.add_argument("--url", default=url, help="Page URL to analyze.")
-    parser.add_argument("--output", default=default_output, help="JSON output path.")
-    args = parser.parse_args()
-    analyze_bank(bank, args.url, Path(args.output))

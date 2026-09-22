@@ -40,7 +40,7 @@ Build checks TypeScript and creates `dist/`. Preview usually uses port 4173; add
 
 ## Manual checks
 
-Use demo or disposable records:
+Use disposable test records:
 
 - Create a campaign; find and open it in Dataset.
 - Save labels, change sections, and refresh to verify persistence.

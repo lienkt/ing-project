@@ -1,5 +1,4 @@
-import React, { useEffect, useState } from "react";
-import { request } from "./api/campaigns";
+import React from "react";
 import ReactDOM from "react-dom/client";
 import {
   BrowserRouter,
@@ -29,20 +28,6 @@ import LabelPage from "./pages/Label";
 import Evaluate from "./pages/Evaluate";
 import "./styles.css";
 function Layout() {
-  const [mode, setMode] = useState<"real" | "demo" | null>(null);
-  useEffect(() => {
-    let active = true;
-    request<{ data_mode: "real" | "demo" }>("/environment")
-      .then((result) => {
-        if (active) setMode(result.data_mode);
-      })
-      .catch(() => {
-        if (active) setMode(null);
-      });
-    return () => {
-      active = false;
-    };
-  }, []);
   const { pathname } = useLocation();
   return (
     <div className="app">
@@ -111,13 +96,6 @@ function Layout() {
       <div className="main-wrap">
         <header className="topbar">
           <span>Bank communication research</span>
-          <span className={`data-mode ${mode === "demo" ? "demo" : ""}`}>
-            {mode === "demo"
-              ? "Demo database · Synthetic data"
-              : mode === "real"
-                ? "Real database"
-                : "Database mode unavailable"}
-          </span>
         </header>
         <main
           className={

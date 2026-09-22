@@ -70,7 +70,6 @@ class Campaign(Base):
             "source_id": record.source_id,
             "status": record.status,
             "scraped_at": (record.page or {}).get("scraped_at"),
-            "is_demo": record.is_demo,
             "engine": record.engine,
             "product_name": source.get("product_name"),
             "language": source.get("language"),

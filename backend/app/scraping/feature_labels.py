@@ -9,33 +9,9 @@ from app.schemas.automation import CampaignInformation, ScrapedPage, FeatureSugg
 from app.schemas.features import FeatureInput
 
 
-def label_demo_page(
-    campaign: CampaignInformation, scraped_data: ScrapedPage
-) -> FeatureSuggestions:
-    """DEMO ONLY. Counts plus fixed example scores; no real analysis."""
-    return FeatureSuggestions(
-        is_demo=True,
-        warnings=["DEMO ONLY: review every suggestion."],
-        values=FeatureInput(
-            word_count=len(scraped_data.text.split()),
-            heading_count=len(scraped_data.headings),
-            paragraph_count=len(scraped_data.paragraphs),
-            image_count=len(scraped_data.images),
-            cta_count=len(scraped_data.buttons),
-            tone_formality=3,
-            tone_friendliness=4,
-            visual_intensity=2,
-            product_name=campaign.product_name,
-            language=scraped_data.source.language,
-            bank_type=scraped_data.source.bank_type,
-            capture_date=scraped_data.scraped_at.date(),
-        ),
-    )
-
-
 def collected_feature_values(page: ScrapedPage) -> FeatureInput:
     """Measured values only; counts describe the captured text, not hidden content."""
-    from app.scraping.functions import count_words
+    from app.scraping.message_analysis import count_words
 
     values = dict(
         product_name=page.source.product_name,
@@ -57,8 +33,8 @@ def label_ing_youth_account_en(
     campaign: CampaignInformation, scraped_data: ScrapedPage
 ) -> FeatureSuggestions:
     """Rule-based text suggestions for the registered ING case; requires review."""
-    from app.scraping.functions import count_words
-    from app.scraping.scrapping_pipeline import (
+    from app.scraping.message_analysis import count_words
+    from app.scraping.text_scoring import (
         calculate_text_density,
         calculate_text_style,
         calculate_information_complexity,
@@ -73,7 +49,7 @@ def label_ing_youth_account_en(
         if paragraphs
         else 0
     )
-    from app.scraping.config import DEFAULT_FINANCIAL_TERMS_EN
+    from app.scraping.scraping_config import DEFAULT_FINANCIAL_TERMS_EN
 
     values["information_complexity"] = calculate_information_complexity(
         scraped_data.text, words, headings, DEFAULT_FINANCIAL_TERMS_EN
@@ -85,7 +61,6 @@ def label_ing_youth_account_en(
         )
     return FeatureSuggestions(
         values=FeatureInput(**values),
-        is_demo=False,
         warnings=[
             "Rule-based suggestions, not AI analysis. Review text style and density before saving.",
             "Counts cover extracted content only. Hidden FAQ may be missing; images, CTA, tone and visual labels remain unset.",

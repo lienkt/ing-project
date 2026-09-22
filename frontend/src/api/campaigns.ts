@@ -50,7 +50,7 @@ export type CampaignInput = {
 export type AutomationSupport = {
   supported: boolean;
   available: boolean;
-  is_demo: boolean;
+
   message: string | null;
 };
 export type Campaign = CampaignInput & {
@@ -59,7 +59,7 @@ export type Campaign = CampaignInput & {
     source_id: string;
     status: string;
     scraped_at: string | null;
-    is_demo: boolean;
+
     engine: string;
     product_name: string | null;
     language: string | null;
