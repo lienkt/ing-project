@@ -27,8 +27,14 @@ alembic upgrade head
 alembic check
 ```
 
-Historical migrations remain in the repository so existing installations can upgrade.
-The single-database migration removes obsolete flags without deleting research rows.
+The schema starts from one baseline: `0001_initial_schema.py` (revision
+`initial_schema`). It creates all current tables, constraints and indexes, plus
+initial bank and product-category options. It does not seed campaigns or captures.
+
+This baseline is for an **empty database**. Databases using the retired
+`0001`–`0009` chain cannot run this new chain directly. Keep any required backup,
+create a new empty database, point `DATABASE_URL` to it, and run `alembic upgrade head`.
+Do not use `alembic stamp` as a substitute for creating or validating the schema.
 Restart the backend after changing the schema or connection settings.
 
 ## Storage

@@ -57,7 +57,13 @@ alongside the database.
 
 ## Updating and testing
 
-After updating code, run `alembic upgrade head` from `backend/` and restart the backend.
+The migration history has been consolidated into `initial_schema` for a fresh
+start. Use an empty database; existing databases on the retired migration chain
+must be backed up and replaced with a new database before using this baseline.
+See the [database guide](docs/database-guide.md). No reset is performed automatically.
+
+For subsequent updates on this baseline, run `alembic upgrade head` from `backend/`
+and restart the backend.
 
 ```bash
 cd backend

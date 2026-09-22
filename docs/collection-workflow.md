@@ -1,8 +1,9 @@
 # Scraping, capture, and labeling
 
-Apply `alembic upgrade head` from `backend/` for the configured database before
-using this version. Migration 0007 adds persistent user sources; existing
-campaigns, labels, and capture history are unchanged.
+For a fresh installation, apply `alembic upgrade head` from `backend/` to an
+empty database. The initial schema includes persistent user sources, campaigns,
+labels, and capture history. See the [database guide](database-guide.md) for
+the requirements when replacing a database on the retired migration chain.
 
 On Tools → Scraping, **Add source** saves bank, product name, category, language,
 and public HTTP(S) URL. Bank and category use the existing Settings catalogs.
