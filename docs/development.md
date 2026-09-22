@@ -4,23 +4,21 @@
 
 ## Formatting
 
-Use Prettier for frontend code, JSON, YAML, and Markdown; use Ruff for Python. Both use an 88-character target line width. Tool setup is in the [root README](../README.md#development-tools-optional).
+Use Prettier for frontend code, JSON, YAML, and Markdown.
 
 From the project root:
 
 ```bash
 npm --prefix frontend run format
-backend/.venv/bin/ruff format backend
 ```
 
 Check formatting without changing files:
 
 ```bash
 npm --prefix frontend run format:check
-backend/.venv/bin/ruff format --check backend
 ```
 
-VS Code formats on save when the recommended extensions are installed. Keep formatting-only commits separate from behavior changes when possible so diffs remain easy to review.
+VS Code formats supported files on save when the recommended extension is installed. Keep formatting-only commits separate from behavior changes when possible so diffs remain easy to review.
 
 ## Backend tests
 

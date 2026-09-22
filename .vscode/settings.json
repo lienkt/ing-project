@@ -1,4 +1,6 @@
 {
+  "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
+  "ruff.enable": false,
   "liveServer.settings.port": 5501,
   "editor.formatOnSave": true,
   "[javascript]": {
@@ -30,8 +32,5 @@
   },
   "[yaml]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
-  },
-  "[python]": {
-    "editor.defaultFormatter": "charliermarsh.ruff"
   }
 }

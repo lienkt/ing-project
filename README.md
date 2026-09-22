@@ -142,16 +142,6 @@ In demo mode, open **Tools → Scraping**, check which sources are **Auto suppor
 
 For an existing installation, apply `DATA_MODE=demo alembic upgrade head` from `backend/` before starting the updated app. See [collection workflow](docs/collection-workflow.md) for details and developer handoff.
 
-## Development tools (optional)
-
-From the project root, install the Python formatter:
-
-```bash
-backend/.venv/bin/python -m pip install -r backend/requirements-dev.txt
-```
-
-Prettier is included in the frontend dependencies installed above. In VS Code, install the workspace's recommended **Prettier** and **Ruff** extensions to format on save. See [formatting commands](docs/development.md#formatting).
-
 ## Further documentation
 
 - [Database operations](docs/database-guide.md): existing/shared PostgreSQL, migrations, backup, restore, and team data.

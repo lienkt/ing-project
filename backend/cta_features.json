@@ -1,0 +1,76 @@
+{
+  "results": [
+    {
+      "bank": "Argenta",
+      "source_file": "scrape_text_features_agenta.py",
+      "url": "https://www.argenta.be/fr/epargner/compte-d-epargne.html",
+      "cta_count": 16,
+      "primary_cta_text": "Épargner et investir",
+      "cta_above_fold": true,
+      "cta_repeated": false,
+      "cta_prominence": 5,
+      "cta_type": "Other",
+      "status": "ok"
+    },
+    {
+      "bank": "Belfius",
+      "source_file": "scrape_text_features_bel.py",
+      "url": "https://www.belfius.be/site/professional/fr/produits/epargner-investir",
+      "cta_count": 13,
+      "primary_cta_text": "Chercher",
+      "cta_above_fold": true,
+      "cta_repeated": false,
+      "cta_prominence": 4,
+      "cta_type": "Other",
+      "status": "ok"
+    },
+    {
+      "bank": "Beobank",
+      "source_file": "scrape_text_features_beobank.py",
+      "url": "https://www.beobank.be/nl/verzekeringen/mobiliteit/autoverzekering.html",
+      "cta_count": 27,
+      "primary_cta_text": "Simuleer uw verzekering",
+      "cta_above_fold": true,
+      "cta_repeated": false,
+      "cta_prominence": 5,
+      "cta_type": "Calculate",
+      "status": "ok"
+    },
+    {
+      "bank": "Crelan",
+      "source_file": "scrape_text_features_crelan.py",
+      "url": "https://www.crelan.be/nl/particulieren/sparen-en-beleggen/sparen/product/spaarrekeningen",
+      "cta_count": 6,
+      "primary_cta_text": "Maak een afspraak",
+      "cta_above_fold": false,
+      "cta_repeated": true,
+      "cta_prominence": 3,
+      "cta_type": "Contact",
+      "status": "ok"
+    },
+    {
+      "bank": "ING",
+      "source_file": "scrape_text_features_ing.py",
+      "url": "https://www.ing.be/en/individuals/insurance/insure-my-car/car-insurance",
+      "cta_count": 22,
+      "primary_cta_text": "Not a client yet? Calculate your price here",
+      "cta_above_fold": true,
+      "cta_repeated": false,
+      "cta_prominence": 5,
+      "cta_type": "Calculate",
+      "status": "ok"
+    },
+    {
+      "bank": "KBC",
+      "source_file": "scrape_text_features_kbc.py",
+      "url": "https://www.kbc.be/retail/en/insurance/home/home-insurance.html?zone=topnav",
+      "cta_count": 19,
+      "primary_cta_text": "Investments",
+      "cta_above_fold": true,
+      "cta_repeated": false,
+      "cta_prominence": 3,
+      "cta_type": "Other",
+      "status": "ok"
+    }
+  ]
+}

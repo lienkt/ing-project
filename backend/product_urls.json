@@ -1,0 +1,34 @@
+{
+  "urls": [
+    {
+      "bank": "Argenta",
+      "source_file": "scrape_text_features_agenta.py",
+      "url": "https://www.argenta.be/fr/epargner/compte-d-epargne.html"
+    },
+    {
+      "bank": "Belfius",
+      "source_file": "scrape_text_features_bel.py",
+      "url": "https://www.belfius.be/site/professional/fr/produits/epargner-investir"
+    },
+    {
+      "bank": "Beobank",
+      "source_file": "scrape_text_features_beobank.py",
+      "url": "https://www.beobank.be/nl/verzekeringen/mobiliteit/autoverzekering.html"
+    },
+    {
+      "bank": "Crelan",
+      "source_file": "scrape_text_features_crelan.py",
+      "url": "https://www.crelan.be/nl/particulieren/sparen-en-beleggen/sparen/product/spaarrekeningen"
+    },
+    {
+      "bank": "ING",
+      "source_file": "scrape_text_features_ing.py",
+      "url": "https://www.ing.be/en/individuals/insurance/insure-my-car/car-insurance"
+    },
+    {
+      "bank": "KBC",
+      "source_file": "scrape_text_features_kbc.py",
+      "url": "https://www.kbc.be/retail/en/insurance/home/home-insurance.html?zone=topnav"
+    }
+  ]
+}
