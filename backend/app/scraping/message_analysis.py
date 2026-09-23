@@ -9,6 +9,8 @@ from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import Page, sync_playwright
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
+from app.scraping import public_urls
+
 from .message_analysis_config import (
     BENEFIT_MARKERS,
     BOILERPLATE_MARKERS,
@@ -230,11 +232,10 @@ def _render_attempt(url: str, wait_until: str, capture=None) -> dict[str, Any]:
                 user_agent=USER_AGENT,
             )
             if capture:
-                from app.scraping.public_urls import validate_public_url
 
                 def public_request(route):
                     try:
-                        validate_public_url(route.request.url)
+                        public_urls.validate_public_url(route.request.url)
                     except ValueError:
                         route.abort()
                     else:

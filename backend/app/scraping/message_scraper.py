@@ -1,19 +1,37 @@
 """Connect message and tone analysis to the app scraping workflow."""
 
 import json
-from .message_analysis_config import MIN_WORDS
+from datetime import datetime, timezone
+
+from app.schemas.automation import FeatureSuggestions, ScrapedPage
+from app.schemas.features import FeatureInput
+from app.scraping import capture, cta_analysis, public_urls
+from app.scraping.feature_labels import collected_feature_values
+
 from .message_analysis import calculate_features, has_enough_content, render_page
+from .message_analysis_config import MIN_WORDS
 
 
 def scrape_message_page(campaign):
     """Adapt the original renderer to the application's saved evidence."""
-    from datetime import datetime, timezone
-    from app.schemas.automation import ScrapedPage
-    from app.scraping.capture import capture_evidence_sync
-    from app.scraping.public_urls import validate_public_url
 
-    validate_public_url(str(campaign.url))
-    source = render_page(str(campaign.url), capture=capture_evidence_sync)
+    public_urls.validate_public_url(str(campaign.url))
+
+    cta_metadata = {}
+
+    def capture_with_cta(page):
+        artifact_id = capture.capture_evidence_sync(page)
+        try:
+            cta_metadata["cta_features"] = json.dumps(
+                cta_analysis.extract_loaded_cta_features_sync(page)
+            )
+        except Exception:
+            cta_metadata["cta_warning"] = (
+                "CTA extraction failed; review CTA fields manually."
+            )
+        return artifact_id
+
+    source = render_page(str(campaign.url), capture=capture_with_cta)
     return ScrapedPage(
         source=campaign,
         title=source["page_title"],
@@ -25,6 +43,7 @@ def scrape_message_page(campaign):
         bullet_list_count=len(source["bullet_lists"]),
         tables=source.get("tables", []),
         metadata={
+            **cta_metadata,
             "collector": "function_messages",
             "artifact_id": source["artifact_id"],
             "final_url": source["final_url"],
@@ -44,9 +63,6 @@ def scrape_message_page(campaign):
 
 def label_message_page(campaign, scraped_data):
     """Map original scores to existing fields; retain the original formulas."""
-    from app.schemas.automation import FeatureSuggestions
-    from app.schemas.features import FeatureInput
-    from app.scraping.feature_labels import collected_feature_values
 
     source = json.loads(scraped_data.metadata["message_source"])
     values = collected_feature_values(scraped_data).model_dump(exclude_unset=True)

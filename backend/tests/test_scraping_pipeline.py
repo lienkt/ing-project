@@ -49,7 +49,7 @@ def test_real_case_import_prefills_draft_and_supports_labeling(client, monkeypat
         async def __aexit__(self, *args):
             pass
 
-    monkeypatch.setattr("playwright.async_api.async_playwright", Playwright)
+    monkeypatch.setattr(functions, "async_playwright", Playwright)
     monkeypatch.setattr(functions, "scrape_site", collect)
     page = scrape_campaign(real_source())
     assert browser.closed

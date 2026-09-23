@@ -10,9 +10,9 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from app.schemas.automation import SourceDefinition, build_case_key
-from app.scraping.page_scrapers import scrape_ing_youth_account_en
 from app.scraping.feature_labels import label_ing_youth_account_en
 from app.scraping.message_scraper import label_message_page, scrape_message_page
+from app.scraping.page_scrapers import scrape_ing_youth_account_en
 
 # Browser defaults and cleanup selectors.
 COLLECTION_TIMEOUT_SECONDS = 120

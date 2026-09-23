@@ -9,20 +9,25 @@ Register supported cases in scraping_config.py; other sources use generic captur
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 import re
 from collections.abc import Iterable
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
+from playwright.async_api import Error, async_playwright
+
+from app.schemas.automation import ScrapedPage, SourceDefinition, build_case_key
+from app.scraping import capture, cta_analysis, public_urls
+from app.scraping.message_analysis import clean_text, count_words
+
+# scraping_config imports these handlers, so its runtime imports stay local.
 if TYPE_CHECKING:
     from playwright.async_api import Locator, Page
 
     from app.scraping.scraping_config import SiteConfig
-from datetime import UTC, datetime
 
-from app.scraping.message_analysis import clean_text, count_words
-
-from app.schemas.automation import ScrapedPage, SourceDefinition, build_case_key
 
 logger = logging.getLogger(__name__)
 
@@ -71,10 +76,9 @@ async def _extract_ing_youth_account_en(config: SiteConfig, browser) -> dict:
 
 def capture_generic_page(campaign: SourceDefinition) -> ScrapedPage:
     """General evidence capture; never generates feature labels."""
-    from app.scraping.scraping_config import SiteConfig, LANGUAGE_LOCALES
-    from app.scraping.public_urls import validate_public_url
+    from app.scraping.scraping_config import LANGUAGE_LOCALES, SiteConfig
 
-    validate_public_url(str(campaign.url))
+    public_urls.validate_public_url(str(campaign.url))
     language, locale = LANGUAGE_LOCALES.get(campaign.language, ("en", "en-BE"))
     config = SiteConfig(
         bank=campaign.bank,
@@ -102,7 +106,6 @@ async def _collect_page(
     campaign: SourceDefinition, config: SiteConfig, extractor, allow_empty=False
 ) -> ScrapedPage:
     """Manage browser resources and convert a case extractor's content to a snapshot."""
-    from playwright.async_api import async_playwright
 
     from app.scraping.scraping_config import COLLECTION_TIMEOUT_SECONDS
 
@@ -129,6 +132,16 @@ async def _collect_page(
         metadata={
             "collector": "playwright-text-v2",
             "final_url": content["final_url"],
+            **(
+                {"cta_features": json.dumps(content["cta_features"])}
+                if "cta_features" in content
+                else {}
+            ),
+            **(
+                {"cta_warning": content["cta_warning"]}
+                if "cta_warning" in content
+                else {}
+            ),
             **(
                 {"artifact_id": content["artifact_id"]}
                 if "artifact_id" in content
@@ -164,7 +177,6 @@ def deduplicate_lines(lines: Iterable[str]) -> list[str]:
 
 async def scroll_page(page: Page) -> None:
     """Scroll to the bottom in steps to trigger lazy-loaded content."""
-    from playwright.async_api import Error
 
     try:
         await page.evaluate(
@@ -238,7 +250,6 @@ async def find_main_locator(page: Page) -> Locator:
 
 async def extract_visible_texts(locator: Locator) -> list[str]:
     """Return normalized inner_text for every visible match of a locator."""
-    from playwright.async_api import Error
 
     texts: list[str] = []
     count = await locator.count()
@@ -257,7 +268,6 @@ async def extract_visible_texts(locator: Locator) -> list[str]:
 
 
 async def extract_headline(main: Locator) -> str:
-    from playwright.async_api import Error
 
     h1 = main.locator("h1").first
     try:
@@ -327,7 +337,6 @@ async def scrape_site(config: SiteConfig, browser) -> dict:
     )
     try:
         if config.public_only:
-            from app.scraping.public_urls import validate_public_url
 
             async def public_requests(route):
                 try:
@@ -344,9 +353,19 @@ async def scrape_site(config: SiteConfig, browser) -> dict:
             await page.locator(config.ready_selector).first.wait_for(
                 state="visible", timeout=30_000
             )
-        from app.scraping.capture import capture_evidence
 
-        artifact_id = await capture_evidence(page)
+        artifact_id = await capture.capture_evidence(page)
+
+        cta_data = {}
+        try:
+            cta_data["cta_features"] = await cta_analysis.extract_loaded_cta_features(
+                page
+            )
+        except Exception as error:
+            logger.warning("CTA extraction failed: %s", error)
+            cta_data["cta_warning"] = (
+                "CTA extraction failed; review CTA fields manually."
+            )
         if config.clean_page:
             await remove_noise(page)
         main = (
@@ -372,6 +391,7 @@ async def scrape_site(config: SiteConfig, browser) -> dict:
         )
         content["all_text"] = " ".join(all_text_lines)
         content["final_url"] = page.url
+        content.update(cta_data)
         content["artifact_id"] = artifact_id
         return content
     finally:

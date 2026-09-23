@@ -2,7 +2,6 @@
 
 import re
 
-
 WORD_PATTERN = re.compile(r"\b[\wÀ-ÿ]+(?:[-'][\wÀ-ÿ]+)*\b")
 SENTENCE_PATTERN = re.compile(r"(?<=[.!?])\s+")
 
