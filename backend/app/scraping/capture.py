@@ -1,9 +1,9 @@
 """Capture original page evidence before destructive text cleanup."""
 
 import json
+import shutil
 from pathlib import Path
 from uuid import UUID, uuid4
-
 
 ROOT = Path(__file__).resolve().parents[2] / "data" / "captures"
 
@@ -58,7 +58,6 @@ async def capture_evidence(page) -> str:
 
 def capture_evidence_sync(page) -> str:
     """Save the same PageCapture artifacts from the message renderer."""
-    import shutil
 
     artifact_id = str(uuid4())
     folder = artifact_path(artifact_id, "screenshot.png").parent

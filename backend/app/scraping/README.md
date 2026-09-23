@@ -45,3 +45,25 @@ Message scores require at least 50 words. The adapter reverses feature/benefit
 scores (`6 - score`) to match the app scale. Automatic drafts require human review.
 
 Run backend checks: `cd backend && .venv/bin/python -m pytest -q`.
+
+## CTA extraction
+
+`cta_analysis_config.py` contains the supplied English/French/Dutch keywords and exclusions.
+`cta_analysis.py` collects visible candidates, deduplicates them, selects the primary
+CTA, and calculates the six existing CTA fields. The async page scraper and sync
+message renderer both analyze the loaded page before text cleanup, using its actual
+viewport height. They reuse the app's navigation, browser settings, and page settling.
+
+Results travel in `ScrapedPage.metadata.cta_features` (JSON) and are mapped by
+`feature_labels.collected_feature_values` into the automatic draft. They appear in
+**Call to Action** in Labeling and Compare. The exact support registry is unchanged;
+generic capture and recapture do not save automatic labels. Existing campaigns are
+not backfilled. Extraction failures leave CTA labels unset and add a warning.
+
+The standalone `cta_main.py` batch runner is not needed: the app already manages
+sources, browser sessions, persistence, and errors. There is no separate
+`product_urls.json` or `cta_features.json` for this integration.
+
+Scoring and keywords retain the supplied rules, including prominence 1 and type
+Other when no candidates are found. Cookie overlays, exclusion substrings, and
+hidden content can affect results; automatic CTA suggestions require review.

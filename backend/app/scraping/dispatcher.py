@@ -42,6 +42,12 @@ def scrape_campaign(campaign: SourceDefinition) -> ScrapedPage | ManualRequired:
             message="Automatic scraping is not available. Manual scraping required."
         )
     result = ScrapedPage.model_validate(function(campaign).model_dump())
+    if result.metadata.get("cta_warning"):
+        result.warnings.append(result.metadata["cta_warning"])
+    if "cta_features" in result.metadata:
+        result.warnings.append(
+            "CTA suggestions use rendered visibility and keyword heuristics; review them before completion."
+        )
     if result.source != campaign:
         raise ValueError("Scraping function returned inconsistent source")
     return result

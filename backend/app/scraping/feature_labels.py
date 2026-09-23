@@ -5,13 +5,20 @@ average_paragraph_length. Never write labels, set Completed, or replace analyst
 notes here. The collection service saves the automatic draft during scraping.
 """
 
-from app.schemas.automation import CampaignInformation, ScrapedPage, FeatureSuggestions
+import json
+
+from app.schemas.automation import CampaignInformation, FeatureSuggestions, ScrapedPage
 from app.schemas.features import FeatureInput
+from app.scraping.message_analysis import count_words
+from app.scraping.text_scoring import (
+    calculate_information_complexity,
+    calculate_text_density,
+    calculate_text_style,
+)
 
 
 def collected_feature_values(page: ScrapedPage) -> FeatureInput:
     """Measured values only; counts describe the captured text, not hidden content."""
-    from app.scraping.message_analysis import count_words
 
     values = dict(
         product_name=page.source.product_name,
@@ -26,6 +33,19 @@ def collected_feature_values(page: ScrapedPage) -> FeatureInput:
         values["headline_length"] = count_words(page.headline)
     if page.bullet_list_count is not None:
         values["bullet_list_count"] = page.bullet_list_count
+
+    if "cta_features" in page.metadata:
+        cta = json.loads(page.metadata["cta_features"])
+        for field in (
+            "cta_count",
+            "primary_cta_text",
+            "cta_above_fold",
+            "cta_repeated",
+            "cta_prominence",
+            "cta_type",
+        ):
+            if field in cta:
+                values[field] = cta[field]
     return FeatureInput(**values)
 
 
@@ -33,12 +53,6 @@ def label_ing_youth_account_en(
     campaign: CampaignInformation, scraped_data: ScrapedPage
 ) -> FeatureSuggestions:
     """Rule-based text suggestions for the registered ING case; requires review."""
-    from app.scraping.message_analysis import count_words
-    from app.scraping.text_scoring import (
-        calculate_text_density,
-        calculate_text_style,
-        calculate_information_complexity,
-    )
 
     values = collected_feature_values(scraped_data).model_dump(exclude_unset=True)
     words = values["word_count"]
@@ -49,6 +63,7 @@ def label_ing_youth_account_en(
         if paragraphs
         else 0
     )
+    # scraping_config registers this handler; defer the import to avoid a cycle.
     from app.scraping.scraping_config import DEFAULT_FINANCIAL_TERMS_EN
 
     values["information_complexity"] = calculate_information_complexity(
@@ -61,8 +76,9 @@ def label_ing_youth_account_en(
         )
     return FeatureSuggestions(
         values=FeatureInput(**values),
-        warnings=[
+        warnings=scraped_data.warnings
+        + [
             "Rule-based suggestions, not AI analysis. Review text style and density before saving.",
-            "Counts cover extracted content only. Hidden FAQ may be missing; images, CTA, tone and visual labels remain unset.",
+            "Counts cover extracted content only. Hidden FAQ may be missing; images, tone and visual labels remain unset.",
         ],
     )
