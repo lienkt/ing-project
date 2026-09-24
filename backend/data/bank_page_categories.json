@@ -1,0 +1,164 @@
+{
+  "ING": [
+    {
+      "url": "https://www.ing.be/en/individuals/current-accounts-packs",
+      "category": "Current account",
+      "score": 0.6902278661727905,
+      "lang": "en"
+    },
+    {
+      "url": "https://www.ing.be/en/individuals/saving/compare-savings-accounts",
+      "category": "Savings account",
+      "score": 0.1830470860004425,
+      "lang": "en"
+    },
+    {
+      "url": "https://www.ing.be/en/individuals/borrowing/car-loan",
+      "category": "Vehicle loan",
+      "score": 0.7276337742805481,
+      "lang": "en"
+    },
+    {
+      "url": "https://www.ing.be/en/individuals/insurance/insure-my-car/car-insurance",
+      "category": "Car insurance",
+      "score": 0.8206858038902283,
+      "lang": "en"
+    },
+    {
+      "url": "https://www.ing.be/en/individuals/investing/ing-self-invest",
+      "category": "Investment fund / regular saving plan",
+      "score": 0.04248107224702835,
+      "lang": "en"
+    }
+  ],
+  "KBC": [
+    {
+      "url": "https://www.kbc.be/retail/en/payments/current-accounts.html?zone=topnav",
+      "category": "Current account",
+      "score": 0.18573738634586334,
+      "lang": "en"
+    },
+    {
+      "url": "https://www.kbc.be/retail/en/savings/regulated-savings-accounts.html",
+      "category": "Savings account",
+      "score": 0.17658933997154236,
+      "lang": "en"
+    },
+    {
+      "url": "https://www.kbc.be/retail/en/loans/vehicle/car-loan-petrol-diesel.html?zone=topnav",
+      "category": "Vehicle loan",
+      "score": 0.0846155509352684,
+      "lang": "en"
+    },
+    {
+      "url": "https://www.kbc.be/retail/en/insurance/vehicle/car-insurance.html?zone=topnav",
+      "category": "Car insurance",
+      "score": 0.07050968706607819,
+      "lang": "en"
+    },
+    {
+      "url": "https://www.kbc.be/retail/en/investments/investment-plan.html?zone=topnav#",
+      "category": "Investment fund / regular saving plan",
+      "score": 0.18002007901668549,
+      "lang": "en"
+    }
+  ],
+  "Belfius": [
+    {
+      "url": "https://www.belfius.be/site/retail/fr/produits/paiement/compte-bancaire",
+      "category": "Compte courant / Compte à vue",
+      "score": 0.09119698405265808,
+      "lang": "fr"
+    },
+    {
+      "url": "https://www.belfius.be/site/retail/fr/produits/epargner/comptes-epargne-reglementes",
+      "category": "Compte d'épargne",
+      "score": 0.05202483385801315,
+      "lang": "fr"
+    },
+    {
+      "url": "https://www.belfius.be/site/retail/fr/produits/emprunter/vehicule",
+      "category": "Crédit auto",
+      "score": 0.11830686032772064,
+      "lang": "fr"
+    },
+    {
+      "url": "https://www.belfius.be/site/retail/fr/produits/assurance/vehicules",
+      "category": "Assurance auto",
+      "score": 0.053329888731241226,
+      "lang": "fr"
+    },
+    {
+      "url": "https://www.belfius.be/site/retail/fr/produits/investir/investisseur-debutant/flex-invest-plan",
+      "category": "Plan d'investissement",
+      "score": 0.09263211488723755,
+      "lang": "fr"
+    }
+  ],
+  "BNP": [],
+  "Argenta": [
+    {
+      "url": "https://www.argenta.be/fr/payer/service-bancaire-de-base.html",
+      "category": "Compte courant / Compte à vue",
+      "score": 0.04365941137075424,
+      "lang": "fr"
+    },
+    {
+      "url": "https://www.argenta.be/fr/epargner/compte-d-epargne.html",
+      "category": "Compte d'épargne",
+      "score": 0.6362128853797913,
+      "lang": "fr"
+    },
+    {
+      "url": "https://www.argenta.be/fr/emprunter/pret-auto.html",
+      "category": "Crédit auto",
+      "score": 0.18614991009235382,
+      "lang": "fr"
+    },
+    {
+      "url": "https://www.argenta.be/fr/assurer/assurance-auto.html",
+      "category": "Assurance auto",
+      "score": 0.05060066282749176,
+      "lang": "fr"
+    },
+    {
+      "url": "https://www.argenta.be/fr/investir/fonds-d-investissement.html#fondsessentiels",
+      "category": "Plan d'investissement",
+      "score": 0.1422143578529358,
+      "lang": "fr"
+    }
+  ],
+  "Crelan": [
+    {
+      "url": "https://www.crelan.be/nl/particulieren/betalen/zichtrekeningen/product/zichtrekeningen-vergelijken",
+      "category": "Zichtrekening",
+      "score": 0.07277059555053711,
+      "lang": "nl"
+    },
+    {
+      "url": "https://www.crelan.be/nl/particulieren/sparen-en-beleggen/sparen/product/spaarrekeningen",
+      "category": "Spaarrekening",
+      "score": 0.05282420292496681,
+      "lang": "nl"
+    },
+    {
+      "url": "https://www.crelan.be/nl/particulieren/lenen/mobiliteit/product/autolening",
+      "category": "Autolening",
+      "score": 0.034948091953992844,
+      "lang": "nl"
+    },
+    {
+      "url": "https://www.crelan.be/nl/particulieren/verzekeren/mobiliteit/product/autoverzekering",
+      "category": "Autoverzekering",
+      "score": 0.04959447309374809,
+      "lang": "nl"
+    },
+    {
+      "url": "https://www.crelan.be/nl/particulieren/sparen-en-beleggen/beleggen/product/starten-met-beleggen",
+      "category": "Beleggingsplan",
+      "score": 0.08010844886302948,
+      "lang": "nl"
+    }
+  ],
+  "Beobank": []
+}
