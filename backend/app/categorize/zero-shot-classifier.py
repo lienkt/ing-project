@@ -153,7 +153,11 @@ def translate_to_en(src_text: str, lang: str) -> str:
     decoded_text = tokenizer.batch_decode(translated, skip_special_tokens=True)
     return decoded_text[0]
 
-def categorize_page(page_url:str, classifier) -> tuple[str,float]:
+def categorize_page(
+    page_url: str,
+    classifier,
+    expected_category: str | None = None,
+) -> tuple[str, float, str]:
     # Scrape page
     time0 = time.time()
     source = SourceDefinition(
@@ -217,9 +221,16 @@ def categorize_page(page_url:str, classifier) -> tuple[str,float]:
     if DEBUG_CLASSIFIER:
         time3 = time.time()
         print(f"* classify : {time3-time2} s")
-    # return category with highest score
-    idx = BANK_PRODUCT_CATEGORIES[trans_lang].index(result['labels'][0])
-    return BANK_PRODUCT_CATEGORIES[lang][idx], result['scores'][0], lang
+    selected_label = expected_category or result["labels"][0]
+    if selected_label not in labels:
+        raise ValueError(f"Unknown English product category: {selected_label}")
+    result_index = result["labels"].index(selected_label)
+    category_index = labels.index(selected_label)
+    return (
+        BANK_PRODUCT_CATEGORIES[lang][category_index],
+        result["scores"][result_index],
+        lang,
+    )
 
 
 def load_bank_pages(input_file: Path = BANK_URLS_FILE) -> dict[str, list[str]]:
@@ -251,7 +262,10 @@ def _save_categorized_pages(results: dict, output_file: Path) -> None:
     temporary_file.replace(output_file)
 
 
-def categorize_bank_pages(output_file: Path = CATEGORIZED_PAGES_FILE) -> dict:
+def categorize_bank_pages(
+    output_file: Path = CATEGORIZED_PAGES_FILE,
+    categories: list[str] | None = None,
+) -> dict:
     input_file = BANK_URLS_SUBSET_FILE if DEBUG_CLASSIFIER else BANK_URLS_FILE
     bank_pages = load_bank_pages(input_file)
     output_file.parent.mkdir(parents=True, exist_ok=True)
@@ -280,6 +294,21 @@ def categorize_bank_pages(output_file: Path = CATEGORIZED_PAGES_FILE) -> dict:
         bank_pages_cat[bank] = []
         if bank in BANK_FOCUS_URLS:
             pages = [page for page in pages if (BANK_FOCUS_URLS[bank] in page)]
+        if categories is not None and pages:
+            if len(categories) != len(pages):
+                raise ValueError(
+                    f"Expected {len(pages)} categories for {bank}, "
+                    f"received {len(categories)}"
+                )
+            invalid_categories = [
+                category
+                for category in categories
+                if category not in BANK_PRODUCT_CATEGORIES["en"]
+            ]
+            if invalid_categories:
+                raise ValueError(
+                    f"Unknown English product categories: {invalid_categories}"
+                )
         bar = progressbar.ProgressBar(maxval=len(pages), 
                                       widgets=[f"Categorize urls of bank {bank} : ", 
                                                 progressbar.Bar('=', '[', ']'), ' ', 
@@ -287,7 +316,10 @@ def categorize_bank_pages(output_file: Path = CATEGORIZED_PAGES_FILE) -> dict:
         bar.start()
         for num, page in enumerate(pages):
             bar.update(num)
-            category, score, lang = categorize_page(page, classifier)
+            expected_category = categories[num] if categories is not None else None
+            category, score, lang = categorize_page(
+                page, classifier, expected_category=expected_category
+            )
             if category == "":
                 continue
             bank_pages_cat[bank].append({
@@ -351,11 +383,78 @@ def get_urls_with_highest_scores(bank_pages_cat : dict, output_file: Path = BEST
     print(f"Printed urls with highest_scores in output file {output_file}.")
     return urls_with_highest_scores
 
+def plot_categorize_score(
+    input_file: Path = CATEGORIZED_PAGES_FILE,
+    output_file: Path | None = None,
+):
+    """Plot classification scores by product and bank."""
+    import pandas as pd
+    import seaborn as sns
+
+    results = json.loads(input_file.read_text(encoding="utf-8"))
+    records = []
+    for bank, pages in results.items():
+        for page in pages:
+            category = page.get("category")
+            language = page.get("lang")
+            if not category or page.get("score") is None:
+                continue
+            language_categories = BANK_PRODUCT_CATEGORIES.get(language, [])
+            if category in language_categories:
+                category = BANK_PRODUCT_CATEGORIES["en"][
+                    language_categories.index(category)
+                ]
+            records.append(
+                {
+                    "product": category,
+                    "score": float(page["score"]),
+                    "bank": bank,
+                }
+            )
+    if not records:
+        raise ValueError(f"No categorized scores found in {input_file}")
+
+    data = pd.DataFrame(records)
+    palette = {
+        "ING": "#e85900",
+        "Belfius": "#c30045",
+        "BNP": "#00965e",
+        "KBC": "#00aeef",
+        "Argenta": "#00814d",
+        "Crelan": "#c4d600",
+    }
+    plot = sns.catplot(
+        data=data,
+        kind="bar",
+        x="product",
+        y="score",
+        hue="bank",
+        palette=palette,
+        errorbar=None,
+        height=7,
+        aspect=1.8,
+    )
+    plot.set_axis_labels("Product", "Classification score")
+    plot.set_xticklabels(rotation=45, ha="right")
+    plot.figure.tight_layout()
+
+    if output_file is None:
+        output_file = BANK_URLS_FILE.with_name("bank_category_scores.png")
+    plot.figure.savefig(output_file, dpi=150, bbox_inches="tight")
+    print(f"Saved score plot to {output_file}")
+    return plot
+
 def main():
-    if DEBUG_CLASSIFIER:
-        categorize_test()
-    bank_pages_cat = categorize_bank_pages()
-    get_urls_with_highest_scores(bank_pages_cat)
+    expected_categories = [
+        "Current account",
+        "Savings account",
+        "Vehicle loan",
+        "Car insurance",
+        "Investment fund / regular saving plan",
+    ] if DEBUG_CLASSIFIER else None
+    #bank_pages_cat = categorize_bank_pages(categories=expected_categories)
+    #get_urls_with_highest_scores(bank_pages_cat)
+    plot_categorize_score()
 
 if __name__ == "__main__":
     main()
