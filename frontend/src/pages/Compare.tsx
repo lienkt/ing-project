@@ -1,3 +1,6 @@
+import { pageColors } from "../components/comparisonColors";
+import { LayoutDashboard, Download } from "lucide-react";
+import { ComparisonEvidence } from "../components/ComparisonEvidence";
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { getProjects, label, ProjectOption } from "../api/campaigns";
@@ -20,6 +23,8 @@ export default function Compare() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [retry, setRetry] = useState(0);
+  const [activeGroup, setActiveGroup] = useState("Overview");
+  const groups = [...new Set(analyticalFields.map((field) => field.section))];
   const [labelingStatus, setLabelingStatus] = useState("");
 
   useEffect(() => {
@@ -54,6 +59,7 @@ export default function Compare() {
   const selected = filteredPages.filter((page) =>
     selectedIds.includes(page.campaign_id),
   );
+  const colors = pageColors(selected);
   useEffect(() => {
     if (hash === "#insights") {
       const frame = requestAnimationFrame(() => {
@@ -78,16 +84,54 @@ export default function Compare() {
     );
   }
   return (
-    <>
+    <div className="compare-workspace">
       <div className="page-heading">
         <div>
           <div className="eyebrow">DATASET → LABEL → COMPARE</div>
           <h1>Compare Campaigns</h1>
           <p>Compare how banks communicate similar products.</p>
         </div>
-        <Link className="button secondary" to="/">
-          Back to dataset
-        </Link>
+        <button
+          className="secondary"
+          disabled={selected.length < 2}
+          onClick={() => {
+            const rows = [
+              [
+                "Group",
+                "Feature",
+                ...selected.map(
+                  (page) =>
+                    `${page.bank_name} · ${page.product_name || "Product"} · #${page.campaign_id}`,
+                ),
+              ],
+              ...analyticalFields.map((field) => [
+                field.section,
+                label(field.key),
+                ...selected.map((page) => page.features?.[field.key] ?? ""),
+              ]),
+            ];
+            const csv = rows
+              .map((row) =>
+                row
+                  .map((value) => {
+                    const text = String(value);
+                    return `"${(/^[=+@\-\t\r]/.test(text) ? "'" + text : text).replaceAll('"', '""')}"`;
+                  })
+                  .join(","),
+              )
+              .join("\r\n");
+            const url = URL.createObjectURL(
+              new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8" }),
+            );
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = "campaign-comparison.csv";
+            link.click();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+          }}
+        >
+          <Download size={16} /> Export comparison
+        </button>
       </div>
       {hash === "#insights" && selected.length < 2 && (
         <section
@@ -112,59 +156,65 @@ export default function Compare() {
         aria-label="Comparison filters"
       >
         <h2>Choose pages to compare</h2>
-        <label className="compare-category">
-          Product category
-          <select
-            value={category}
-            onChange={(e) => {
-              setPages([]);
-              setSelectedIds([]);
-              navigate({
-                pathname: "/compare",
-                search: e.target.value
-                  ? `?${new URLSearchParams({ product_category: e.target.value })}`
-                  : "",
-                hash,
-              });
-            }}
-          >
-            <option value="">Select a product category</option>
-            {category && !categories.some((option) => option.key === category) && (
-              <option value={category}>{label(category)}</option>
-            )}
-            {categories.map((option) => (
-              <option key={option.key} value={option.key}>
-                {option.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="compare-category">
-          Labeling status
-          <select
-            value={labelingStatus}
-            onChange={(e) => {
-              const status = e.target.value;
-              setLabelingStatus(status);
-              setSelectedIds((previous) =>
-                previous.filter((id) =>
-                  pages.some(
-                    (page) =>
-                      page.campaign_id === id &&
-                      (!status || page.labeling_status === status),
+        <div className="compare-filter-row">
+          <label className="compare-category">
+            Product category
+            <select
+              value={category}
+              onChange={(e) => {
+                setPages([]);
+                setSelectedIds([]);
+                navigate({
+                  pathname: "/compare",
+                  search: e.target.value
+                    ? `?${new URLSearchParams({ product_category: e.target.value })}`
+                    : "",
+                  hash,
+                });
+              }}
+            >
+              <option value="">Select a product category</option>
+              {category && !categories.some((option) => option.key === category) && (
+                <option value={category}>{label(category)}</option>
+              )}
+              {categories.map((option) => (
+                <option key={option.key} value={option.key}>
+                  {option.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="compare-category">
+            Labeling status
+            <select
+              value={labelingStatus}
+              onChange={(e) => {
+                const status = e.target.value;
+                setLabelingStatus(status);
+                setSelectedIds((previous) =>
+                  previous.filter((id) =>
+                    pages.some(
+                      (page) =>
+                        page.campaign_id === id &&
+                        (!status || page.labeling_status === status),
+                    ),
                   ),
-                ),
-              );
-            }}
-          >
-            <option value="">All statuses</option>
-            {["Not Started", "In Progress", "Completed"].map((status) => (
-              <option key={status} value={status}>
-                {status}
-              </option>
-            ))}
-          </select>
-        </label>
+                );
+              }}
+            >
+              <option value="">All statuses</option>
+              {["Not Started", "In Progress", "Completed"].map((status) => (
+                <option key={status} value={status}>
+                  {status}
+                </option>
+              ))}
+            </select>
+          </label>
+          <div className="compare-filter-summary">
+            <strong>{selected.length} pages selected</strong>
+            <span>Choose at least two pages to compare</span>
+          </div>
+        </div>
         <Notice message={error} />
         {error && (
           <button
@@ -202,96 +252,109 @@ export default function Compare() {
             </div>
           ) : (
             <>
-              <p>Select a bank, or expand its pages to choose individually.</p>
-              <div className="compare-selection-actions">
-                <button
-                  className="secondary"
-                  type="button"
-                  onClick={() =>
-                    setSelectedIds(filteredPages.map((page) => page.campaign_id))
-                  }
-                >
-                  Select all pages
-                </button>
-                <button
-                  className="secondary"
-                  type="button"
-                  onClick={() => setSelectedIds([])}
-                >
-                  Clear selection
-                </button>
-                <span role="status">{selected.length} pages selected</span>
-              </div>
-              {bankNames.map((bank) => {
-                const bankPages = filteredPages.filter(
-                  (page) => page.bank_name === bank,
-                );
-                const allSelected = bankPages.every((page) =>
-                  selectedIds.includes(page.campaign_id),
-                );
-                return (
-                  <fieldset className="compare-bank" key={bank}>
-                    <legend>{bank}</legend>
-                    <button
-                      type="button"
-                      className={`bank-select ${allSelected ? "selected" : "secondary"}`}
-                      aria-pressed={allSelected}
-                      onClick={() =>
-                        setSelectedIds((previous) =>
-                          allSelected
-                            ? previous.filter(
-                                (id) =>
-                                  !bankPages.some((page) => page.campaign_id === id),
-                              )
-                            : [
-                                ...new Set([
-                                  ...previous,
-                                  ...bankPages.map((page) => page.campaign_id),
-                                ]),
-                              ],
-                        )
-                      }
-                    >
-                      {allSelected ? "✓ Selected" : "Select bank"}
-                    </button>
-                    <details className="candidate-disclosure">
-                      <summary>
-                        Review {bankPages.length}{" "}
-                        {bankPages.length === 1 ? "page" : "pages"}
-                      </summary>
-                      {bankPages.map((page) => (
-                        <div className="compare-candidate" key={page.campaign_id}>
-                          <div className="compare-candidate-info">
-                            <input
-                              aria-label={`Select ${page.product_name || "product"} · Page ${page.campaign_id}`}
-                              type="checkbox"
-                              checked={selectedIds.includes(page.campaign_id)}
-                              onChange={() => toggle(page.campaign_id)}
-                            />
-                            <span className="compare-candidate-details">
-                              <strong>
-                                <Link to={`/campaigns/${page.campaign_id}`}>
-                                  {page.product_name || "Product not recorded"}
-                                </Link>{" "}
-                                · Page #{page.campaign_id}
-                              </strong>
-                              <small>
-                                {label(page.product_category)} ·{" "}
-                                {page.language || "Language not recorded"} ·{" "}
-                                {page.bank_type || "Bank type not recorded"}
-                              </small>
-                              <small>
-                                Reviewed: {page.capture_date || "Not recorded"}
-                              </small>
-                            </span>
-                          </div>
-                          <FeatureStatus value={page.labeling_status} />
-                        </div>
-                      ))}
-                    </details>
-                  </fieldset>
-                );
-              })}
+              <details className="compare-picker" open>
+                <summary>
+                  Banks & pages{" "}
+                  <span>
+                    {new Set(selected.map((page) => page.bank_name)).size} banks
+                    selected · Edit selection
+                  </span>
+                </summary>
+                <p>Select a bank, or expand its pages to choose individually.</p>
+                <div className="compare-selection-actions">
+                  <button
+                    className="secondary"
+                    type="button"
+                    onClick={() =>
+                      setSelectedIds(filteredPages.map((page) => page.campaign_id))
+                    }
+                  >
+                    Select all pages
+                  </button>
+                  <button
+                    className="secondary"
+                    type="button"
+                    onClick={() => setSelectedIds([])}
+                  >
+                    Clear selection
+                  </button>
+                  <span role="status">{selected.length} pages selected</span>
+                </div>
+                <div className="compare-bank-grid">
+                  {bankNames.map((bank) => {
+                    const bankPages = filteredPages.filter(
+                      (page) => page.bank_name === bank,
+                    );
+                    const allSelected = bankPages.every((page) =>
+                      selectedIds.includes(page.campaign_id),
+                    );
+                    return (
+                      <fieldset className="compare-bank" key={bank}>
+                        <legend>{bank}</legend>
+                        <button
+                          type="button"
+                          className={`bank-select ${allSelected ? "selected" : "secondary"}`}
+                          aria-pressed={allSelected}
+                          onClick={() =>
+                            setSelectedIds((previous) =>
+                              allSelected
+                                ? previous.filter(
+                                    (id) =>
+                                      !bankPages.some(
+                                        (page) => page.campaign_id === id,
+                                      ),
+                                  )
+                                : [
+                                    ...new Set([
+                                      ...previous,
+                                      ...bankPages.map((page) => page.campaign_id),
+                                    ]),
+                                  ],
+                            )
+                          }
+                        >
+                          {allSelected ? "✓ Selected" : "Select bank"}
+                        </button>
+                        <details className="candidate-disclosure">
+                          <summary>
+                            Review {bankPages.length}{" "}
+                            {bankPages.length === 1 ? "page" : "pages"}
+                          </summary>
+                          {bankPages.map((page) => (
+                            <div className="compare-candidate" key={page.campaign_id}>
+                              <div className="compare-candidate-info">
+                                <input
+                                  aria-label={`Select ${page.product_name || "product"} · Page ${page.campaign_id}`}
+                                  type="checkbox"
+                                  checked={selectedIds.includes(page.campaign_id)}
+                                  onChange={() => toggle(page.campaign_id)}
+                                />
+                                <span className="compare-candidate-details">
+                                  <strong>
+                                    <Link to={`/campaigns/${page.campaign_id}`}>
+                                      {page.product_name || "Product not recorded"}
+                                    </Link>{" "}
+                                    · Page #{page.campaign_id}
+                                  </strong>
+                                  <small>
+                                    {label(page.product_category)} ·{" "}
+                                    {page.language || "Language not recorded"} ·{" "}
+                                    {page.bank_type || "Bank type not recorded"}
+                                  </small>
+                                  <small>
+                                    Reviewed: {page.capture_date || "Not recorded"}
+                                  </small>
+                                </span>
+                              </div>
+                              <FeatureStatus value={page.labeling_status} />
+                            </div>
+                          ))}
+                        </details>
+                      </fieldset>
+                    );
+                  })}
+                </div>
+              </details>
             </>
           ))
         )}
@@ -348,13 +411,70 @@ export default function Compare() {
                   and missing values.
                 </div>
               )}
-              <ComparisonFindings pages={selected} />
-              <ComparisonChart pages={selected} />
-              <ComparisonTable pages={selected} />
+              <nav className="compare-tabs" aria-label="Comparison groups">
+                {["Overview", ...groups].map((group) => (
+                  <button
+                    key={group}
+                    type="button"
+                    aria-current={activeGroup === group ? "page" : undefined}
+                    onClick={() => setActiveGroup(group)}
+                  >
+                    {group === "Overview" && <LayoutDashboard size={16} />}
+                    {group}
+                  </button>
+                ))}
+              </nav>
+              <div className="compare-dashboard">
+                <div className="compare-main">
+                  {activeGroup === "Overview" && <ComparisonChart pages={selected} />}
+                  <ComparisonTable
+                    pages={selected}
+                    group={activeGroup === "Overview" ? undefined : activeGroup}
+                  />
+                  <ComparisonEvidence pages={selected} />
+                </div>
+                <aside className="compare-aside" aria-label="Comparison insights">
+                  <ComparisonFindings pages={selected} />
+                  <section className="card compare-coverage">
+                    <h2>Labeling coverage</h2>
+                    <p>
+                      Review unfinished labels to make your comparison more complete.
+                    </p>
+                    {selected.map((page) => {
+                      const count = analyticalFields.filter((field) =>
+                        isFilled(page.features?.[field.key]),
+                      ).length;
+                      return (
+                        <Link
+                          key={page.campaign_id}
+                          to={`/campaigns/${page.campaign_id}/label`}
+                        >
+                          <span>
+                            {page.bank_name} ·{" "}
+                            {page.product_name || `Page #${page.campaign_id}`}
+                          </span>
+                          <strong>
+                            {count}/{analyticalFields.length}
+                          </strong>
+                          <progress
+                            style={{
+                              color: colors.get(page.campaign_id),
+                              accentColor: colors.get(page.campaign_id),
+                            }}
+                            value={count}
+                            max={analyticalFields.length}
+                            aria-label={`${page.bank_name} page ${page.campaign_id} recorded labels`}
+                          />
+                        </Link>
+                      );
+                    })}
+                  </section>
+                </aside>
+              </div>
             </>
           )}
         </>
       )}
-    </>
+    </div>
   );
 }

@@ -33,7 +33,7 @@ export function ComparisonFindings({ pages }: { pages: ComparisonPage[] }) {
     <section
       id="insights"
       tabIndex={-1}
-      className="compare-section findings-section"
+      className="card compare-section findings-section"
       aria-labelledby="findings-title"
     >
       <h2 id="findings-title" className="comparison-help-heading">
@@ -74,6 +74,12 @@ export function ComparisonFindings({ pages }: { pages: ComparisonPage[] }) {
                     </p>
                   </QuickGuide>
                 </h3>
+                <p>
+                  {minimum === maximum
+                    ? `All ${values.length} labeled pages share a score of ${minimum}/5.`
+                    : `Scores range from ${minimum} to ${maximum} out of 5.`}{" "}
+                  {values.length}/{pages.length} pages labeled.
+                </p>
                 <div className="finding-values">
                   {values.map(({ page, value }) => (
                     <div key={page.campaign_id}>
