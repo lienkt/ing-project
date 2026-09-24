@@ -9,14 +9,17 @@ from nltk.corpus import stopwords
 import string
 from langdetect import detect
 import torch
+import re
+from urllib.parse import unquote, urlsplit
 #import requests
 #from bs4 import BeautifulSoup
 import progressbar
 import time
 from functools import lru_cache
 
-from backend.app.crawling.crawling import BANK_URLS_FILE
-from backend.app.scraping.scrape_text_features_bel import scrape_page
+from app.crawling.crawling import BANK_URLS_FILE
+from app.schemas.automation import SourceDefinition
+from app.scraping.page_scrapers import capture_cleaned_page
 
 nltk.download('stopwords')
 nltk.download('punkt')
@@ -102,17 +105,6 @@ BANK_PRODUCT_CATEGORIES = {
     ]
 }
 
-"""
-def scrape_page(page_url:str) -> str:
-    # scrape page_url and return text
-    response = requests.get(page_url, timeout=30)
-    soup = BeautifulSoup(response.text, 'html.parser')
-    text = ""
-    for data in soup.find_all("p"):
-        text = text + " " + data.get_text()
-    return text
-"""
-
 @lru_cache(maxsize=2)
 def load_translation_model(model_name: str):
     tokenizer = MarianTokenizer.from_pretrained(model_name)
@@ -125,6 +117,22 @@ def clean_text(text) -> str:
     filtered_tokens = [word for word in tokens if word.lower() not in stop_words]
     clean_tokens = [word for word in filtered_tokens if word not in string.punctuation]
     return " ".join(clean_tokens)
+
+
+def extract_product_keywords(page_url: str) -> list[str]:
+    """Extract useful product terms from a URL path."""
+    ignored_terms = {
+        "en", "fr", "nl", "de", "be",
+        "www", "site", "retail", "public", "individuals",
+        "particuliers", "particulieren", "products", "produits",
+        "product", "html",
+    }
+    path = unquote(urlsplit(page_url).path).lower()
+    tokens = re.findall(r"[^\W\d_]+", path, flags=re.UNICODE)
+    return list(dict.fromkeys(
+        token for token in tokens
+        if len(token) > 1 and token not in ignored_terms
+    ))
 
 def translate_to_en(src_text: str, lang: str) -> str:
     if lang == "en":
@@ -148,10 +156,35 @@ def translate_to_en(src_text: str, lang: str) -> str:
 def categorize_page(page_url:str, classifier) -> tuple[str,float]:
     # Scrape page
     time0 = time.time()
-    text = scrape_page(page_url)
-    text = " ".join(text["headings"]) + " " + text["paragraphs"][0] + " " + text["paragraphs"][1]
+    source = SourceDefinition(
+        source_id="zero-shot-classifier",
+        bank="unknown",
+        product_category="unknown",
+        product_name="unknown",
+        language="English",
+        page_type="generic",
+        url=page_url,
+    )
+    try:
+        scraped_page = capture_cleaned_page(source)
+    except ValueError as exc:
+        print(f"- skipped page {page_url}: {exc}")
+        return "", 0.0, ""
+    url_keywords = extract_product_keywords(page_url)
+    text_parts = [
+        scraped_page.headline or scraped_page.title,
+        *url_keywords,
+        *scraped_page.headings[:5],
+        *scraped_page.paragraphs[:5],
+    ]
+    text = " ".join(dict.fromkeys(part.strip() for part in text_parts if part.strip()))
     if DEBUG_CLASSIFIER:
-        print("text : ",text)
+        print(f"* scraped_page ({type(scraped_page)}) : \"{scraped_page}\"")
+        print(f"* scraped_page.text ({type(scraped_page.text)}) : \"{scraped_page.text}\"")
+        print(f"* scraped_page.headings ({type(scraped_page.headings)},{len(scraped_page.headings)}) : \"{scraped_page.headings}\"")
+        print(f"* scraped_page.paragraphs ({type(scraped_page.paragraphs)},{len(scraped_page.paragraphs)}) : \"{scraped_page.paragraphs}\"")
+        print(f"* URL product keywords: {url_keywords}")
+        print(f"* text ({type(text)},{len(text)}) : \"{text}\"")
         time1 = time.time()
         print(f"* scraping : {time1-time0} s")
     # Clean text
@@ -166,7 +199,7 @@ def categorize_page(page_url:str, classifier) -> tuple[str,float]:
         return "", 0., ""
     trans_text = translate_to_en(text, lang)
     if DEBUG_CLASSIFIER:
-        print("- translated text : ",text)
+        print(f"- translated text from {lang} to en : {trans_text}")
     trans_lang="en"
     labels = BANK_PRODUCT_CATEGORIES[trans_lang]
     if DEBUG_CLASSIFIER:
