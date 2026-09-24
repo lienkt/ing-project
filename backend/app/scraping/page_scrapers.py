@@ -101,6 +101,83 @@ def capture_generic_page(campaign: SourceDefinition) -> ScrapedPage:
     return page
 
 
+def filter_real_headings(headings: list[str]) -> list[str]:
+    """Remove common navigation, legal, and site-chrome headings."""
+    remove_patterns = [
+        r"\bmenu\b",
+        r"main menu|menu principal|hoofdmenu",
+        r"language menu|menu langue|taalmenu",
+        r"segment and language|segment et langue|segment en taal",
+        r"\bcontact\b|contactez|contacteer",
+        r"privacy|confidentialité|privacybeleid",
+        r"cookie",
+        r"voorwaarden|conditions générales|conditions d'utilisation",
+        r"help|aide|hulp",
+        r"jobs|carrières|carrière|vacatures",
+        r"social|suivez-nous|volg ons",
+        r"footer|pied de page|voettekst",
+        r"navigation|navigatie",
+        r"tarieven|tarifs|rates",
+        r"documenten|documents",
+        r"pdf",
+        r"tools|outils|hulpmiddelen",
+        r"zoek|recherche|search",
+        r"login|log in|connexion|se connecter|aanmelden|inloggen",
+        r"openingsuren|heures d'ouverture|opening hours",
+        r"kantoren|agences|branches|locations",
+        r"\bfaq\b|questions fréquentes|veelgestelde vragen",
+        r"sparen-beleggen|épargne-investissement|savings and investments",
+        r"andere websites|autres sites|other websites",
+        r"online bankieren|banque en ligne|online banking",
+        r"diensten|services",
+        r"sectoren|secteurs|sectors",
+        r"een noodgeval|une urgence|emergency",
+    ]
+    cleaned = []
+    for heading in headings:
+        heading_clean = heading.strip()
+        heading_lower = heading_clean.lower()
+        if any(re.search(pattern, heading_lower) for pattern in remove_patterns):
+            continue
+        if len(heading_clean) >= 8 and re.search(r"[A-Za-z]", heading_clean):
+            cleaned.append(heading_clean)
+    return cleaned
+
+
+def filter_real_paragraphs(paragraphs: list[str]) -> list[str]:
+    """Remove common cookie, advertising, and navigation paragraphs."""
+    cookie_patterns = [
+        r"cookies?",
+        r"advertentie|publicité|advertising|reclame",
+        r"social media|socialmediacookies|réseaux sociaux|sociale media",
+        r"veiligheid en de goede werking|sécurité et bon fonctionnement|security and proper operation",
+        r"voorkeuren te onthouden|mémoriser vos préférences|remember your preferences",
+        r"hoeveel mensen onze websites bezoeken|combien de personnes visitent nos sites|how many people visit our websites",
+        r"gepersonaliseerde aanbevelingen|recommandations personnalisées|personalized recommendations",
+        r"main menu|menu principal|hoofdmenu",
+        r"language menu|menu langue|taalmenu",
+    ]
+    return [
+        paragraph
+        for paragraph in paragraphs
+        if not any(re.search(pattern, paragraph.lower()) for pattern in cookie_patterns)
+    ]
+
+
+def capture_cleaned_page(campaign: SourceDefinition) -> ScrapedPage:
+    """Capture a page and remove common navigation and cookie text."""
+    page = capture_generic_page(campaign)
+    headings = filter_real_headings(page.headings)
+    paragraphs = filter_real_paragraphs(page.paragraphs)
+    return page.model_copy(
+        update={
+            "headings": headings,
+            "paragraphs": paragraphs,
+            "text": " ".join([*headings, *paragraphs]),
+        }
+    )
+
+
 # Shared infrastructure: never register this helper directly in AUTO_SUPPORT.
 async def _collect_page(
     campaign: SourceDefinition, config: SiteConfig, extractor, allow_empty=False
@@ -313,6 +390,12 @@ async def extract_content(
     bullet_list_count = await main.locator("ul, ol").count()
 
     tables = await extract_visible_texts(main.locator("table"))
+    fallback_text = ""
+    if not any((headline, headings, paragraphs, bullets, tables)):
+        try:
+            fallback_text = clean_text(await main.inner_text())
+        except Error:
+            logger.debug("Fallback page text extraction failed", exc_info=True)
 
     return {
         "headline": headline,
@@ -321,7 +404,39 @@ async def extract_content(
         "bullets": bullets,
         "bullet_list_count": bullet_list_count,
         "tables": tables,
+        "fallback_text": fallback_text,
     }
+
+
+async def extract_shadow_content(page: Page) -> dict[str, list[str]]:
+    """Collect headings and paragraphs rendered inside open shadow roots."""
+    return await page.evaluate(
+        """
+        () => {
+            const headings = [];
+            const paragraphs = [];
+            const read = (element) => (element.innerText || element.textContent || '')
+                .replace(/\\s+/g, ' ')
+                .trim();
+            const visit = (root) => {
+                for (const element of root.querySelectorAll('*')) {
+                    if (element.matches('h1, h2, h3, h4, h5, h6')) {
+                        const text = read(element);
+                        if (text) headings.push(text);
+                    } else if (element.matches('p')) {
+                        const text = read(element);
+                        if (text) paragraphs.push(text);
+                    }
+                    if (element.shadowRoot) {
+                        visit(element.shadowRoot);
+                    }
+                }
+            };
+            visit(document);
+            return {headings, paragraphs};
+        }
+        """
+    )
 
 
 async def scrape_site(config: SiteConfig, browser) -> dict:
@@ -340,7 +455,9 @@ async def scrape_site(config: SiteConfig, browser) -> dict:
 
             async def public_requests(route):
                 try:
-                    await asyncio.to_thread(validate_public_url, route.request.url)
+                    await asyncio.to_thread(
+                        public_urls.validate_public_url, route.request.url
+                    )
                 except ValueError:
                     await route.abort()
                 else:
@@ -380,6 +497,17 @@ async def scrape_site(config: SiteConfig, browser) -> dict:
             paragraph_exclude=config.paragraph_exclude,
             bullet_exclude=config.bullet_exclude,
         )
+        shadow_content = await extract_shadow_content(page)
+        content["headings"] = deduplicate_lines(
+            [*content["headings"], *shadow_content["headings"]]
+        )
+        content["paragraphs"] = [
+            paragraph
+            for paragraph in deduplicate_lines(
+                [*content["paragraphs"], *shadow_content["paragraphs"]]
+            )
+            if count_words(paragraph) >= 2
+        ]
 
         all_text_lines = deduplicate_lines(
             [
@@ -387,6 +515,7 @@ async def scrape_site(config: SiteConfig, browser) -> dict:
                 *content["headings"],
                 *content["paragraphs"],
                 *content["bullets"],
+                content["fallback_text"],
             ]
         )
         content["all_text"] = " ".join(all_text_lines)
