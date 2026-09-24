@@ -1,0 +1,45 @@
+{
+  "low_level_metrics": {
+    "dimensions": {
+      "width": 1536,
+      "height": 720
+    },
+    "aspect_ratio": 2.13,
+    "brightness": 200.26,
+    "saturation": 37.56,
+    "dominant_colors": [
+      "#dbd8d4",
+      "#b79379",
+      "#5a402f"
+    ],
+    "contrast_rms": 49.81,
+    "visual_clutter_score": 0.0396,
+    "text_coverage_pct": 0.0,
+    "ocr_copy_count": 0,
+    "ocr_detected_copy": []
+  },
+  "semantic_analysis": {
+    "product_category": "Financial Services",
+    "secondary_tags": [
+      "Banking",
+      "Credit Card",
+      "Mobile Payments",
+      "Digital Banking",
+      "Online Shopping"
+    ],
+    "perceived_emotion": "Joy",
+    "brand_logos": [
+      "KBC",
+      "Mastercard"
+    ],
+    "brand_safety": {
+      "is_safe": true,
+      "flags": []
+    },
+    "target_audience": {
+      "perceived_age_group": "Young Professionals",
+      "lifestyle_vibe": "Modern Casual"
+    },
+    "value_proposition_summary": "Effortless and joyful digital banking and payment experience using a smartphone and KBC card."
+  }
+}

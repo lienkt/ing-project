@@ -1,0 +1,42 @@
+{
+  "low_level_metrics": {
+    "dimensions": {
+      "width": 960,
+      "height": 300
+    },
+    "aspect_ratio": 3.2,
+    "brightness": 137.56,
+    "saturation": 55.5,
+    "dominant_colors": [
+      "#7b7b6a",
+      "#c7c6bc",
+      "#2b2d1b"
+    ],
+    "contrast_rms": 64.15,
+    "visual_clutter_score": 0.0436,
+    "text_coverage_pct": 0.0,
+    "ocr_copy_count": 0,
+    "ocr_detected_copy": []
+  },
+  "semantic_analysis": {
+    "product_category": "Financial Services",
+    "secondary_tags": [
+      "Banking",
+      "Young Professional",
+      "Urban Lifestyle",
+      "Career Growth",
+      "Smart Casual"
+    ],
+    "perceived_emotion": "Confidence/Optimism",
+    "brand_logos": [],
+    "brand_safety": {
+      "is_safe": true,
+      "flags": []
+    },
+    "target_audience": {
+      "perceived_age_group": "Young Professionals",
+      "lifestyle_vibe": "Urban Sophisticated"
+    },
+    "value_proposition_summary": "Inspires modern, ambitious young professionals with a sense of financial confidence and modern success in an urban setting."
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "low_level_metrics": {
+    "dimensions": {
+      "width": 1920,
+      "height": 1600
+    },
+    "aspect_ratio": 1.2,
+    "brightness": 141.08,
+    "saturation": 15.95,
+    "dominant_colors": [
+      "#dad5d3",
+      "#242222",
+      "#867261"
+    ],
+    "contrast_rms": 88.34,
+    "visual_clutter_score": 0.0035,
+    "text_coverage_pct": 0.97,
+    "ocr_copy_count": 1,
+    "ocr_detected_copy": [
+      "3"
+    ]
+  },
+  "semantic_analysis": {
+    "product_category": "Financial Services",
+    "secondary_tags": [
+      "Credit Card",
+      "Banking",
+      "Payment",
+      "Mastercard",
+      "Digital Banking"
+    ],
+    "perceived_emotion": "Calm/Trust",
+    "brand_logos": [
+      "Belfius",
+      "Mastercard"
+    ],
+    "brand_safety": {
+      "is_safe": true,
+      "flags": []
+    },
+    "target_audience": {
+      "perceived_age_group": "Young Professionals",
+      "lifestyle_vibe": "Minimalist Premium"
+    },
+    "value_proposition_summary": "Sleek, modern payment card design offering premium banking services with Belfius and Mastercard."
+  }
+}

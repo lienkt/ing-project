@@ -1,0 +1,42 @@
+{
+  "low_level_metrics": {
+    "dimensions": {
+      "width": 766,
+      "height": 255
+    },
+    "aspect_ratio": 3.0,
+    "brightness": 153.33,
+    "saturation": 60.93,
+    "dominant_colors": [
+      "#ddd9db",
+      "#232927",
+      "#98897b"
+    ],
+    "contrast_rms": 77.8,
+    "visual_clutter_score": 0.0783,
+    "text_coverage_pct": 0.0,
+    "ocr_copy_count": 0,
+    "ocr_detected_copy": []
+  },
+  "semantic_analysis": {
+    "product_category": "Office & Workplace Solutions",
+    "secondary_tags": [
+      "Modern Office",
+      "Coworking Space",
+      "Corporate Culture",
+      "Teamwork",
+      "Startup"
+    ],
+    "perceived_emotion": "Joy",
+    "brand_logos": [],
+    "brand_safety": {
+      "is_safe": true,
+      "flags": []
+    },
+    "target_audience": {
+      "perceived_age_group": "Young Professionals",
+      "lifestyle_vibe": "Casual Modern Office"
+    },
+    "value_proposition_summary": "Showcases a happy, productive team working in a modern, collaborative office environment."
+  }
+}

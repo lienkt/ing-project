@@ -1,0 +1,41 @@
+{
+  "low_level_metrics": {
+    "dimensions": {
+      "width": 480,
+      "height": 320
+    },
+    "aspect_ratio": 1.5,
+    "brightness": 127.52,
+    "saturation": 102.47,
+    "dominant_colors": [
+      "#433927",
+      "#876b79",
+      "#cab5c4"
+    ],
+    "contrast_rms": 52.95,
+    "visual_clutter_score": 0.117,
+    "text_coverage_pct": 0.0,
+    "ocr_copy_count": 0,
+    "ocr_detected_copy": []
+  },
+  "semantic_analysis": {
+    "product_category": "Lifestyle & Mobile Accessories",
+    "secondary_tags": [
+      "Smartphone",
+      "Outdoor Lifestyle",
+      "Casual Apparel",
+      "Spring / Floral"
+    ],
+    "perceived_emotion": "Joy",
+    "brand_logos": [],
+    "brand_safety": {
+      "is_safe": true,
+      "flags": []
+    },
+    "target_audience": {
+      "perceived_age_group": "Gen Z / Young Adults",
+      "lifestyle_vibe": "Casual Outdoor & Vibrant"
+    },
+    "value_proposition_summary": "A smiling young woman highlights effortless connectivity and joy during a vibrant outdoor moment."
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "low_level_metrics": {
+    "dimensions": {
+      "width": 766,
+      "height": 255
+    },
+    "aspect_ratio": 3.0,
+    "brightness": 182.2,
+    "saturation": 160.77,
+    "dominant_colors": [
+      "#289dc0",
+      "#bdaa8a",
+      "#493627"
+    ],
+    "contrast_rms": 37.67,
+    "visual_clutter_score": 0.0437,
+    "text_coverage_pct": 0.0,
+    "ocr_copy_count": 0,
+    "ocr_detected_copy": []
+  },
+  "semantic_analysis": {
+    "product_category": "Outdoor & Travel",
+    "secondary_tags": [
+      "Hiking",
+      "Fitness",
+      "Adventure",
+      "Active Lifestyle",
+      "Mountains"
+    ],
+    "perceived_emotion": "Empowerment",
+    "brand_logos": [],
+    "brand_safety": {
+      "is_safe": true,
+      "flags": []
+    },
+    "target_audience": {
+      "perceived_age_group": "Young Professionals",
+      "lifestyle_vibe": "Casual Outdoor"
+    },
+    "value_proposition_summary": "Empowering outdoor enthusiasts to conquer active adventures and feel strong in nature."
+  }
+}
