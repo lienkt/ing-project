@@ -96,6 +96,13 @@ npm run build
 For the full verification checklist, see [development checks](docs/development.md).
 Return to the [documentation index](docs/README.md) to explore other topics.
 
+## Project timeline — 2 weeks
+
+| Week | Planned work |
+| --- | --- |
+| Week 1 | Define the scope; build the backend, frontend, scraping and automation functions. |
+| Week 2 | Integrate automation, test and improve the app, write documentation and prepare the demo. |
+
 ## Contributors
 
 | Contributor | Role | Contributions | Profile |
