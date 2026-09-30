@@ -3,6 +3,24 @@
 Capture bank product pages, label their communication, and compare similar products.
 All application records use one database, configured by `DATABASE_URL`.
 
+## Start here
+
+Use this README to install and run the app. The [documentation index](docs/README.md)
+provides reading paths and the complete guide list.
+
+| What you want to do | Where to read |
+| --- | --- |
+| Install and launch the app | [Local setup](#local-setup), then [application overview](docs/application-overview.md) |
+| Collect pages and review labels | [Collection workflow](docs/collection-workflow.md) → [labeling workflow](docs/feature-framework.md) → [field definitions and examples](docs/labeling-field-reference.md) |
+| Understand comparison results | [Comparison methodology](docs/comparison.md) |
+| Develop or extend the app | [Architecture](docs/architecture.md) → [backend README](backend/README.md) or [frontend README](frontend/README.md) → [development checks](docs/development.md) |
+| Add sources or connect automation functions | [Source catalog README](backend/data/sources/README.md) → [scraping pipeline README](backend/app/scraping/README.md) → [collection workflow](docs/collection-workflow.md) |
+| Maintain data or integrate with the API | [Database guide](docs/database-guide.md) · [API reference](docs/api-reference.md) |
+
+New to the project? After setup, follow the user reading path in the
+[documentation index](docs/README.md#for-users-and-reviewers) before labeling or
+interpreting comparisons.
+
 ## Local setup
 
 Requires Docker Desktop, Python 3.11+, and Node.js 22.12+ (22.x).
@@ -75,8 +93,8 @@ cd frontend
 npm run build
 ```
 
-See [scraping flow](backend/app/scraping/README.md),
-[database guide](docs/database-guide.md), and [API reference](docs/api-reference.md).
+For the full verification checklist, see [development checks](docs/development.md).
+Return to the [documentation index](docs/README.md) to explore other topics.
 
 ## Contributors
 

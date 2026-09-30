@@ -1,5 +1,7 @@
 # Scraping flow
 
+[Documentation index](../../../docs/README.md) · [Collection workflow](../../../docs/collection-workflow.md) · [Source catalog](../../data/sources/README.md)
+
 Sources live in the database. Each source shows **one capture action**, based on
 its successful capture history and automatic support.
 

@@ -4,7 +4,7 @@
 
 ## Purpose
 
-Compare how bank webpages communicate similar products using reviewed observations. The main workflow is **Dataset → Label → Compare → Insights**. Secondary collection tools import sources and propose labels through explicitly registered functions; no real scraping or AI algorithm is connected.
+Compare how bank webpages communicate similar products using reviewed observations. The main workflow is **Dataset → Label → Compare → Insights**. Collection tools capture public pages and generate rule-based label drafts for explicitly registered cases; analysts review those drafts before comparison.
 
 ## Terms
 

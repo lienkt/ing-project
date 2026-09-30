@@ -1,5 +1,7 @@
 # Frontend
 
+[Project README](../README.md) · [Documentation index](../docs/README.md)
+
 React · TypeScript · Vite
 
 - [Install and run](../README.md)

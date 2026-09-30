@@ -1,5 +1,7 @@
 # Database guide
 
+[Documentation index](README.md) · [Local setup](../README.md#local-setup)
+
 The app uses one PostgreSQL database, selected by `DATABASE_URL` in `backend/.env`.
 The database name does not classify its records. Preserve the database containing
 your current campaigns when changing configuration.

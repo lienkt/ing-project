@@ -1,5 +1,7 @@
 # Backend
 
+[Project README](../README.md) · [Documentation index](../docs/README.md)
+
 FastAPI · SQLAlchemy · PostgreSQL · Alembic
 
 - [Install and run](../README.md)

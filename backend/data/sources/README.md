@@ -1,5 +1,7 @@
 # Source catalog
 
+[Documentation index](../../../docs/README.md) · [Scraping pipeline](../../app/scraping/README.md)
+
 JSON files here contain configured public product pages. Each file has a `sources`
 array validated by `SourceDefinition`. Keep `source_id` stable after import.
 

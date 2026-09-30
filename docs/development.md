@@ -4,7 +4,7 @@
 
 ## Formatting
 
-Use Prettier for frontend code, JSON, YAML, and Markdown; use Ruff for Python. Both use an 88-character target line width. Tool setup is in the [root README](../README.md#development-tools-optional).
+Use Prettier for frontend code, JSON, YAML, and Markdown; use Ruff for Python. Both use an 88-character target line width. Install the frontend dependencies using [local setup](../README.md#local-setup); install backend development tools with `pip install -r requirements-dev.txt` from `backend/`.
 
 From the project root:
 

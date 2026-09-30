@@ -1,5 +1,7 @@
 # Scraping, capture, and labeling
 
+[Documentation index](README.md) · [Scraping pipeline](../backend/app/scraping/README.md)
+
 For a fresh installation, apply `alembic upgrade head` from `backend/` to an
 empty database. The initial schema includes persistent user sources, campaigns,
 labels, and capture history. See the [database guide](database-guide.md) for
