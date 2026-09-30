@@ -10,11 +10,11 @@ Each page remains a separate record, including multiple pages from the same bank
 
 ## Reading results
 
-| View | Meaning |
-| --- | --- |
-| Observations | Deterministic ranges or equal values for six semantic scales, with contributing page values, source links, and coverage |
-| Chart | One of the 17 descriptive scales, shown as 1–5 bars; a higher value is not necessarily better |
-| Detailed tables | Seven analytical sections with a column per selected page; metadata supplies context |
+| View            | Meaning                                                                                                                 |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Observations    | Deterministic ranges or equal values for six semantic scales, with contributing page values, source links, and coverage |
+| Chart           | One of the 17 descriptive scales, shown as 1–5 bars; a higher value is not necessarily better                           |
+| Detailed tables | Seven analytical sections with a column per selected page; metadata supplies context                                    |
 
 Observations cover text density, tone formality, emotional versus rational messaging, feature versus benefit focus, visual intensity, and CTA prominence. They describe only the selected sample; they do not measure effectiveness or recommend changes.
 

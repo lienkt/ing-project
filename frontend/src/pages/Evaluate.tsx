@@ -40,9 +40,7 @@ export default function Evaluate() {
   useEffect(() => {
     if (campaign?.evaluation) {
       setScores(
-        Object.fromEntries(
-          scoreFields.map((k) => [k, campaign.evaluation![k]]),
-        ),
+        Object.fromEntries(scoreFields.map((k) => [k, campaign.evaluation![k]])),
       );
       setNotes(campaign.evaluation.evaluation_notes || "");
     }
@@ -97,11 +95,7 @@ export default function Evaluate() {
           </span>
           <h2>Evaluation saved successfully</h2>
           <p>This campaign is now marked as Evaluated.</p>
-          <button
-            type="button"
-            className="secondary"
-            onClick={() => setSaved(false)}
-          >
+          <button type="button" className="secondary" onClick={() => setSaved(false)}>
             Edit evaluation
           </button>
           <div className="success-actions">
@@ -118,8 +112,7 @@ export default function Evaluate() {
           <div className="section-heading">
             <h2>Communication scores</h2>
             <p>
-              Choose a score for every dimension. 1 = weak · 3 = average · 5 =
-              strong.
+              Choose a score for every dimension. 1 = weak · 3 = average · 5 = strong.
             </p>
           </div>
           <Notice message={saveError} />
@@ -130,10 +123,7 @@ export default function Evaluate() {
                 <p>{dimensions[key][1]}</p>
                 <div className="score-options">
                   {[1, 2, 3, 4, 5].map((n) => (
-                    <label
-                      key={n}
-                      className={scores[key] === n ? "selected" : ""}
-                    >
+                    <label key={n} className={scores[key] === n ? "selected" : ""}>
                       <input
                         required
                         type="radio"

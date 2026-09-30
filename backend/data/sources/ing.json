@@ -1,0 +1,15 @@
+{
+  "sources": [
+    {
+      "source_id": "ing-youth-account-en",
+      "bank": "ING",
+      "bank_type": "Traditional",
+      "country": "Belgium",
+      "product_name": "ING Youth Account",
+      "product_category": "current_account",
+      "language": "English",
+      "page_type": "Product Page",
+      "url": "https://www.ing.be/en/individuals/current-accounts-packs/youth-account"
+    }
+  ]
+}

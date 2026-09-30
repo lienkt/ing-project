@@ -1,0 +1,96 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1190" viewBox="0 0 1200 1190" role="img" aria-labelledby="title desc">
+<title id="title">Source lifecycle and scraping actions</title>
+<desc id="desc">Configured JSON sources are imported into the database when the source list loads. UI additions are saved to the same table. A successful previous capture allows only Capture only. Before the first capture, supported sources offer Scrape and Auto-label; unsupported sources offer Capture page. Successful captures create history. Recapture preserves all labels. Failed first attempts remain eligible for a first capture.</desc>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#64748b"/></marker></defs>
+<style>text{font-family:Arial,Helvetica,sans-serif;fill:#172033}.title{font-size:25px;font-weight:700}.heading{font-size:18px;font-weight:700}.body{font-size:15px}.note{font-size:14px;fill:#475569}.edge{fill:none;stroke:#64748b;stroke-width:2;marker-end:url(#arrow)}</style>
+<rect width="1200" height="1190" rx="16" fill="#f8fafc"/>
+<text x="600" y="38" text-anchor="middle" class="title">Source lifecycle: first capture vs. recapture</text>
+<rect x="55" y="65" width="515" height="94" rx="12" fill="#fff" stroke="#cbd5e1"/>
+<text x="312.5" y="92" text-anchor="middle" class="heading">Configured sources</text>
+<text x="312.5" y="116" text-anchor="middle" class="body">data/sources/*.json</text>
+<text x="312.5" y="138" text-anchor="middle" class="body">api/scraping.py: catalog() imports missing rows</text>
+<text x="312.5" y="160" text-anchor="middle" class="body">Runs when the source list is requested.</text>
+<rect x="630" y="65" width="515" height="94" rx="12" fill="#fff" stroke="#cbd5e1"/>
+<text x="887.5" y="92" text-anchor="middle" class="heading">Add source in the UI</text>
+<text x="887.5" y="116" text-anchor="middle" class="body">Scraping.tsx → POST /api/scraping/sources</text>
+<text x="887.5" y="138" text-anchor="middle" class="body">api/scraping.py: create_source()</text>
+<text x="887.5" y="160" text-anchor="middle" class="body">Save bank, product, category, language and URL.</text>
+<path d="M312 159V184H480V210" class="edge"/>
+<path d="M887 159V184H720V210" class="edge"/>
+<rect x="250" y="212" width="700" height="94" rx="12" fill="#e0f2fe" stroke="#cbd5e1"/>
+<text x="600.0" y="239" text-anchor="middle" class="heading">Database: user_sources</text>
+<text x="600.0" y="263" text-anchor="middle" class="body">One displayed source list; existing records are not overwritten.</text>
+<text x="600.0" y="285" text-anchor="middle" class="body">Unique IDs / URLs prevent duplicate imports.</text>
+<text x="600.0" y="307" text-anchor="middle" class="body">deleted_sources prevents re-import of removed configured sources.</text>
+<path d="M600 306V340" class="edge"/>
+<rect x="360" y="342" width="480" height="73" rx="12" fill="#fef3c7" stroke="#cbd5e1"/>
+<text x="600.0" y="369" text-anchor="middle" class="heading">Has a successful capture?</text>
+<text x="600.0" y="393" text-anchor="middle" class="body">PageCapture history or a saved successful source import</text>
+<path d="M840 378H997V533" class="edge"/>
+<text x="995" y="365" text-anchor="middle" class="heading">YES</text>
+<path d="M500 415V449" class="edge"/>
+<text x="525" y="439" text-anchor="middle" class="heading">NO</text>
+<rect x="70" y="451" width="680" height="65" rx="12" fill="#fef3c7" stroke="#cbd5e1"/>
+<text x="410.0" y="478" text-anchor="middle" class="heading">Automatic scraping + labeling supported?</text>
+<text x="410.0" y="502" text-anchor="middle" class="body">dispatcher.py + scraping_config.py: exact case lookup</text>
+<path d="M215 516V553" class="edge"/>
+<text x="190" y="543" text-anchor="middle" class="heading">NO</text>
+<path d="M600 516V553" class="edge"/>
+<text x="625" y="543" text-anchor="middle" class="heading">YES</text>
+<rect x="35" y="555" width="350" height="89" rx="12" fill="#f1f5f9" stroke="#cbd5e1"/>
+<text x="210.0" y="582" text-anchor="middle" class="heading">Capture page</text>
+<text x="210.0" y="606" text-anchor="middle" class="body">First capture without auto-label support</text>
+<text x="210.0" y="628" text-anchor="middle" class="body">Generic capture; no labels</text>
+<rect x="425" y="555" width="350" height="89" rx="12" fill="#dcfce7" stroke="#cbd5e1"/>
+<text x="600.0" y="582" text-anchor="middle" class="heading">Scrape &amp; Auto-label</text>
+<text x="600.0" y="606" text-anchor="middle" class="body">First capture with auto-label support</text>
+<text x="600.0" y="628" text-anchor="middle" class="body">Scrape + capture + automatic draft</text>
+<rect x="815" y="555" width="350" height="89" rx="12" fill="#e0f2fe" stroke="#cbd5e1"/>
+<text x="990.0" y="582" text-anchor="middle" class="heading">Capture only</text>
+<text x="990.0" y="606" text-anchor="middle" class="body">Only action after a successful capture</text>
+<text x="990.0" y="628" text-anchor="middle" class="body">New evidence; all labels preserved</text>
+<path d="M997 533V553" class="edge"/>
+<path d="M210 644V678" class="edge"/>
+<path d="M600 644V678" class="edge"/>
+<path d="M990 644V678" class="edge"/>
+<rect x="35" y="680" width="350" height="91" rx="12" fill="#f1f5f9" stroke="#cbd5e1"/>
+<text x="210.0" y="707" text-anchor="middle" class="heading">page_scrapers.py</text>
+<text x="210.0" y="731" text-anchor="middle" class="body">capture_generic_page()</text>
+<text x="210.0" y="753" text-anchor="middle" class="body">Extract public page content.</text>
+<rect x="425" y="680" width="350" height="91" rx="12" fill="#dcfce7" stroke="#cbd5e1"/>
+<text x="600.0" y="707" text-anchor="middle" class="heading">dispatcher.py → registered scraper</text>
+<text x="600.0" y="731" text-anchor="middle" class="body">page_scrapers.py OR</text>
+<text x="600.0" y="753" text-anchor="middle" class="body">message_scraper.py → message_analysis.py</text>
+<rect x="815" y="680" width="350" height="91" rx="12" fill="#e0f2fe" stroke="#cbd5e1"/>
+<text x="990.0" y="707" text-anchor="middle" class="heading">Use the available scraper</text>
+<text x="990.0" y="731" text-anchor="middle" class="body">Registered scraper or generic capture</text>
+<text x="990.0" y="753" text-anchor="middle" class="body">Skip label calculation even if requested.</text>
+<path d="M210 771V806" class="edge"/>
+<path d="M600 771V806" class="edge"/>
+<path d="M990 771V806" class="edge"/>
+<rect x="35" y="808" width="350" height="78" rx="12" fill="#fff" stroke="#cbd5e1"/>
+<text x="210.0" y="835" text-anchor="middle" class="heading">capture.py</text>
+<text x="210.0" y="859" text-anchor="middle" class="body">Save screenshot + dom.json</text>
+<text x="210.0" y="881" text-anchor="middle" class="body">Return extracted content as ScrapedPage.</text>
+<rect x="425" y="808" width="350" height="126" rx="12" fill="#fff" stroke="#cbd5e1"/>
+<text x="600.0" y="835" text-anchor="middle" class="heading">Capture, then calculate labels</text>
+<text x="600.0" y="859" text-anchor="middle" class="body">capture.py: screenshot + dom.json</text>
+<text x="600.0" y="881" text-anchor="middle" class="body">dispatcher.py: auto_label_campaign()</text>
+<text x="600.0" y="903" text-anchor="middle" class="body">feature_labels.py / text_scoring.py OR</text>
+<text x="600.0" y="925" text-anchor="middle" class="body">message_scraper.py / message_analysis.py</text>
+<rect x="815" y="808" width="350" height="78" rx="12" fill="#fff" stroke="#cbd5e1"/>
+<text x="990.0" y="835" text-anchor="middle" class="heading">capture.py</text>
+<text x="990.0" y="859" text-anchor="middle" class="body">Save a new screenshot + dom.json</text>
+<text x="990.0" y="881" text-anchor="middle" class="body">Return extracted content as ScrapedPage.</text>
+<path d="M210 886V959H425V989" class="edge"/>
+<path d="M600 934V989" class="edge"/>
+<path d="M990 886V959H775V989" class="edge"/>
+<rect x="250" y="991" width="700" height="92" rx="12" fill="#e0f2fe" stroke="#cbd5e1"/>
+<text x="600.0" y="1018" text-anchor="middle" class="heading">services/collection.py: save successful results</text>
+<text x="600.0" y="1042" text-anchor="middle" class="body">Campaign + SourceImport + PageCapture history</text>
+<text x="600.0" y="1064" text-anchor="middle" class="body">First auto-label run also saves CampaignFeature as In Progress.</text>
+<text x="600.0" y="1086" text-anchor="middle" class="body">The next source-list load shows only Capture only.</text>
+<path d="M600 1083V1110" class="edge"/>
+<text x="600" y="1136" text-anchor="middle" class="heading">Dataset → Human review → Compare</text>
+<text x="600" y="1164" text-anchor="middle" class="note">A failed first attempt does not mark the source as captured: retry the same first-capture action.</text>
+</svg>

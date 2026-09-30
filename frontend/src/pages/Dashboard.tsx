@@ -11,14 +11,10 @@ import {
   SlidersHorizontal,
   Trash2,
 } from "lucide-react";
-import {
-  Campaign,
-  deleteCampaign,
-  getCampaigns,
-  label,
-} from "../api/campaigns";
+import { Campaign, deleteCampaign, getCampaigns, label } from "../api/campaigns";
 import { getComparison, ComparisonPage } from "../api/compare";
 import { Loading, Notice } from "../components/shared";
+import { LabelingStatusHelp } from "../components/LabelingStatusHelp";
 import { FeatureStatus } from "../components/FeatureControls";
 export default function Dashboard() {
   const location = useLocation();
@@ -26,7 +22,8 @@ export default function Dashboard() {
     if (location.hash !== "#label") return;
     const frame = requestAnimationFrame(() => {
       const target = document.getElementById("label");
-      target?.focus(); target?.scrollIntoView({ block: "start" });
+      target?.focus();
+      target?.scrollIntoView({ block: "start" });
     });
     return () => cancelAnimationFrame(frame);
   }, [location.key, location.hash]);
@@ -61,7 +58,12 @@ export default function Dashboard() {
   const [bank, setBank] = useState("");
   const [project, setProject] = useState("");
   const [search, setSearch] = useState("");
+  const [labelingStatus, setLabelingStatus] = useState("");
   const [retry, setRetry] = useState(0);
+  const [page, setPage] = useState(1);
+  useEffect(() => {
+    setPage(1);
+  }, [bank, project, search, labelingStatus]);
   useEffect(() => {
     let active = true;
     setLoading(true);
@@ -69,13 +71,27 @@ export default function Dashboard() {
     getCampaigns()
       .then(async (c) => {
         if (!active) return;
-        setCampaigns(c); setMetadata({}); setMetadataError("");
-        const results = await Promise.allSettled([...new Set(c.map(page => page.project))].map(category => getComparison(category)));
+        setCampaigns(c);
+        setMetadata({});
+        setMetadataError("");
+        const results = await Promise.allSettled(
+          [...new Set(c.map((page) => page.project))].map((category) =>
+            getComparison(category),
+          ),
+        );
         if (!active) return;
         const entries: Record<number, ComparisonPage> = {};
-        results.forEach(result => { if (result.status === "fulfilled") result.value.pages.forEach(page => { entries[page.campaign_id] = page; }); });
+        results.forEach((result) => {
+          if (result.status === "fulfilled")
+            result.value.pages.forEach((page) => {
+              entries[page.campaign_id] = page;
+            });
+        });
         setMetadata(entries);
-        if (results.some(result => result.status === "rejected")) setMetadataError("Some product and language details could not be loaded. Refresh the dataset to retry.");
+        if (results.some((result) => result.status === "rejected"))
+          setMetadataError(
+            "Some product and language details could not be loaded. Refresh the dataset to retry.",
+          );
       })
       .catch((e) => {
         if (active) setError(e.message);
@@ -91,19 +107,44 @@ export default function Dashboard() {
     (c) =>
       (!bank || c.bank_name === bank) &&
       (!project || c.project === project) &&
+      (!labelingStatus || c.labeling_status === labelingStatus) &&
       `${c.bank_name} ${c.details?.campaign_name || ""} ${c.campaign_url}`
         .toLowerCase()
         .includes(search.toLowerCase()),
   );
+  const pageSize = 10;
+  const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const currentPage = Math.min(page, pageCount);
+  const firstVisiblePage = Math.max(1, Math.min(currentPage - 1, pageCount - 2));
+  const pageNumbers = Array.from(
+    { length: Math.min(3, pageCount) },
+    (_, index) => firstVisiblePage + index,
+  );
+  const offset = (currentPage - 1) * pageSize;
+  const visibleCampaigns = filtered.slice(offset, offset + pageSize);
+  useEffect(() => {
+    setPage((previous) => Math.min(previous, pageCount));
+  }, [pageCount]);
   const evaluated = campaigns.filter((c) => c.labeling_status === "Completed").length;
   return (
     <>
-      {location.hash === "#label" && <section id="label" tabIndex={-1} className="card form-card compare-section" aria-labelledby="label-entry-title"><h2 id="label-entry-title">Choose a campaign to label</h2><p>Open a campaign by clicking its bank name, then choose its Campaign Feature Framework.</p></section>}
+      {location.hash === "#label" && (
+        <section
+          id="label"
+          tabIndex={-1}
+          className="card form-card compare-section"
+          aria-labelledby="label-entry-title"
+        >
+          <h2 id="label-entry-title">Choose a campaign to label</h2>
+          <p>
+            Open a campaign by clicking its bank name to review and complete its labels.
+          </p>
+        </section>
+      )}
       <div className="page-heading">
         <div>
-          <h1>
-            Campaign dataset
-          </h1><p>Choose a page, label its communication, then compare banks.</p>
+          <h1>Campaign dataset</h1>
+          <p>Choose a page, label its communication, then compare banks.</p>
         </div>
         <Link className="button" to="/campaigns/new">
           <Plus size={17} /> Add campaign
@@ -123,9 +164,7 @@ export default function Dashboard() {
         <div className="stat card stat-progress">
           <div>
             <span>In progress</span>
-            <strong>
-              {loading || error ? "—" : campaigns.length - evaluated}
-            </strong>
+            <strong>{loading || error ? "—" : campaigns.length - evaluated}</strong>
             <small>Awaiting completed labeling</small>
           </div>
           <span className="stat-icon amber">
@@ -209,6 +248,18 @@ export default function Dashboard() {
               </option>
             ))}
           </select>
+          <select
+            aria-label="Filter by labeling status"
+            value={labelingStatus}
+            onChange={(e) => setLabelingStatus(e.target.value)}
+          >
+            <option value="">All statuses</option>
+            {["Not Started", "In Progress", "Completed"].map((status) => (
+              <option key={status} value={status}>
+                {status}
+              </option>
+            ))}
+          </select>
         </div>
         {loading ? (
           <Loading />
@@ -222,21 +273,65 @@ export default function Dashboard() {
         ) : filtered.length ? (
           <>
             <div className="table-scroll">
-              <table>
+              <table className="dataset-table">
                 <thead>
                   <tr>
-                    <th>BANK</th><th>PRODUCT</th><th>CATEGORY</th><th>LANGUAGE</th><th>LABELING STATUS</th>
+                    <th
+                      scope="col"
+                      aria-label="Row number"
+                      className="dataset-row-number"
+                    />
+                    <th>BANK</th>
+                    <th>PRODUCT</th>
+                    <th>CATEGORY</th>
+                    <th>LANGUAGE</th>
+                    <th>
+                      <span className="dataset-status-heading">
+                        LABELING STATUS <LabelingStatusHelp />
+                      </span>
+                    </th>
                     <th>ACTIONS</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.map((c) => (
+                  {visibleCampaigns.map((c, index) => (
                     <tr key={c.id}>
-                      <td><Link className="campaign-title" to={`/campaigns/${c.id}`}>{c.bank_name}</Link><a className="table-url" href={c.campaign_url} target="_blank" rel="noreferrer">Source <ArrowUpRight size={14} /></a></td>
-                      <td>{metadata[c.id]?.product_name || "Not recorded"}</td>
+                      <td className="dataset-row-number">{offset + index + 1}</td>
+                      <td>
+                        <Link className="campaign-title" to={`/campaigns/${c.id}`}>
+                          {c.bank_name}
+                        </Link>
+                        <a
+                          className="table-url"
+                          href={c.campaign_url}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          Source <ArrowUpRight size={14} />
+                        </a>
+                      </td>
+                      <td>
+                        {metadata[c.id]?.product_name ||
+                          c.collection?.product_name ||
+                          "Not recorded"}
+                      </td>
                       <td>{label(c.project)}</td>
-                      <td>{metadata[c.id]?.language || "Not recorded"}</td>
-                      <td><FeatureStatus value={c.labeling_status} /></td>
+                      <td>
+                        {metadata[c.id]?.language ||
+                          c.collection?.language ||
+                          "Not recorded"}
+                      </td>
+                      <td>
+                        <FeatureStatus value={c.labeling_status} />
+                        <div>
+                          <small>
+                            {metadata[c.id]?.features?.source === "automatic" ||
+                            metadata[c.id]?.features?.source === "manual_override"
+                              ? "Auto-assisted"
+                              : null}
+                          </small>
+                        </div>
+                      </td>
                       <td>
                         <div className="row-actions">
                           <button
@@ -257,9 +352,41 @@ export default function Dashboard() {
                 </tbody>
               </table>
             </div>
-            <div className="table-footer">
-              Showing {filtered.length} of {campaigns.length} campaigns
-              <span>Manually labeled. Compare within a product category.</span>
+            <div className="table-footer dataset-footer">
+              <span role="status">
+                Showing {offset + 1}–{offset + visibleCampaigns.length} of{" "}
+                {filtered.length} campaigns
+              </span>
+              <nav className="dataset-pagination" aria-label="Dataset pagination">
+                <button
+                  type="button"
+                  className="secondary"
+                  disabled={currentPage === 1}
+                  onClick={() => setPage(currentPage - 1)}
+                >
+                  ← Previous
+                </button>
+                {pageNumbers.map((number) => (
+                  <button
+                    key={number}
+                    type="button"
+                    className={`dataset-page-number${number === currentPage ? "" : " secondary"}`}
+                    aria-label={`Page ${number}`}
+                    aria-current={number === currentPage ? "page" : undefined}
+                    onClick={() => setPage(number)}
+                  >
+                    {number}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  className="secondary"
+                  disabled={currentPage === pageCount}
+                  onClick={() => setPage(currentPage + 1)}
+                >
+                  Next →
+                </button>
+              </nav>
             </div>
           </>
         ) : (
@@ -284,6 +411,7 @@ export default function Dashboard() {
                   setBank("");
                   setProject("");
                   setSearch("");
+                  setLabelingStatus("");
                 }}
               >
                 Clear filters
@@ -296,10 +424,6 @@ export default function Dashboard() {
           </div>
         )}
       </section>
-      <div className="dashboard-note">
-        <span className="online-dot" /> A space for human observation. All
-        evaluations are entered manually.
-      </div>
     </>
   );
 }
