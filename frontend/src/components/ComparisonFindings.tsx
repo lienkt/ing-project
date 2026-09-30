@@ -1,8 +1,7 @@
-import { Link } from "react-router-dom";
+import { FeatureBarChart } from "./FeatureBarChart";
 import { QuickGuide } from "./QuickGuide";
 import { FieldHelp } from "./FieldHelp";
-import { useState } from "react";
-import { ComparisonPage, pageTitle, scaleFields } from "../api/compare";
+import { ComparisonPage, scaleFields } from "../api/compare";
 import { label } from "../api/campaigns";
 
 // A small, fixed set of dimensions, not fixed results or bank rankings.
@@ -16,7 +15,6 @@ const dimensions = new Set([
 ]);
 
 export function ComparisonFindings({ pages }: { pages: ComparisonPage[] }) {
-  const [showAll, setShowAll] = useState(false);
   const observations = scaleFields
     .filter((field) => dimensions.has(field.key))
     .flatMap((field) => {
@@ -33,7 +31,7 @@ export function ComparisonFindings({ pages }: { pages: ComparisonPage[] }) {
     <section
       id="insights"
       tabIndex={-1}
-      className="card compare-section findings-section"
+      className="card compare-section findings-section findings-strip"
       aria-labelledby="findings-title"
     >
       <h2 id="findings-title" className="comparison-help-heading">
@@ -51,63 +49,37 @@ export function ComparisonFindings({ pages }: { pages: ComparisonPage[] }) {
         </p>
       ) : (
         <ul className="comparison-findings">
-          {observations
-            .slice(0, showAll ? observations.length : 3)
-            .map(({ field, values, minimum, maximum }) => (
-              <li key={field.key}>
-                <h3 className="comparison-help-heading">
-                  {label(field.key)}
-                  <QuickGuide
-                    label={`Explain ${label(field.key)} observation`}
-                    title={label(field.key)}
-                  >
-                    <p className="field-help-description">{field.help}</p>
-                    <p className="field-help-description">
-                      <strong>Observation: </strong>
-                      {minimum === maximum
-                        ? `Among the selected pages with a recorded value, all ${values.length} pages share a score of ${minimum} (${field.descriptions[minimum - 1]}).`
-                        : `In the selected sample, recorded scores range from ${minimum} (${field.descriptions[minimum - 1]}) to ${maximum} (${field.descriptions[maximum - 1]}).`}
-                    </p>
-                    <p className="status-help-note">
-                      Coverage: {values.length}/{pages.length} selected pages.{" "}
-                      {pages.length - values.length} missing.
-                    </p>
-                  </QuickGuide>
-                </h3>
-                <p>
-                  {minimum === maximum
-                    ? `All ${values.length} labeled pages share a score of ${minimum}/5.`
-                    : `Scores range from ${minimum} to ${maximum} out of 5.`}{" "}
-                  {values.length}/{pages.length} pages labeled.
-                </p>
-                <div className="finding-values">
-                  {values.map(({ page, value }) => (
-                    <div key={page.campaign_id}>
-                      <Link to={`/campaigns/${page.campaign_id}`}>
-                        {pageTitle(page)}
-                      </Link>
-                      <strong>
-                        {value}
-                        <small> / 5</small>
-                      </strong>
-                    </div>
-                  ))}
-                </div>
-              </li>
-            ))}
+          {observations.map(({ field, values, minimum, maximum }) => (
+            <li key={field.key}>
+              <h3 className="comparison-help-heading">
+                {label(field.key)}
+                <QuickGuide
+                  label={`Explain ${label(field.key)} observation`}
+                  title={label(field.key)}
+                >
+                  <p className="field-help-description">{field.help}</p>
+                  <p className="field-help-description">
+                    <strong>Observation: </strong>
+                    {minimum === maximum
+                      ? `Among the selected pages with a recorded value, all ${values.length} pages share a score of ${minimum} (${field.descriptions[minimum - 1]}).`
+                      : `In the selected sample, recorded scores range from ${minimum} (${field.descriptions[minimum - 1]}) to ${maximum} (${field.descriptions[maximum - 1]}).`}
+                  </p>
+                  <p className="status-help-note">
+                    Coverage: {values.length}/{pages.length} selected pages.{" "}
+                    {pages.length - values.length} missing.
+                  </p>
+                </QuickGuide>
+              </h3>
+              <p>
+                {minimum === maximum
+                  ? `All ${values.length} labeled pages share a score of ${minimum}/5.`
+                  : `Scores range from ${minimum} to ${maximum} out of 5.`}{" "}
+                {values.length}/{pages.length} pages labeled.
+              </p>
+              <FeatureBarChart pages={pages} field={field} />
+            </li>
+          ))}
         </ul>
-      )}
-      {observations.length > 3 && (
-        <button
-          type="button"
-          className="secondary"
-          aria-expanded={showAll}
-          onClick={() => setShowAll((value) => !value)}
-        >
-          {showAll
-            ? "Show fewer observations"
-            : `Show all ${observations.length} observations`}
-        </button>
       )}
     </section>
   );

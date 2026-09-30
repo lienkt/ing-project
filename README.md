@@ -77,3 +77,11 @@ npm run build
 
 See [scraping flow](backend/app/scraping/README.md),
 [database guide](docs/database-guide.md), and [API reference](docs/api-reference.md).
+
+## Contributors
+
+| Contributor | Role | Contributions | Profile |
+| --- | --- | --- | --- |
+| Liên KIM | Team Lead | Created the web application's backend and frontend; wrote documentation; integrated automation functions into the application. | [LinkedIn](https://www.linkedin.com/in/lienkt0110/) |
+| Gaetan | Data Scientist | Contributed to the main scraping pipeline; developed the automatic classifier and automation functions for Images & Visuals; wrote documentation. | [LinkedIn](https://www.linkedin.com/in/ga%C3%ABtan-bricteux/) |
+| Hussein | Data Scientist | Contributed to the main scraping pipeline; developed automation functions for Text & Content, Messaging & Tone, and Call to Action. | [LinkedIn](https://www.linkedin.com/in/hussein-abuammar/) |

@@ -84,3 +84,29 @@ def test_failed_first_capture_does_not_change_action(client, monkeypatch):
         == "success"
     )
     assert source_row(client, source["source_id"])["has_capture"]
+
+
+def test_delete_campaign_restores_auto_scraping_action(client, monkeypatch):
+    source_id = "ing-youth-account-en"
+    monkeypatch.setattr("app.services.collection.scrape_campaign", fake_capture)
+    monkeypatch.setattr(
+        "app.services.collection.auto_label_campaign",
+        lambda *args: FeatureSuggestions(values={"word_count": 123}),
+    )
+    payload = {"source_ids": [source_id], "mode": "scrape_and_label"}
+    result = client.post("/api/scraping/run", json=payload).json()["results"][0]
+    assert result["status"] == "success"
+    assert source_row(client, source_id)["has_capture"]
+    assert client.delete(f"/api/campaigns/{result['campaign_id']}").status_code == 204
+
+    source = source_row(client, source_id)
+    assert source["campaign_id"] is None
+    assert source["has_capture"] is False
+    assert source["auto_labeling_supported"] is True
+    assert source["scraping"]["supported"] is True
+    assert source["import_status"] == "Ready"
+
+    result = client.post("/api/scraping/run", json=payload).json()["results"][0]
+    assert result["status"] == "success"
+    features = client.get(f"/api/campaigns/{result['campaign_id']}/features").json()
+    assert features["features"]["source"] == "automatic"

@@ -3125,14 +3125,33 @@ summary:focus-visible {
 }
 .compare-tabs {
   display: flex;
+  flex-wrap: nowrap;
+  max-width: 100%;
+  min-width: 0;
   gap: 6px;
   overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #bdc8b7 transparent;
   border-bottom: 1px solid #dce3d7;
   margin-bottom: 20px;
   padding-bottom: 1px;
 }
+.compare-tabs::-webkit-scrollbar {
+  height: 1px;
+}
+.compare-tabs::-webkit-scrollbar-track {
+  background: transparent;
+}
+.compare-tabs::-webkit-scrollbar-thumb {
+  background: #bdc8b7;
+  border-radius: 999px;
+}
+.compare-tabs::-webkit-scrollbar-thumb:hover {
+  background: #94a58d;
+}
 .compare-tabs button {
   display: inline-flex;
+  flex: 0 0 auto;
   align-items: center;
   gap: 7px;
   white-space: nowrap;
@@ -3143,6 +3162,9 @@ summary:focus-visible {
   border-radius: 0;
   font-size: 13px;
   padding: 12px;
+}
+.compare-tabs button svg {
+  flex-shrink: 0;
 }
 .compare-tabs button[aria-current] {
   color: #315d3f;
@@ -3547,4 +3569,35 @@ summary:focus-visible {
 }
 .compare-workspace .feature-chart > .feature-chart-note {
   margin: 12px 0 0;
+}
+
+/* All observation charts share a horizontal strip and one page legend. */
+.compare-workspace .findings-strip {
+  padding: 20px;
+  margin-bottom: 20px;
+  min-width: 0;
+}
+.compare-workspace .findings-strip .comparison-findings {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(260px, 1fr);
+  grid-template-columns: none;
+  gap: 14px;
+  overflow-x: auto;
+  padding-bottom: 12px;
+  margin-bottom: 0;
+}
+.compare-workspace .findings-strip .comparison-findings > li {
+  min-width: 0;
+}
+.compare-workspace .findings-strip .comparison-findings > li > p {
+  min-height: 54px;
+}
+
+/* Use the exact scrollbar size in browsers supporting WebKit scrollbar styling. */
+@supports selector(::-webkit-scrollbar) {
+  .compare-tabs {
+    scrollbar-width: auto;
+    scrollbar-color: auto;
+  }
 }

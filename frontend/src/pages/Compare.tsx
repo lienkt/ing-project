@@ -4,7 +4,12 @@ import { ComparisonEvidence } from "../components/ComparisonEvidence";
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { getProjects, label, ProjectOption } from "../api/campaigns";
-import { analyticalFields, ComparisonPage, getComparison } from "../api/compare";
+import {
+  analyticalFields,
+  ComparisonPage,
+  getComparison,
+  pageTitle,
+} from "../api/compare";
 import { isFilled } from "../api/features";
 import { Notice } from "../components/shared";
 import { FeatureStatus } from "../components/FeatureControls";
@@ -412,7 +417,7 @@ export default function Compare() {
                 </div>
               )}
               <nav className="compare-tabs" aria-label="Comparison groups">
-                {["Overview", ...groups].map((group) => (
+                {["Overview", "Communication overview", ...groups].map((group) => (
                   <button
                     key={group}
                     type="button"
@@ -424,17 +429,37 @@ export default function Compare() {
                   </button>
                 ))}
               </nav>
+              {["Overview", "Communication overview"].includes(activeGroup) && (
+                <>
+                  <ul className="feature-chart-legend" aria-label="Selected pages">
+                    {selected.map((page) => (
+                      <li key={page.campaign_id}>
+                        <span
+                          style={{ background: colors.get(page.campaign_id) }}
+                          aria-hidden="true"
+                        />
+                        <Link to={`/campaigns/${page.campaign_id}`}>
+                          {pageTitle(page)}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                  {activeGroup === "Overview" && (
+                    <ComparisonFindings pages={selected} />
+                  )}
+                </>
+              )}
               <div className="compare-dashboard">
                 <div className="compare-main">
-                  {activeGroup === "Overview" && <ComparisonChart pages={selected} />}
-                  <ComparisonTable
-                    pages={selected}
-                    group={activeGroup === "Overview" ? undefined : activeGroup}
-                  />
+                  {activeGroup === "Communication overview" && (
+                    <ComparisonChart pages={selected} />
+                  )}
+                  {groups.some((group) => group === activeGroup) && (
+                    <ComparisonTable pages={selected} group={activeGroup} />
+                  )}
                   <ComparisonEvidence pages={selected} />
                 </div>
                 <aside className="compare-aside" aria-label="Comparison insights">
-                  <ComparisonFindings pages={selected} />
                   <section className="card compare-coverage">
                     <h2>Labeling coverage</h2>
                     <p>
