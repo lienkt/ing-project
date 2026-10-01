@@ -404,6 +404,8 @@ def plot_categorize_score(
                 category = BANK_PRODUCT_CATEGORIES["en"][
                     language_categories.index(category)
                 ]
+            if category == "Investment fund / regular saving plan":
+                category = "Investment fund"
             records.append(
                 {
                     "product": category,
@@ -434,8 +436,19 @@ def plot_categorize_score(
         height=7,
         aspect=1.8,
     )
-    plot.set_axis_labels("Product", "Classification score")
-    plot.set_xticklabels(rotation=45, ha="right")
+    axis = plot.ax
+    axis.set_xlabel("Product", fontsize=22, labelpad=14)
+    axis.set_ylabel("Classification score", fontsize=22, labelpad=14)
+    axis.tick_params(axis="both", labelsize=18)
+    plot.set_xticklabels(rotation=45, ha="right", fontsize=18)
+
+    if plot._legend is not None:
+        plot._legend.set_loc("upper right")
+        plot._legend.set_bbox_to_anchor((0.99, 0.99))
+        plot._legend.get_title().set_fontsize(20)
+        for label in plot._legend.get_texts():
+            label.set_fontsize(18)
+
     plot.figure.tight_layout()
 
     if output_file is None:
