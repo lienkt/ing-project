@@ -5,6 +5,8 @@ All application records use one database, configured by `DATABASE_URL`.
 
 ## Start here
 
+[App preview](#app-preview) · [Local setup](#local-setup) · [Documentation](docs/README.md)
+
 Use this README to install and run the app. The [documentation index](docs/README.md)
 provides reading paths and the complete guide list.
 
@@ -20,6 +22,58 @@ provides reading paths and the complete guide list.
 New to the project? After setup, follow the user reading path in the
 [documentation index](docs/README.md#for-users-and-reviewers) before labeling or
 interpreting comparisons.
+
+## App preview
+
+**Collect sources → Inspect captures → Review labels → Compare pages.**
+
+These screenshots come from the project presentation and illustrate saved app
+states. Labels, counts and layout may differ from your local dataset; comparison
+scores are examples of the interface, not validated bank rankings.
+
+### 1. Collect sources
+
+Add product URLs, filter sources, and capture pages. Supported cases also generate
+automatic label drafts. [Collection guide](docs/collection-workflow.md).
+
+![Scraping Sources with bank and product filters, Capture page and Scrape & Auto-label actions](docs/images/scraping.png)
+
+### 2. Inspect the evidence
+
+Open saved screenshots, capture history and extracted page content before reviewing
+labels. [Scraping and capture workflow](backend/app/scraping/README.md).
+
+<details>
+<summary>View the capture viewer</summary>
+
+![Capture viewer showing saved history, screenshot and DOM links, and an ING page preview](docs/images/capture-viewer.png)
+
+</details>
+
+### 3. Review and complete labels
+
+Check automatic drafts, fill missing fields and track labeling progress across the
+shared framework. [Labeling guide](docs/feature-framework.md).
+
+![Campaign labeling screen with product information, completion progress and label groups](docs/images/labeling.png)
+
+### 4. Compare communication
+
+Compare selected pages through observation charts, saved visual evidence and
+labeling coverage. Use the feature tabs to inspect detailed values.
+[Comparison guide](docs/comparison.md).
+
+![Comparison Overview with Key observations charts, bank colors, visual evidence and labeling coverage](docs/images/compare-overview.png)
+
+<details>
+<summary>View the Communication overview feature chart</summary>
+
+Choose a feature to compare its recorded values across selected pages. Higher
+scores indicate a position on the scale, not better performance.
+
+![Communication overview with the Tone Formality dropdown and a bar for each selected page](docs/images/communication-overview.png)
+
+</details>
 
 ## Local setup
 
