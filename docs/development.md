@@ -4,7 +4,8 @@
 
 ## Agent verification
 
-After installing frontend dependencies and backend `requirements-dev.txt`, run:
+After installing frontend dependencies, backend `requirements-dev.txt`, and
+Chromium (`backend/.venv/bin/python -m playwright install chromium`), run:
 
 ```bash
 ./scripts/verify.sh
@@ -12,8 +13,8 @@ After installing frontend dependencies and backend `requirements-dev.txt`, run:
 
 The executable resolves the repository root itself, runs backend tests, then
 TypeScript checking and the Vite production build, then Prettier and Ruff
-formatting checks. It stops at the first failure with a non-zero exit code and
-names the failed step. It does not install dependencies, change formatting,
+formatting checks. It runs all steps, names failures, and returns a non-zero exit
+code if any step fails. It does not install dependencies, change formatting,
 start services, migrate the application database, or capture live bank pages.
 There is no frontend test runner or standalone lint command configured.
 
@@ -27,6 +28,20 @@ exact dispatch, evidence requirements, missing counts, and both artifact writers
 without network requests or database migrations. Existing integration tests cover
 capture-only, history, protected labels, stale reviews, and Compare compatibility.
 Browser mocks verify contracts; rendered bank pages still need human inspection.
+
+## Pull-request checks
+
+[Development checks](../.github/workflows/checks.yml) runs the same command on every
+pull request, pushes to `main`, and manual dispatch. It installs Python 3.11 and
+Node 22 dependencies using the existing requirements and npm lockfile. Tests use
+throwaway SQLite and install Chromium for offline HTML rendering tests; no
+database service, bank capture, or deployment credentials are needed.
+Auth tests enable authentication explicitly
+and validate locally signed tokens; other tests use auth-disabled local mode.
+
+The existing Azure deployment workflow is separate and is not a PR check.
+Repository administrators can require `Development checks / verify` through
+branch protection. Adding the workflow alone does not make it required.
 
 ## Formatting
 

@@ -12,6 +12,18 @@ product is financially better. Workflow: source → capture → Dataset → Labe
 - `backend/app/scraping/`: Playwright/Chromium capture, extraction, rule-based labels.
 - Read relevant code and [development checks](docs/development.md) before editing.
 
+## Commands and authoritative references
+
+- Setup: [local installation](README.md#local-setup); backend development tools:
+  `backend/.venv/bin/python -m pip install -r backend/requirements-dev.txt`.
+- Develop: from `backend/`, `.venv/bin/uvicorn app.main:app --reload`; from the root,
+  `npm --prefix frontend run dev`.
+- Verify: `./scripts/verify.sh` (the same command runs in pull-request CI).
+- Consult [architecture](docs/architecture.md), [API contracts](docs/api-reference.md),
+  [database and migrations](docs/database-guide.md), [label definitions](docs/labeling-field-reference.md),
+  [scraper registration](backend/app/scraping/README.md), and
+  [authentication setup](docs/keycloak-setup.md). [Documentation index](docs/README.md).
+
 ## Invariants
 
 - Generic public-page capture is independent of specialized automatic labeling.
@@ -33,6 +45,17 @@ product is financially better. Workflow: source → capture → Dataset → Labe
   or silently change keyword rules, scoring, scales, or Compare behavior.
 - Preserve API compatibility, Dataset → Label → Compare, and existing database/UI
   modes. Inspect current implementation rather than assuming old docs are current.
+- Validate API inputs and handler outputs through `backend/app/schemas/`; shared
+  `Schema` forbids unknown fields. Preserve strict feature counts/booleans and 1–5
+  scales; suggestions reject empty observations and analyst notes. Do not bypass
+  dispatcher revalidation with `model_construct` or unchecked dictionaries.
+- Protect every `/api/` route with `core/auth.py:authorize` and add its exact
+  method/route template to `backend/config/permissions.json`. With auth enabled,
+  RS256 access tokens require issuer, audience, expiry and Bearer type; unknown
+  roles/endpoints are denied and admin has no implicit bypass. The backend is the
+  authority; frontend visibility is not access control. Auth-disabled local mode
+  grants all configured permissions; `/health` is public. Policy changes require
+  process restart because the validated policy is cached.
 
 ## Working rules and definition of done
 

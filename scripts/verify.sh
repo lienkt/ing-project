@@ -3,6 +3,7 @@ set -euo pipefail
 
 PROJECT_ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$PROJECT_ROOT"
+failed=0
 
 run_check() {
     local name="$1"
@@ -13,7 +14,7 @@ run_check() {
     else
         local status=$?
         echo "=== Verification failed: $name (exit $status) ===" >&2
-        exit "$status"
+        failed=1
     fi
 }
 
@@ -27,4 +28,8 @@ run_check "Frontend TypeScript check and build" npm --prefix frontend run build
 run_check "Prettier formatting check" npm --prefix frontend run format:check
 run_check "Python formatting check" backend/.venv/bin/ruff format --check backend
 
+if (( failed )); then
+    echo "=== Verification failed; see failed steps above ===" >&2
+    exit 1
+fi
 echo "=== Verification passed ==="

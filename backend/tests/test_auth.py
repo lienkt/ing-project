@@ -205,3 +205,39 @@ def test_admin_has_no_implicit_bypass(secured, monkeypatch):
     policy.roles["admin"] = ["workspace.read"]
     monkeypatch.setattr(auth, "load_policy", lambda: policy)
     assert client.post("/api/campaigns", headers=token(["admin"])).status_code == 403
+
+
+@pytest.mark.parametrize("access", [None, "admin", {"roles": "admin"}, {"roles": [1]}])
+def test_malformed_role_claims_fail_closed(secured, access):
+    client, token = secured
+    response = client.get("/api/campaigns", headers=token(realm_access=access))
+    assert response.status_code == 403
+
+
+@pytest.mark.parametrize("field", ["oidc_issuer", "oidc_audience"])
+def test_missing_auth_configuration_fails_closed(secured, monkeypatch, field):
+    client, token = secured
+    headers = token(["admin"])
+    monkeypatch.setattr(settings, field, "")
+    assert client.get("/api/campaigns", headers=headers).status_code == 503
+
+
+@pytest.mark.parametrize(
+    "changes",
+    [
+        {"permissions": []},
+        {"permissions": ["workspace.read", "workspace.read"]},
+        {"api": {"GET /api/campaigns": "undeclared"}},
+        {"api": {"GET /health": "workspace.read"}},
+        {"api": {"TRACE /api/campaigns": "workspace.read"}},
+        {"roles": {"viewer": "workspace.read"}},
+        {"unexpected": True},
+    ],
+)
+def test_invalid_policy_is_rejected(changes):
+    from app.core.permissions import PermissionPolicy, load_policy
+    from pydantic import ValidationError
+
+    data = {**load_policy().model_dump(), **changes}
+    with pytest.raises(ValidationError):
+        PermissionPolicy.model_validate(data)
