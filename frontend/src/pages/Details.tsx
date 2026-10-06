@@ -1,3 +1,4 @@
+import { can } from "../auth";
 import { CaptureViewer } from "../components/CaptureViewer";
 import { useCallback, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
@@ -55,7 +56,7 @@ export default function DetailsPage() {
     setSuccess("");
   }
   const saveObservations = useCallback(async () => {
-    if (!dirty) return;
+    if (!can("campaigns.write") || !can("labels.write") || !dirty) return;
     const updated = await updateCampaignDetails(id, data);
     setCampaign(updated);
     setDirty(false);
@@ -96,7 +97,9 @@ export default function DetailsPage() {
           <div className="eyebrow">OBSERVE THE COMMUNICATION</div>
           <h1>Campaign details & labels</h1>
           <p>
-            Review the captured page, check the prefilled fields, and complete labeling.
+            {can("labels.write")
+              ? "Review the captured page, check the prefilled fields, and complete labeling."
+              : "Explore the captured page and saved communication labels."}
           </p>
         </div>
         <div className="campaign-header-actions">
@@ -107,17 +110,20 @@ export default function DetailsPage() {
           >
             <Camera size={18} /> View captures
           </button>
-          <button
-            type="button"
-            className="danger-link delete-icon"
-            title="Delete campaign"
-            aria-label="Delete campaign"
-            aria-busy={deleting}
-            disabled={deleting || saving}
-            onClick={remove}
-          >
-            <Trash2 size={19} aria-hidden="true" />
-          </button>
+          {can("campaigns.delete") && (
+            <button
+              type="button"
+              className="danger-link delete-icon"
+              title="Delete campaign"
+              aria-label="Delete campaign"
+              aria-busy={deleting}
+
+              disabled={deleting || saving}
+              onClick={remove}
+            >
+              <Trash2 size={19} aria-hidden="true" />
+            </button>
+          )}
         </div>
       </div>
       {showCaptures && (
@@ -137,96 +143,102 @@ export default function DetailsPage() {
       <LabelEditor
         key={`${id}:${review}`}
         id={id}
-        review={review}
-        additionalDirty={dirty}
+        review={can("labels.write") && review}
+        readOnly={!can("labels.write")}
+        additionalDirty={can("campaigns.write") && dirty}
         additionalTotal={Object.keys(empty).length}
         additionalRecorded={
           Object.keys(empty).filter((key) =>
             Boolean(data[key as keyof Details]?.trim()),
           ).length
         }
-        saveAdditional={saveObservations}
+        saveAdditional={can("campaigns.write") ? saveObservations : undefined}
         onSavingChange={setSaving}
       >
         <div className="additional-observations-content">
-          <div className="section-heading">
-            <h3>Message & content</h3>
-            <p>
-              Review the source page and record your observations. All fields are
-              optional.
-            </p>
-          </div>
-          <div className="form-grid">
-            {(
-              [
-                "campaign_name",
-                "cta_text",
-                "headline",
-                "subheadline",
-                "main_message",
-                "notes",
-              ] as (keyof Details)[]
-            ).map((key) => (
-              <label
-                key={key}
-                className={["main_message", "notes"].includes(key) ? "full" : ""}
-              >
-                {key === "cta_text" ? "CTA text" : label(key)}
-                {["main_message", "notes"].includes(key) ? (
-                  <textarea
-                    rows={3}
-                    maxLength={10000}
-                    value={data[key] || ""}
-                    onChange={(e) => change(key, e.target.value)}
-                    placeholder={
-                      key === "main_message"
-                        ? "What is the central message of this campaign?"
-                        : "Additional observations and context…"
-                    }
-                  />
-                ) : (
-                  <input
-                    maxLength={
-                      ["campaign_name", "cta_text"].includes(key) ? 300 : 10000
-                    }
-                    value={data[key] || ""}
-                    onChange={(e) => change(key, e.target.value)}
-                  />
-                )}
-              </label>
-            ))}
-          </div>
-          <div className="section-heading divided">
-            <h3>Communication style</h3>
-            <p>Describe the balance and tone of the campaign.</p>
-          </div>
-          <div className="form-grid">
-            {(Object.keys(choices) as (keyof Details)[]).map((key) => (
-              <label key={key}>
-                {label(key)}
-                <select
-                  value={data[key] || ""}
-                  onChange={(e) => change(key, e.target.value)}
+          <fieldset
+            disabled={!can("labels.write") || !can("campaigns.write")}
+            className="observation-fields"
+          >
+            <div className="section-heading">
+              <h3>Message & content</h3>
+              <p>
+                Review the source page and record your observations. All fields are
+                optional.
+              </p>
+            </div>
+            <div className="form-grid">
+              {(
+                [
+                  "campaign_name",
+                  "cta_text",
+                  "headline",
+                  "subheadline",
+                  "main_message",
+                  "notes",
+                ] as (keyof Details)[]
+              ).map((key) => (
+                <label
+                  key={key}
+                  className={["main_message", "notes"].includes(key) ? "full" : ""}
                 >
-                  <option value="">Select an observation</option>
-                  {choices[key]!.map((v) => (
-                    <option key={v} value={v}>
-                      {label(v)}
-                    </option>
-                  ))}
-                </select>
+                  {key === "cta_text" ? "CTA text" : label(key)}
+                  {["main_message", "notes"].includes(key) ? (
+                    <textarea
+                      rows={3}
+                      maxLength={10000}
+                      value={data[key] || ""}
+                      onChange={(e) => change(key, e.target.value)}
+                      placeholder={
+                        key === "main_message"
+                          ? "What is the central message of this campaign?"
+                          : "Additional observations and context…"
+                      }
+                    />
+                  ) : (
+                    <input
+                      maxLength={
+                        ["campaign_name", "cta_text"].includes(key) ? 300 : 10000
+                      }
+                      value={data[key] || ""}
+                      onChange={(e) => change(key, e.target.value)}
+                    />
+                  )}
+                </label>
+              ))}
+            </div>
+            <div className="section-heading divided">
+              <h3>Communication style</h3>
+              <p>Describe the balance and tone of the campaign.</p>
+            </div>
+            <div className="form-grid">
+              {(Object.keys(choices) as (keyof Details)[]).map((key) => (
+                <label key={key}>
+                  {label(key)}
+                  <select
+                    value={data[key] || ""}
+                    onChange={(e) => change(key, e.target.value)}
+                  >
+                    <option value="">Select an observation</option>
+                    {choices[key]!.map((v) => (
+                      <option key={v} value={v}>
+                        {label(v)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ))}
+              <label>
+                Tone
+                <input
+                  value={data.tone || ""}
+                  maxLength={120}
+                  placeholder="e.g. Friendly, reassuring, formal"
+                  onChange={(e) => change("tone", e.target.value)}
+                />
               </label>
-            ))}
-            <label>
-              Tone
-              <input
-                value={data.tone || ""}
-                maxLength={120}
-                placeholder="e.g. Friendly, reassuring, formal"
-                onChange={(e) => change("tone", e.target.value)}
-              />
-            </label>
-          </div>
+            </div>
+          </fieldset>
         </div>
       </LabelEditor>
     </>

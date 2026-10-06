@@ -1,3 +1,4 @@
+import { can } from "../auth";
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
@@ -146,9 +147,11 @@ export default function Dashboard() {
           <h1>Campaign dataset</h1>
           <p>Choose a page, label its communication, then compare banks.</p>
         </div>
-        <Link className="button" to="/campaigns/new">
-          <Plus size={17} /> Add campaign
-        </Link>
+        {can("campaigns.write") && (
+          <Link className="button" to="/campaigns/new">
+            <Plus size={17} /> Add campaign
+          </Link>
+        )}
       </div>
       <div className="stats dataset-stats" role="region" aria-label="Campaign summary">
         <div className="stat card stat-total">
@@ -334,17 +337,20 @@ export default function Dashboard() {
                       </td>
                       <td>
                         <div className="row-actions">
-                          <button
-                            type="button"
-                            className="danger-link delete-icon"
-                            title="Delete campaign"
-                            aria-label={`Delete campaign ${c.details?.campaign_name || c.bank_name}`}
-                            aria-busy={deleting === c.id}
-                            disabled={deleting !== null}
-                            onClick={() => remove(c)}
-                          >
-                            <Trash2 size={17} aria-hidden="true" />
-                          </button>
+                          {can("campaigns.delete") && (
+                            <button
+                              type="button"
+                              className="danger-link delete-icon"
+                              title="Delete campaign"
+                              aria-label={`Delete campaign ${c.details?.campaign_name || c.bank_name}`}
+                              aria-busy={deleting === c.id}
+
+                              disabled={deleting !== null}
+                              onClick={() => remove(c)}
+                            >
+                              <Trash2 size={17} aria-hidden="true" />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -417,9 +423,11 @@ export default function Dashboard() {
                 Clear filters
               </button>
             ) : (
-              <Link className="button" to="/campaigns/new">
-                <Plus size={16} /> Add your first campaign
-              </Link>
+              can("campaigns.write") && (
+                <Link className="button" to="/campaigns/new">
+                  <Plus size={16} /> Add your first campaign
+                </Link>
+              )
             )}
           </div>
         )}

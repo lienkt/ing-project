@@ -1,7 +1,8 @@
+import { useCaptureArtifact } from "./useCaptureArtifact";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Camera, ExternalLink, X } from "lucide-react";
-import { Capture, captureArtifactUrl, getCaptures } from "../api/collection";
+import { Capture, getCaptures } from "../api/collection";
 
 export function CaptureViewer({
   campaignId,
@@ -50,6 +51,14 @@ export function CaptureViewer({
     };
   }, [campaignId, retry]);
   const current = captures.find((c) => c.id === selected);
+  const screenshot = useCaptureArtifact(
+    current?.has_screenshot ? current.id : undefined,
+    "screenshot.png",
+  );
+  const dom = useCaptureArtifact(
+    current?.has_screenshot ? current.id : undefined,
+    "dom.json",
+  );
   return createPortal(
     <dialog
       ref={dialog}
@@ -110,6 +119,8 @@ export function CaptureViewer({
               </p>
             </div>
           )}
+          {screenshot.error && <p role="alert">{screenshot.error}</p>}
+          {dom.error && <p role="alert">{dom.error}</p>}
           {current && (
             <>
               <div className="capture-toolbar">
@@ -130,7 +141,7 @@ export function CaptureViewer({
                 {current.has_screenshot && (
                   <a
                     className="button"
-                    href={captureArtifactUrl(current.id, "screenshot.png")}
+                    href={screenshot.url || undefined}
                     target="_blank"
                     rel="noreferrer"
                   >
@@ -140,7 +151,7 @@ export function CaptureViewer({
                 {current.has_screenshot && (
                   <a
                     className="button secondary"
-                    href={captureArtifactUrl(current.id, "dom.json")}
+                    href={dom.url || undefined}
                     target="_blank"
                     rel="noreferrer"
                   >
@@ -152,17 +163,17 @@ export function CaptureViewer({
                 Captured {new Date(current.page.scraped_at).toLocaleString()} · Saved
                 manual and completed labels are preserved during recapture.
               </p>
-              {current.has_screenshot ? (
+              {current.has_screenshot && screenshot.url ? (
                 <a
                   className="capture-preview"
-                  href={captureArtifactUrl(current.id, "screenshot.png")}
+                  href={screenshot.url || undefined}
                   target="_blank"
                   rel="noreferrer"
                   aria-label={`Open full-size screenshot of ${product}`}
                 >
                   <img
                     key={current.id}
-                    src={captureArtifactUrl(current.id, "screenshot.png")}
+                    src={screenshot.url || undefined}
                     alt={`Saved website screenshot of ${product}`}
                   />
                   <span>Screenshot preview · Click to view the full page ↗</span>

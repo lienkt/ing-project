@@ -24,12 +24,12 @@ Each source uses the existing exact bank/category/product/language registry:
 
 A new capture-only campaign remains Not Started. Its submitted product name and
 language remain visible without fabricating a feature record. Manually edited
-and completed labels are preserved. Specialized auto-label recapture may refresh
-an untouched automatic draft. Previous pending proposals are invalidated when
+and completed labels are preserved. Recapture saves evidence only, including for untouched
+automatic drafts. Previous pending proposals are invalidated when
 new evidence is captured. Failed recapture preserves existing database evidence.
 
 All capture and labeling code lives in `backend/app/scraping/`. `scraping_config.py` retains
-SCRAPING_SUPPORT and AUTO_LABEL_SUPPORT. `page_scrapers.py` shares browser lifecycle
+the exact `AUTO_SUPPORT` registry. `page_scrapers.py` shares browser lifecycle
 and extraction between specialized and generic capture. `feature_labels.py` and the
 scoring formulas are unchanged. Generic capture does not call them.
 

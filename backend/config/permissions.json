@@ -1,0 +1,55 @@
+{
+  "permissions": [
+    "campaigns.delete",
+    "campaigns.write",
+    "capture.write",
+    "catalog.write",
+    "evaluation.write",
+    "labels.write",
+    "workspace.read"
+  ],
+  "roles": {
+    "viewer": ["workspace.read"],
+    "admin": [
+      "campaigns.delete",
+      "campaigns.write",
+      "capture.write",
+      "catalog.write",
+      "evaluation.write",
+      "labels.write",
+      "workspace.read"
+    ]
+  },
+  "api": {
+    "GET /api/auth/permissions": "workspace.read",
+    "GET /api/campaigns": "workspace.read",
+    "GET /api/campaigns/{campaign_id}": "workspace.read",
+    "GET /api/banks": "workspace.read",
+    "GET /api/projects": "workspace.read",
+    "GET /api/compare": "workspace.read",
+    "GET /api/campaigns/{campaign_id}/features": "workspace.read",
+    "GET /api/campaigns/{campaign_id}/suggestions": "workspace.read",
+    "GET /api/scraping/sources": "workspace.read",
+    "GET /api/scraping/campaigns/{campaign_id}/captures": "workspace.read",
+    "GET /api/scraping/captures/{capture_id}/{artifact}": "workspace.read",
+    "GET /api/scraping/campaigns/{campaign_id}/content": "workspace.read",
+    "POST /api/campaigns": "campaigns.write",
+    "PUT /api/campaigns/{campaign_id}": "campaigns.write",
+    "PUT /api/campaigns/{campaign_id}/details": "campaigns.write",
+    "DELETE /api/campaigns/{campaign_id}": "campaigns.delete",
+    "POST /api/campaigns/{campaign_id}/evaluation": "evaluation.write",
+    "PUT /api/campaigns/{campaign_id}/features": "labels.write",
+    "POST /api/campaigns/{campaign_id}/features/complete": "labels.write",
+    "POST /api/campaigns/{campaign_id}/suggestions/review": "labels.write",
+    "POST /api/campaigns/{campaign_id}/auto-label": "labels.write",
+    "POST /api/banks": "catalog.write",
+    "POST /api/projects": "catalog.write",
+    "PUT /api/banks/{bank_id}": "catalog.write",
+    "PUT /api/projects/{project_key}": "catalog.write",
+    "DELETE /api/banks/{bank_id}": "catalog.write",
+    "DELETE /api/projects/{project_key}": "catalog.write",
+    "POST /api/scraping/run": "capture.write",
+    "POST /api/scraping/sources": "capture.write",
+    "DELETE /api/scraping/sources/{source_id}": "capture.write"
+  }
+}

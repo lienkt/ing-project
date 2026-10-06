@@ -1,7 +1,8 @@
+import { useCaptureArtifact } from "./useCaptureArtifact";
 import { useEffect, useState } from "react";
 import { Camera, ExternalLink } from "lucide-react";
 import { ComparisonPage } from "../api/compare";
-import { Capture, captureArtifactUrl, getCaptures } from "../api/collection";
+import { Capture, getCaptures } from "../api/collection";
 import { CaptureViewer } from "./CaptureViewer";
 
 function EvidenceCard({ page }: { page: ComparisonPage }) {
@@ -27,6 +28,11 @@ function EvidenceCard({ page }: { page: ComparisonPage }) {
       active = false;
     };
   }, [page.campaign_id, retry]);
+  const screenshot = useCaptureArtifact(
+    capture?.has_screenshot ? capture.id : undefined,
+    "screenshot.png",
+  );
+
   return (
     <article className="compare-evidence-card">
       <strong>{page.bank_name}</strong>
@@ -35,17 +41,20 @@ function EvidenceCard({ page }: { page: ComparisonPage }) {
         onClick={() => setViewing(true)}
         aria-label={`View captures for ${page.bank_name} · ${page.product_name || page.campaign_id}`}
       >
-        {capture?.has_screenshot && !imageFailed ? (
+        {capture?.has_screenshot && screenshot.url && !imageFailed ? (
           <img
             loading="lazy"
-            src={captureArtifactUrl(capture.id, "screenshot.png")}
+            src={screenshot.url}
             alt={`${page.bank_name} campaign screenshot`}
             onError={() => setImageFailed(true)}
           />
         ) : (
           <span>
             <Camera size={24} />
-            {imageFailed ? "Screenshot unavailable" : status}
+            {screenshot.error ||
+              (imageFailed
+                ? "Screenshot unavailable"
+                : status || "Loading screenshot…")}
           </span>
         )}
       </button>

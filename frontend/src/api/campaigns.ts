@@ -1,3 +1,4 @@
+import { authHeaders } from "../auth";
 export const projects = [
   "credit_card",
   "savings_account",
@@ -84,11 +85,15 @@ export async function request<T>(
   method = "GET",
   data?: unknown,
 ): Promise<T> {
+  const authorization = await authHeaders();
   let response: Response;
   try {
     response = await fetch(`${base}/api${path}`, {
       method,
-      headers: data ? { "Content-Type": "application/json" } : undefined,
+      headers: {
+        ...authorization,
+        ...(data ? { "Content-Type": "application/json" } : {}),
+      },
       body: data ? JSON.stringify(data) : undefined,
     });
   } catch {

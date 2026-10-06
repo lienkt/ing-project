@@ -2,6 +2,32 @@
 
 [Documentation index](README.md) · [Installation](../README.md)
 
+## Agent verification
+
+After installing frontend dependencies and backend `requirements-dev.txt`, run:
+
+```bash
+./scripts/verify.sh
+```
+
+The executable resolves the repository root itself, runs backend tests, then
+TypeScript checking and the Vite production build, then Prettier and Ruff
+formatting checks. It stops at the first failure with a non-zero exit code and
+names the failed step. It does not install dependencies, change formatting,
+start services, migrate the application database, or capture live bank pages.
+There is no frontend test runner or standalone lint command configured.
+
+Read [AGENTS.md](../AGENTS.md), inspect relevant code, implement the smallest
+change, run verification, fix introduced failures, rerun, and report evidence.
+Tests use disposable SQLite databases by default; never point `TEST_DATABASE_URL`
+at research data. See [database test safety](database-guide.md#12-run-tests-without-affecting-research-data).
+
+`backend/tests/test_scraping_invariants.py` checks production registry support,
+exact dispatch, evidence requirements, missing counts, and both artifact writers
+without network requests or database migrations. Existing integration tests cover
+capture-only, history, protected labels, stale reviews, and Compare compatibility.
+Browser mocks verify contracts; rendered bank pages still need human inspection.
+
 ## Formatting
 
 Use Prettier for frontend code, JSON, YAML, and Markdown; use Ruff for Python. Both use an 88-character target line width. Install the frontend dependencies using [local setup](../README.md#local-setup); install backend development tools with `pip install -r requirements-dev.txt` from `backend/`.
@@ -39,6 +65,8 @@ npm run preview
 Build checks TypeScript and creates `dist/`. Preview usually uses port 4173; add its exact origin to backend `CORS_ORIGINS` and restart the backend. Static hosting must serve `index.html` for application routes.
 
 ## Manual checks
+
+For authenticated installations, first run the [Keycloak login and role checks](keycloak-setup.md#6-check-login-logout-and-permissions).
 
 Use disposable test records:
 

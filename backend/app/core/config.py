@@ -2,6 +2,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    auth_enabled: bool = False
+    oidc_issuer: str = ""
+    oidc_audience: str = "banking-api"
     database_url: str = (
         "postgresql+psycopg://postgres:postgres@localhost:5432/campaign_db"
     )

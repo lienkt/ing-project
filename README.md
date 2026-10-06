@@ -5,19 +5,19 @@ All application records use one database, configured by `DATABASE_URL`.
 
 ## Start here
 
-[App preview](#app-preview) · [Local setup](#local-setup) · [Documentation](docs/README.md)
+[App preview](#app-preview) · [Local setup](#local-setup) · [Keycloak setup](docs/keycloak-setup.md) · [Documentation](docs/README.md)
 
 Use this README to install and run the app. The [documentation index](docs/README.md)
 provides reading paths and the complete guide list.
 
-| What you want to do | Where to read |
-| --- | --- |
-| Install and launch the app | [Local setup](#local-setup), then [application overview](docs/application-overview.md) |
-| Collect pages and review labels | [Collection workflow](docs/collection-workflow.md) → [labeling workflow](docs/feature-framework.md) → [field definitions and examples](docs/labeling-field-reference.md) |
-| Understand comparison results | [Comparison methodology](docs/comparison.md) |
-| Develop or extend the app | [Architecture](docs/architecture.md) → [backend README](backend/README.md) or [frontend README](frontend/README.md) → [development checks](docs/development.md) |
+| What you want to do                         | Where to read                                                                                                                                                             |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Install and launch the app                  | [Local setup](#local-setup), then [application overview](docs/application-overview.md)                                                                                    |
+| Collect pages and review labels             | [Collection workflow](docs/collection-workflow.md) → [labeling workflow](docs/feature-framework.md) → [field definitions and examples](docs/labeling-field-reference.md)  |
+| Understand comparison results               | [Comparison methodology](docs/comparison.md)                                                                                                                              |
+| Develop or extend the app                   | [Architecture](docs/architecture.md) → [backend README](backend/README.md) or [frontend README](frontend/README.md) → [development checks](docs/development.md)           |
 | Add sources or connect automation functions | [Source catalog README](backend/data/sources/README.md) → [scraping pipeline README](backend/app/scraping/README.md) → [collection workflow](docs/collection-workflow.md) |
-| Maintain data or integrate with the API | [Database guide](docs/database-guide.md) · [API reference](docs/api-reference.md) |
+| Maintain data or integrate with the API     | [Database guide](docs/database-guide.md) · [API reference](docs/api-reference.md)                                                                                         |
 
 New to the project? After setup, follow the user reading path in the
 [documentation index](docs/README.md#for-users-and-reviewers) before labeling or
@@ -92,6 +92,8 @@ cd backend
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
+# New installations only:
+cp .env.example .env
 ```
 
 For a new installation, copy `.env.example` to `.env`. For an existing installation,
@@ -110,11 +112,13 @@ In another terminal:
 ```bash
 cd frontend
 npm ci
-# New installations only: copy .env.example to .env.
+# New installations only:
+cp .env.example .env
 npm run dev
 ```
 
-Open http://localhost:5173. API documentation: http://localhost:8000/docs.
+Open http://127.0.0.1:5173. API documentation: http://localhost:8000/docs.
+For login and viewer/admin permissions, continue with [Keycloak setup](docs/keycloak-setup.md).
 
 ## Workflow
 
@@ -129,13 +133,10 @@ alongside the database.
 
 ## Updating and testing
 
-The migration history has been consolidated into `initial_schema` for a fresh
-start. Use an empty database; existing databases on the retired migration chain
-must be backed up and replaced with a new database before using this baseline.
-See the [database guide](docs/database-guide.md). No reset is performed automatically.
+Back up the database and capture files before updating an existing installation.
+See the [database guide](docs/database-guide.md).
 
-For subsequent updates on this baseline, run `alembic upgrade head` from `backend/`
-and restart the backend.
+Run `alembic upgrade head` from `backend/` and restart the backend.
 
 ```bash
 cd backend
@@ -152,15 +153,30 @@ Return to the [documentation index](docs/README.md) to explore other topics.
 
 ## Project timeline — 2 weeks
 
-| Week | Planned work |
-| --- | --- |
-| Week 1 | Define the scope; build the backend, frontend, scraping and automation functions. |
+| Week   | Planned work                                                                              |
+| ------ | ----------------------------------------------------------------------------------------- |
+| Week 1 | Define the scope; build the backend, frontend, scraping and automation functions.         |
 | Week 2 | Integrate automation, test and improve the app, write documentation and prepare the demo. |
 
 ## Contributors
 
-| Contributor | Role | Contributions | Profile |
-| --- | --- | --- | --- |
-| Liên KIM | Team Lead | Created the web application's backend and frontend; wrote documentation; integrated automation functions into the application. | [LinkedIn](https://www.linkedin.com/in/lienkt0110/) |
-| Gaetan | Data Scientist | Contributed to the main scraping pipeline; developed the automatic classifier and automation functions for Images & Visuals; wrote documentation. | [LinkedIn](https://www.linkedin.com/in/ga%C3%ABtan-bricteux/) |
-| Hussein | Data Scientist | Contributed to the main scraping pipeline; developed automation functions for Text & Content, Messaging & Tone, and Call to Action. | [LinkedIn](https://www.linkedin.com/in/hussein-abuammar/) |
+| Contributor | Role           | Contributions                                                                                                                                     | Profile                                                       |
+| ----------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| Liên KIM    | Team Lead      | Created the web application's backend and frontend; wrote documentation; integrated automation functions into the application.                    | [LinkedIn](https://www.linkedin.com/in/lienkt0110/)           |
+| Gaetan      | Data Scientist | Contributed to the main scraping pipeline; developed the automatic classifier and automation functions for Images & Visuals; wrote documentation. | [LinkedIn](https://www.linkedin.com/in/ga%C3%ABtan-bricteux/) |
+| Hussein     | Data Scientist | Contributed to the main scraping pipeline; developed automation functions for Text & Content, Messaging & Tone, and Call to Action.               | [LinkedIn](https://www.linkedin.com/in/hussein-abuammar/)     |
+
+## Keycloak login and roles
+
+For the team setup, follow [Install and run with Keycloak](docs/keycloak-setup.md).
+It covers starting the services, selecting the `banking` realm, creating users,
+configuring both `.env` files and checking login/logout.
+
+- `viewer`: read Dataset, saved labels, capture evidence and Compare.
+- `admin`: all viewer permissions plus campaign/catalog edits, scraping, labeling
+  and evaluation.
+
+The Keycloak administration account belongs to `master`. Application accounts must
+be created separately in `banking`; the realm import creates roles and the client,
+not users. Authentication is optional and defaults to off in both example `.env`
+files. Follow the guide to enable it in both applications.

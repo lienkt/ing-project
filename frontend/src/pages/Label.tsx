@@ -34,6 +34,7 @@ export default function LabelPage() {
 export function LabelEditor({
   id,
   review,
+  readOnly = false,
   children,
   additionalDirty = false,
   additionalRecorded = 0,
@@ -43,6 +44,7 @@ export function LabelEditor({
 }: {
   id: string;
   review: boolean;
+  readOnly?: boolean;
   children?: ReactNode;
   additionalDirty?: boolean;
   additionalRecorded?: number;
@@ -51,7 +53,7 @@ export function LabelEditor({
   onSavingChange?: (saving: boolean) => void;
 }) {
   const [proposal, setProposal] = useState<Proposal | null>(null);
-  const [reviewPending, setReviewPending] = useState(review);
+  const [reviewPending, setReviewPending] = useState(!readOnly && review);
   const [activeSection, setActiveSection] = useState(0);
   const sectionHeading = useRef<HTMLHeadingElement>(null);
   function goToSection(index: number) {
@@ -76,7 +78,10 @@ export function LabelEditor({
   useEffect(() => {
     let active = true;
     setLoadError("");
-    Promise.all([getFeatures(id), getSuggestions(id)])
+    Promise.all([
+      getFeatures(id),
+      readOnly ? Promise.resolve(null) : getSuggestions(id),
+    ])
       .then(([result, suggestion]) => {
         if (!active) return;
         const loaded: FeatureInput = { ...emptyFeatures, labeling_notes: null };
@@ -84,7 +89,7 @@ export function LabelEditor({
           Object.assign(loaded, { [field.key]: result.features?.[field.key] ?? null });
         loaded.labeling_notes = result.features?.labeling_notes ?? null;
         setProposal(suggestion);
-        if (review) {
+        if (review && !readOnly) {
           if (localStorage.getItem(storageKey))
             throw new Error(
               "You have an unsaved manual draft. Open manual labeling and save it before reviewing suggestions.",
@@ -103,7 +108,7 @@ export function LabelEditor({
           }
         }
         try {
-          const raw = review ? null : localStorage.getItem(storageKey);
+          const raw = review || readOnly ? null : localStorage.getItem(storageKey);
           if (raw) {
             const draft: unknown = JSON.parse(raw);
             if (draft && typeof draft === "object") {
@@ -122,7 +127,7 @@ export function LabelEditor({
         } catch {
           /* Server values remain available if local storage is unavailable. */
         }
-        setData(withDerivedValues(loaded));
+        setData(readOnly ? loaded : withDerivedValues(loaded));
         setResponse(result);
       })
       .catch((e) => {
@@ -131,12 +136,13 @@ export function LabelEditor({
     return () => {
       active = false;
     };
-  }, [id, storageKey, retry, review]);
+  }, [id, storageKey, retry, review, readOnly]);
 
   function change(
     key: FeatureKey | "labeling_notes",
     value: string | number | boolean | null,
   ) {
+    if (readOnly) return;
     const next = withDerivedValues({ ...data, [key]: value });
     setData(next);
     setDirty(true);
@@ -150,7 +156,7 @@ export function LabelEditor({
   }
   const save = useCallback(
     async (complete = false) => {
-      if (saving) return;
+      if (readOnly || saving) return;
       const missing = featureFields.filter((f) => !isFilled(data[f.key]));
       if (complete && missing.length === featureFields.length) {
         setError("Label at least one feature before completing.");
@@ -200,6 +206,7 @@ export function LabelEditor({
       }
     },
     [
+      readOnly,
       data,
       dirty,
       id,
@@ -214,13 +221,20 @@ export function LabelEditor({
   );
 
   useEffect(() => {
-    if (reviewPending || (!dirty && !additionalDirty) || saving || error || !response)
+    if (
+      readOnly ||
+      reviewPending ||
+      (!dirty && !additionalDirty) ||
+      saving ||
+      error ||
+      !response
+    )
       return;
     const timer = window.setTimeout(() => {
       void save();
     }, 1200);
     return () => window.clearTimeout(timer);
-  }, [dirty, additionalDirty, saving, error, response, save, reviewPending]);
+  }, [readOnly, dirty, additionalDirty, saving, error, response, save, reviewPending]);
 
   if (loadError)
     return (
@@ -245,9 +259,11 @@ export function LabelEditor({
         <div>
           <h2>Campaign labels</h2>
           <p>
-            {reviewPending
-              ? "Review automatic suggestions"
-              : "Review & complete labels"}
+            {readOnly
+              ? "View saved labels · Read only"
+              : reviewPending
+                ? "Review automatic suggestions"
+                : "Review & complete labels"}
           </p>
         </div>
         <FeatureStatus value={dirty ? "In Progress" : response.labeling_status} />
@@ -359,7 +375,7 @@ export function LabelEditor({
       )}
       <Notice message={error} />
       <form
-        className="label-editor"
+        className={`label-editor${readOnly ? " label-editor-readonly" : ""}`}
         onSubmit={(e) => {
           e.preventDefault();
           void save();
@@ -405,7 +421,7 @@ export function LabelEditor({
               );
             })}
           </nav>
-          <fieldset disabled={saving} className="feature-form-fields">
+          <fieldset disabled={saving || readOnly} className="feature-form-fields">
             {sections.map((section, i) => {
               if (i !== activeSection) return null;
               const fields = featureFields.filter((f) => f.section === section);
@@ -470,6 +486,7 @@ export function LabelEditor({
                       if (field.kind === "scale")
                         return (
                           <RatingScale
+                            readOnly={readOnly}
                             key={field.key}
                             label={label(field.key)}
                             help={help}
@@ -593,34 +610,36 @@ export function LabelEditor({
           </button>
         </nav>
 
-        <div className="card form-card labeling-actions">
-          <span role="status">
-            {saving
-              ? "Saving…"
-              : error
-                ? "Save failed"
-                : reviewPending
-                  ? "Suggestions awaiting review"
-                  : dirty || additionalDirty
-                    ? "Changes pending…"
-                    : "Saved ✓"}
-          </span>
-          <button type="submit" className="secondary" disabled={saving}>
-            {reviewPending ? "Save Reviewed Draft" : "Save Draft"}
-          </button>
-          <button
-            type="button"
-            className={
-              activeSection === sections.length - 1 || progress === 100
-                ? ""
-                : "secondary"
-            }
-            disabled={saving}
-            onClick={() => void save(true)}
-          >
-            Complete Labeling
-          </button>
-        </div>
+        {!readOnly && (
+          <div className="card form-card labeling-actions">
+            <span role="status">
+              {saving
+                ? "Saving…"
+                : error
+                  ? "Save failed"
+                  : reviewPending
+                    ? "Suggestions awaiting review"
+                    : dirty || additionalDirty
+                      ? "Changes pending…"
+                      : "Saved ✓"}
+            </span>
+            <button type="submit" className="secondary" disabled={saving}>
+              {reviewPending ? "Save Reviewed Draft" : "Save Draft"}
+            </button>
+            <button
+              type="button"
+              className={
+                activeSection === sections.length - 1 || progress === 100
+                  ? ""
+                  : "secondary"
+              }
+              disabled={saving}
+              onClick={() => void save(true)}
+            >
+              Complete Labeling
+            </button>
+          </div>
+        )}
       </form>
     </>
   );

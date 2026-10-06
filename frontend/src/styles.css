@@ -230,16 +230,20 @@ nav a.active {
   margin-top: 4px;
   font-weight: 400;
 }
-.online-dot {
-  display: inline-block;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #7d9d77;
-  flex-shrink: 0;
+.workspace-user-details {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
 }
-.workspace-user .online-dot {
-  margin-left: auto;
+.workspace-user .signout-button {
+  margin-left: 20px;
+  padding: 4px 10px;
+  min-height: 0;
+  font-size: 12px;
+  line-height: 1.4;
+  background: transparent;
+  color: #244f41;
 }
 .main-wrap {
   margin-left: 240px;
@@ -3600,4 +3604,23 @@ summary:focus-visible {
     scrollbar-width: auto;
     scrollbar-color: auto;
   }
+}
+
+.observation-fields {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+.label-editor-readonly input:disabled,
+.label-editor-readonly select:disabled,
+.label-editor-readonly textarea:disabled {
+  color: #182e26;
+  -webkit-text-fill-color: #182e26;
+  opacity: 1;
+  cursor: default;
+}
+.label-editor-readonly .score-options label,
+.label-editor-readonly .boolean-options label {
+  cursor: default;
 }

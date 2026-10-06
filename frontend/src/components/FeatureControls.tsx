@@ -14,6 +14,7 @@ export function FeatureStatus({ value }: { value: LabelingStatus }) {
 }
 
 export function RatingScale({
+  readOnly = false,
   value,
   onChange,
   label,
@@ -24,6 +25,7 @@ export function RatingScale({
   onChange: (value: number | null) => void;
   label: string;
   descriptions: readonly string[];
+  readOnly?: boolean;
   help?: string;
 }) {
   const id = useId();
@@ -50,14 +52,18 @@ export function RatingScale({
             key={meaning}
             className={value === i + 1 ? "selected" : ""}
             title={`${i + 1}: ${meaning}`}
-            onMouseEnter={() => setPreview(i + 1)}
+            onMouseEnter={() => {
+              if (!readOnly) setPreview(i + 1);
+            }}
           >
             <input
               type="radio"
               name={id}
               checked={value === i + 1}
               onChange={() => onChange(i + 1)}
-              onFocus={() => setPreview(i + 1)}
+              onFocus={() => {
+                if (!readOnly) setPreview(i + 1);
+              }}
               onBlur={() => setPreview(null)}
               aria-label={`${i + 1}: ${meaning}`}
             />
@@ -67,17 +73,21 @@ export function RatingScale({
       </div>
       <p id={`${id}-meaning`} className="scale-meaning" aria-live="polite">
         {shown === null
-          ? "Not set — choose a value"
+          ? readOnly
+            ? "Not recorded"
+            : "Not set — choose a value"
           : `${preview !== null && preview !== value ? "Preview" : "Selected"}: ${shown} — ${descriptions[shown - 1]}`}
       </p>
-      <button
-        type="button"
-        className="secondary clear-scale"
-        disabled={value === null}
-        onClick={() => onChange(null)}
-      >
-        Clear
-      </button>
+      {!readOnly && (
+        <button
+          type="button"
+          className="secondary clear-scale"
+          disabled={value === null}
+          onClick={() => onChange(null)}
+        >
+          Clear
+        </button>
+      )}
     </fieldset>
   );
 }
